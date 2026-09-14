@@ -1,0 +1,18 @@
+# Data dumps — import these into MySQL, don't ship them in the image.
+*.sql
+
+# Dev / server artifacts.
+error_log
+test.txt
+phpinfo.php
+cache/*
+!cache/.gitkeep
+
+# VCS / OS noise.
+.git
+.gitignore
+.DS_Store
+Thumbs.db
+
+# Deploy docs (not needed inside the running container).
+DEPLOY.md
