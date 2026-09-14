@@ -8,7 +8,12 @@ FROM php:7.4-apache
 # pdo_mysql/mysqli compile against libraries already in the base image, so this
 # layer needs NO apt packages and can never be broken by a Debian mirror hiccup.
 RUN docker-php-ext-install pdo pdo_mysql mysqli \
-    && a2enmod rewrite
+    && a2enmod rewrite \
+    # mod_php requires the prefork MPM. Ensure exactly one MPM is loaded
+    # (the base image can end up with both event/worker and prefork enabled,
+    # which makes Apache fail to start with "More than one MPM loaded").
+    && a2dismod mpm_event mpm_worker 2>/dev/null || true \
+    && a2enmod mpm_prefork
 
 # --- GD (for timthumb.php thumbnails) — best effort ---------------------------
 # The php:7.4 base runs on Debian bullseye. During Debian point-release rotations
