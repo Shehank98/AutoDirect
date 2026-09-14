@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Account — DirectAuto Import</title>
+  <link rel="shortcut icon" href="/assets/images/favicon-icon/favicon.png">
+  <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/assets/css/orange.css" title="orange">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" rel="stylesheet">
+  <style>.page-title{background:#1c2331;color:#fff;padding:40px 0;margin-bottom:30px;} .acct-card{background:#fff;border:1px solid #eee;border-radius:6px;padding:22px;margin-bottom:20px;} table.t td,table.t th{padding:9px 12px;border-bottom:1px solid #eee;text-align:left;}</style>
+</head>
+<body>
+  <div id="site-header"></div>
+  <div class="page-title"><div class="container"><h2 style="color:#fff;margin:0;">My Account</h2></div></div>
+  <section class="container" style="margin-bottom:50px;">
+    <div id="need-login" class="text-center" style="display:none;padding:40px;">Please <a href="/login">log in</a> to view your account.</div>
+    <div id="acct" style="display:none;">
+      <ul class="nav nav-tabs" role="tablist">
+        <li class="active"><a href="#profile" data-toggle="tab">Profile</a></li>
+        <li><a href="#inquiries" data-toggle="tab">My Inquiries</a></li>
+        <li><a href="#requests" data-toggle="tab">Auction Requests</a></li>
+      </ul>
+      <div class="tab-content" style="margin-top:20px;">
+        <div class="tab-pane active" id="profile">
+          <div class="acct-card" style="max-width:560px;">
+            <h4 style="margin-top:0;">Profile details</h4>
+            <form id="profile-form">
+              <div class="form-group"><label>Name</label><input class="form-control" id="p-name"></div>
+              <div class="form-group"><label>Email</label><input class="form-control" id="p-email" disabled></div>
+              <div class="form-group"><label>Phone</label><input class="form-control" id="p-phone"></div>
+              <div class="form-group"><label>Address</label><textarea class="form-control" id="p-address" rows="2"></textarea></div>
+              <button class="btn" id="p-save">Save Changes</button>
+              <div id="p-msg" style="margin-top:10px;"></div>
+            </form>
+          </div>
+        </div>
+        <div class="tab-pane" id="inquiries"><div class="acct-card"><div id="inq-list">Loading…</div></div></div>
+        <div class="tab-pane" id="requests"><div class="acct-card"><div id="req-list">Loading…</div></div></div>
+      </div>
+    </div>
+  </section>
+  <div id="site-footer"></div>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="/assets/js/jquery.min.js"></script>
+  <script src="/assets/js/bootstrap.min.js"></script>
+  <script src="/assets/js/app.js"></script>
+  <script>
+    DA.pageInit = async function () {
+      try { await DA.initFirebase(); } catch (e) { document.getElementById('need-login').style.display = 'block'; document.getElementById('need-login').innerHTML = 'Accounts are not enabled yet.'; return; }
+      firebase.auth().onAuthStateChanged(async (user) => {
+        if (!user) { document.getElementById('need-login').style.display = 'block'; return; }
+        document.getElementById('acct').style.display = 'block';
+        try {
+          const me = await DA.api.get('/api/account/me');
+          document.getElementById('p-name').value = me.name || user.displayName || '';
+          document.getElementById('p-email').value = me.email || user.email || '';
+          document.getElementById('p-phone').value = me.phone || '';
+          document.getElementById('p-address').value = me.address || '';
+        } catch (e) {}
+        loadInquiries(); loadRequests();
+      });
+
+      document.getElementById('profile-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const msg = document.getElementById('p-msg');
+        try {
+          await DA.api.put('/api/account/me', {
+            name: document.getElementById('p-name').value,
+            phone: document.getElementById('p-phone').value,
+            address: document.getElementById('p-address').value,
+          });
+          msg.innerHTML = '<span class="text-success">Saved.</span>';
+        } catch (err) { msg.innerHTML = '<span class="text-danger">' + DA.esc(err.message) + '</span>'; }
+      });
+
+      async function loadInquiries() {
+        try {
+          const rows = await DA.api.get('/api/account/inquiries');
+          document.getElementById('inq-list').innerHTML = rows.length
+            ? '<table class="t" style="width:100%;"><tr><th>Vehicle</th><th>Message</th><th>Date</th></tr>' +
+              rows.map((i) => '<tr><td>' + DA.esc([i.year, i.manufacturer_name, i.model_name].filter(Boolean).join(' ') || '—') + '</td><td>' + DA.esc(i.message) + '</td><td>' + new Date(i.created_at).toLocaleDateString() + '</td></tr>').join('') + '</table>'
+            : '<p class="text-muted">You have no inquiries yet.</p>';
+        } catch (e) { document.getElementById('inq-list').innerHTML = '<p class="text-danger">' + DA.esc(e.message) + '</p>'; }
+      }
+      async function loadRequests() {
+        try {
+          const rows = await DA.api.get('/api/account/live-inquiries');
+          document.getElementById('req-list').innerHTML = rows.length
+            ? '<table class="t" style="width:100%;"><tr><th>Make</th><th>Model</th><th>Year</th><th>Date</th></tr>' +
+              rows.map((i) => '<tr><td>' + DA.esc(i.make) + '</td><td>' + DA.esc(i.model) + '</td><td>' + DA.esc(i.year || '—') + '</td><td>' + new Date(i.created_at).toLocaleDateString() + '</td></tr>').join('') + '</table>'
+            : '<p class="text-muted">No auction requests yet. <a href="/live-auction">Make one</a>.</p>';
+        } catch (e) { document.getElementById('req-list').innerHTML = '<p class="text-danger">' + DA.esc(e.message) + '</p>'; }
+      }
+
+      // Deep-link to a tab from the sub-path, e.g. /my-account/my-inquiries
+      const sub = location.pathname.split('/')[2] || '';
+      if (sub.indexOf('inquir') >= 0) $('a[href="#inquiries"]').tab('show');
+      else if (sub.indexOf('auction') >= 0 || sub.indexOf('request') >= 0) location.href = '/live-auction';
+    };
+  </script>
+</body>
+</html>

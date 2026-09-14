@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vehicle Details — DirectAuto Import</title>
+  <link rel="shortcut icon" href="/assets/images/favicon-icon/favicon.png">
+  <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/assets/css/orange.css" title="orange">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" rel="stylesheet">
+  <style>
+    .v-main-img{width:100%;height:420px;object-fit:cover;border-radius:6px;background:#eee;}
+    .v-thumbs img{width:100%;height:80px;object-fit:cover;border-radius:4px;cursor:pointer;border:2px solid transparent;margin-bottom:10px;}
+    .v-thumbs img.active{border-color:#f76b1c;}
+    .spec-table td{padding:9px 12px;border-bottom:1px solid #eee;}
+    .spec-table td:first-child{color:#888;width:45%;}
+    .v-price{font-size:28px;font-weight:700;color:#f76b1c;}
+    .feature-chip{display:inline-block;background:#f5f6fa;border:1px solid #e5e7ef;border-radius:20px;padding:5px 14px;margin:0 6px 8px 0;font-size:13px;}
+    .inquiry-card{background:#fff;border:1px solid #eee;border-radius:6px;padding:22px;position:sticky;top:20px;}
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <section class="container" style="margin:30px auto;">
+    <div id="vehicle-wrap"><p class="text-center" style="padding:60px;">Loading vehicle…</p></div>
+  </section>
+
+  <section class="container" style="margin-bottom:40px;">
+    <div id="similar-wrap"></div>
+  </section>
+
+  <div id="site-footer"></div>
+
+  <script src="/assets/js/jquery.min.js"></script>
+  <script src="/assets/js/bootstrap.min.js"></script>
+  <script src="/assets/js/app.js"></script>
+  <script>
+    function seoFromPath() {
+      const parts = location.pathname.split('/').filter(Boolean); // ['our-stock','<seo>']
+      return parts[1] ? decodeURIComponent(parts[1]) : (DA.qs('id') || '');
+    }
+
+    function specRow(label, val) { return val ? '<tr><td>' + DA.esc(label) + '</td><td>' + DA.esc(val) + '</td></tr>' : ''; }
+
+    function render(v, similar) {
+      const imgs = Array.isArray(v.images) && v.images.length ? v.images : ['/assets/images/no-image.jpg'];
+      const thumbs = imgs.map((s, i) => '<img src="' + DA.esc(s) + '" class="' + (i === 0 ? 'active' : '') + '" onclick="DA.swapImg(this,\'' + DA.esc(s) + '\')" onerror="this.src=\'/assets/images/no-image.jpg\'">').join('');
+      const features = (v.feature_names || []).map((f) => '<span class="feature-chip"><i class="fa fa-check"></i> ' + DA.esc(f) + '</span>').join('');
+
+      document.title = DA.vehicleTitle(v) + ' — DirectAuto Import';
+      document.getElementById('vehicle-wrap').innerHTML =
+        '<ol class="breadcrumb"><li><a href="/">Home</a></li><li><a href="/our-stock">Our Stock</a></li><li class="active">' + DA.esc(DA.vehicleTitle(v)) + '</li></ol>' +
+        '<div class="row">' +
+        '  <div class="col-md-8">' +
+        '    <img id="v-main" class="v-main-img" src="' + DA.esc(imgs[0]) + '" alt="' + DA.esc(DA.vehicleTitle(v)) + '" onerror="this.src=\'/assets/images/no-image.jpg\'">' +
+        '    <div class="row v-thumbs" style="margin-top:10px;">' + imgs.map((s) => '<div class="col-xs-3"></div>').join('') + '</div>' +
+        '    <div class="v-thumbs row" style="margin-top:10px;">' + imgs.slice(0, 8).map((s, i) => '<div class="col-xs-3"><img src="' + DA.esc(s) + '" class="' + (i === 0 ? 'active' : '') + '" onclick="DA.swapImg(this,\'' + DA.esc(s) + '\')" onerror="this.src=\'/assets/images/no-image.jpg\'"></div>').join('') + '</div>' +
+        '    <h2 style="margin-top:24px;">' + DA.esc(DA.vehicleTitle(v)) + '</h2>' +
+        '    <p class="v-price">' + DA.money(v.price) + '</p>' +
+        (v.description ? '<p>' + DA.esc(v.description) + '</p>' : '') +
+        '    <h4 style="margin-top:24px;">Specifications</h4>' +
+        '    <table class="spec-table" style="width:100%;">' +
+        specRow('Make', v.manufacturer_name) + specRow('Model', v.model_name) + specRow('Type', v.type_name) +
+        specRow('Year', v.year) + specRow('Chassis No', v.chassi_id) + specRow('Mileage', v.mileage ? v.mileage + ' km' : '') +
+        specRow('Engine (cc)', v.engine_capacity) + specRow('Fuel', v.fuel_type) + specRow('Transmission', v.transmission) +
+        specRow('Drive', v.drive_type) + specRow('Colour', v.color_name) + specRow('Seats', v.seats) + specRow('Doors', v.doors) +
+        specRow('Auction Grade', v.auction_grade) + specRow('Grade', v.grade) + specRow('Condition', v.conditions) +
+        '    </table>' +
+        (features ? '<h4 style="margin-top:24px;">Features</h4><div>' + features + '</div>' : '') +
+        '  </div>' +
+        '  <div class="col-md-4">' +
+        '    <div class="inquiry-card">' +
+        '      <h4 style="margin-top:0;">Interested in this vehicle?</h4>' +
+        '      <p class="text-muted">Send us an inquiry and we\'ll get back to you.</p>' +
+        '      <form id="inquiry-form">' +
+        '        <div class="form-group"><input class="form-control" id="iq-name" placeholder="Your name" required></div>' +
+        '        <div class="form-group"><input class="form-control" id="iq-email" type="email" placeholder="Email" required></div>' +
+        '        <div class="form-group"><input class="form-control" id="iq-phone" placeholder="Phone"></div>' +
+        '        <div class="form-group"><textarea class="form-control" id="iq-message" rows="4" required>I am interested in the ' + DA.esc(DA.vehicleTitle(v)) + '. Please share more details.</textarea></div>' +
+        '        <button class="btn btn-block" id="iq-submit" type="submit">Send Inquiry</button>' +
+        '        <div id="iq-msg" style="margin-top:10px;"></div>' +
+        '      </form>' +
+        '      <hr><button class="btn btn-default btn-block" onclick="DA.addCompare(' + v.id + ')"><i class="fa fa-exchange"></i> Add to Compare</button>' +
+        '    </div>' +
+        '  </div>' +
+        '</div>';
+
+      document.getElementById('inquiry-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('iq-submit'); const msg = document.getElementById('iq-msg');
+        btn.disabled = true; btn.textContent = 'Sending…';
+        try {
+          const r = await DA.api.post('/api/inquiries', {
+            vehicle_id: v.id,
+            name: document.getElementById('iq-name').value,
+            email: document.getElementById('iq-email').value,
+            phone: document.getElementById('iq-phone').value,
+            message: document.getElementById('iq-message').value,
+          });
+          msg.innerHTML = '<span class="text-success">' + DA.esc(r.message) + '</span>';
+          document.getElementById('inquiry-form').reset();
+        } catch (err) {
+          msg.innerHTML = '<span class="text-danger">' + DA.esc(err.message) + '</span>';
+        } finally { btn.disabled = false; btn.textContent = 'Send Inquiry'; }
+      });
+
+      if (similar && similar.length) {
+        document.getElementById('similar-wrap').innerHTML =
+          '<h3>Similar Vehicles</h3><div class="row">' + similar.map(DA.vehicleCard).join('') + '</div>';
+      }
+    }
+
+    DA.swapImg = function (el, src) {
+      document.getElementById('v-main').src = src;
+      document.querySelectorAll('.v-thumbs img').forEach((i) => i.classList.remove('active'));
+      el.classList.add('active');
+    };
+    DA.addCompare = function (id) {
+      const on = DA.compare.toggle(id);
+      alert(on ? 'Added to compare.' : 'Removed from compare.');
+    };
+
+    DA.pageInit = async function () {
+      const seo = seoFromPath();
+      if (!seo) { document.getElementById('vehicle-wrap').innerHTML = '<p class="text-center text-danger">No vehicle specified.</p>'; return; }
+      try {
+        const r = await DA.api.get('/api/vehicles/' + encodeURIComponent(seo));
+        render(r.vehicle, r.similar);
+      } catch (e) {
+        document.getElementById('vehicle-wrap').innerHTML = '<p class="text-center text-danger" style="padding:60px;">Vehicle not found.</p>';
+      }
+    };
+  </script>
+</body>
+</html>

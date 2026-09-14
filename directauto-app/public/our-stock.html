@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Our Stock — DirectAuto Import</title>
+  <link rel="shortcut icon" href="/assets/images/favicon-icon/favicon.png">
+  <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/assets/css/orange.css" title="orange">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" rel="stylesheet">
+  <style>
+    .filter-box{background:#fff;border:1px solid #eee;border-radius:6px;padding:18px;margin-bottom:20px;}
+    .filter-box h5{margin-top:0;border-bottom:1px solid #eee;padding-bottom:10px;}
+    .page-title{background:#1c2331;color:#fff;padding:40px 0;margin-bottom:30px;}
+    .pagination-wrap{text-align:center;margin:24px 0;}
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <div class="page-title">
+    <div class="container"><h2 style="color:#fff;margin:0;">Our Stock</h2><p style="margin:6px 0 0;color:#cfd6e6;" id="result-count"></p></div>
+  </div>
+
+  <section class="container" style="margin-bottom:40px;">
+    <div class="row">
+      <!-- Filters -->
+      <div class="col-md-3">
+        <div class="filter-box">
+          <h5>Filter</h5>
+          <div class="form-group"><label>Make</label><select id="f-manufacturer" class="form-control"><option value="">Any</option></select></div>
+          <div class="form-group"><label>Model</label><select id="f-model" class="form-control"><option value="">Any</option></select></div>
+          <div class="form-group"><label>Type</label><select id="f-type" class="form-control"><option value="">Any</option></select></div>
+          <div class="form-group"><label>Colour</label><select id="f-color" class="form-control"><option value="">Any</option></select></div>
+          <div class="form-group"><label>Fuel</label><select id="f-fuel_type" class="form-control"><option value="">Any</option><option>Petrol</option><option>Diesel</option><option>Hybrid</option><option>Electric</option></select></div>
+          <div class="form-group"><label>Transmission</label><select id="f-transmission" class="form-control"><option value="">Any</option><option>Automatic</option><option>Manual</option></select></div>
+          <div class="row">
+            <div class="col-xs-6 form-group"><label>Year from</label><input id="f-from_year" type="number" class="form-control" placeholder="2010"></div>
+            <div class="col-xs-6 form-group"><label>Year to</label><input id="f-to_year" type="number" class="form-control" placeholder="2024"></div>
+          </div>
+          <div class="row">
+            <div class="col-xs-6 form-group"><label>Min price</label><input id="f-min_price" type="number" class="form-control" placeholder="0"></div>
+            <div class="col-xs-6 form-group"><label>Max price</label><input id="f-max_price" type="number" class="form-control" placeholder="Any"></div>
+          </div>
+          <button id="apply-filters" class="btn btn-block"><i class="fa fa-search"></i> Apply</button>
+          <button id="clear-filters" class="btn btn-block btn-default" style="margin-top:8px;">Clear</button>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="col-md-9">
+        <div class="row" style="margin-bottom:12px;">
+          <div class="col-sm-6"><input id="f-search" type="text" class="form-control" placeholder="Search make, model…"></div>
+          <div class="col-sm-6">
+            <select id="f-sort" class="form-control">
+              <option value="">Sort: Featured</option>
+              <option value="newest">Newest</option>
+              <option value="price_low">Price: Low to High</option>
+              <option value="price_high">Price: High to Low</option>
+              <option value="year_new">Year: Newest</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" id="results"><p class="text-center">Loading…</p></div>
+        <div class="pagination-wrap"><ul class="pagination" id="pager"></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+
+  <script src="/assets/js/jquery.min.js"></script>
+  <script src="/assets/js/bootstrap.min.js"></script>
+  <script src="/assets/js/app.js"></script>
+  <script>
+    const FILTER_IDS = ['manufacturer','model','type','color','fuel_type','transmission','from_year','to_year','min_price','max_price','search','sort'];
+
+    function currentFilters() {
+      const f = {};
+      FILTER_IDS.forEach((k) => { const el = document.getElementById('f-' + k); if (el && el.value) f[k] = el.value; });
+      return f;
+    }
+
+    async function loadResults(page) {
+      const f = currentFilters();
+      f.page = page || 1; f.limit = 9;
+      const qs = new URLSearchParams(f).toString();
+      // keep the URL shareable
+      history.replaceState(null, '', '/our-stock' + (qs ? '?' + qs : ''));
+      const box = document.getElementById('results');
+      box.innerHTML = '<p class="text-center">Loading…</p>';
+      try {
+        const r = await DA.api.get('/api/vehicles?' + qs);
+        document.getElementById('result-count').textContent = r.total + ' vehicle' + (r.total === 1 ? '' : 's') + ' found';
+        box.innerHTML = r.data.length ? r.data.map(DA.vehicleCard).join('') : '<p class="text-center text-muted" style="padding:40px;">No vehicles match your filters.</p>';
+        renderPager(r.page, r.pages);
+      } catch (e) {
+        box.innerHTML = '<p class="text-center text-danger">Could not load vehicles: ' + DA.esc(e.message) + '</p>';
+      }
+    }
+
+    function renderPager(page, pages) {
+      const p = document.getElementById('pager');
+      if (pages <= 1) { p.innerHTML = ''; return; }
+      let html = '';
+      for (let i = 1; i <= pages; i++) html += '<li class="' + (i === page ? 'active' : '') + '"><a href="#" data-page="' + i + '">' + i + '</a></li>';
+      p.innerHTML = html;
+      p.querySelectorAll('a').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); loadResults(Number(a.dataset.page)); window.scrollTo({ top: 0, behavior: 'smooth' }); }));
+    }
+
+    DA.pageInit = async function () {
+      const params = new URLSearchParams(location.search);
+      // Prefill selects/inputs from URL
+      const [makes, types, colors] = await Promise.all([
+        DA.api.get('/api/manufacturers'), DA.api.get('/api/types'), DA.api.get('/api/colors')
+      ]);
+      const fill = (id, items) => { const s = document.getElementById(id); items.forEach((it) => s.insertAdjacentHTML('beforeend', '<option value="' + it.id + '">' + DA.esc(it.name) + '</option>')); };
+      fill('f-manufacturer', makes); fill('f-type', types); fill('f-color', colors);
+
+      async function loadModels(mid, selected) {
+        const s = document.getElementById('f-model'); s.innerHTML = '<option value="">Any</option>';
+        if (!mid) return;
+        const models = await DA.api.get('/api/models?manufacturer=' + mid);
+        models.forEach((mo) => s.insertAdjacentHTML('beforeend', '<option value="' + mo.id + '"' + (String(mo.id) === String(selected) ? ' selected' : '') + '>' + DA.esc(mo.name) + '</option>'));
+      }
+
+      FILTER_IDS.forEach((k) => { const el = document.getElementById('f-' + k); if (el && params.get(k)) el.value = params.get(k); });
+      if (params.get('manufacturer')) await loadModels(params.get('manufacturer'), params.get('model'));
+
+      document.getElementById('f-manufacturer').addEventListener('change', (e) => loadModels(e.target.value));
+      document.getElementById('apply-filters').addEventListener('click', () => loadResults(1));
+      document.getElementById('f-sort').addEventListener('change', () => loadResults(1));
+      document.getElementById('f-search').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadResults(1); });
+      document.getElementById('clear-filters').addEventListener('click', () => {
+        FILTER_IDS.forEach((k) => { const el = document.getElementById('f-' + k); if (el) el.value = ''; });
+        document.getElementById('f-model').innerHTML = '<option value="">Any</option>';
+        loadResults(1);
+      });
+
+      loadResults(Number(params.get('page')) || 1);
+    };
+  </script>
+</body>
+</html>
