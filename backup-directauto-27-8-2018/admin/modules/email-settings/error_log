@@ -1,0 +1,4 @@
+[16-May-2017 14:45:36 Asia/Colombo] PHP Fatal error:  Call to undefined method EmailSettings::selectAll() in /home2/univeuj4/public_html/server-renewal-app/email-settings/index.php on line 8
+[16-May-2017 14:45:46 Asia/Colombo] PHP Fatal error:  Call to undefined method EmailSettings::selectAll() in /home2/univeuj4/public_html/server-renewal-app/email-settings/index.php on line 8
+[16-May-2017 14:45:53 Asia/Colombo] PHP Fatal error:  Call to undefined method EmailSettings::selectAll() in /home2/univeuj4/public_html/server-renewal-app/email-settings/index.php on line 8
+[16-May-2017 14:46:38 Asia/Colombo] PHP Fatal error:  Call to undefined method EmailSettings::selectAll() in /home2/univeuj4/public_html/server-renewal-app/email-settings/index.php on line 8

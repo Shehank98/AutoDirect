@@ -1,0 +1,287 @@
+[09-Dec-2018 14:04:14 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[09-Dec-2018 14:04:14 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/55_1538980493.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[09-Dec-2018 14:04:15 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[01-Jan-2019 14:53:21 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[01-Jan-2019 14:53:21 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[01-Jan-2019 14:53:21 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[01-Jan-2019 14:53:21 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/17_1520318985.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[01-Jan-2019 14:53:21 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/9_1520318985.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[01-Jan-2019 14:53:21 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/16_1520318985.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[01-Jan-2019 14:53:21 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[01-Jan-2019 14:53:21 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[01-Jan-2019 14:53:21 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[02-Apr-2019 17:59:52 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[02-Apr-2019 17:59:52 UTC] PHP Warning:  imagejpeg(): gd-jpeg: JPEG library reports unrecoverable error:  in /home/directau/public_html/timthumb.php on line 753
+[02-Apr-2019 17:59:52 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[02-Apr-2019 17:59:52 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[02-Apr-2019 17:59:52 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[02-Apr-2019 17:59:52 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/66_1538980493.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[02-Apr-2019 17:59:52 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/55_1538980493.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[02-Apr-2019 17:59:52 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[02-Apr-2019 17:59:53 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[02-Apr-2019 17:59:53 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/88_1538980493.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[02-Apr-2019 17:59:53 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[02-Apr-2019 17:59:53 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1073
+[02-Apr-2019 17:59:53 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1074
+[02-Apr-2019 17:59:53 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1075
+[02-Apr-2019 17:59:53 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1076
+[02-Apr-2019 17:59:53 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1084
+[02-Apr-2019 17:59:53 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1085
+[02-Apr-2019 17:59:54 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/33_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[02-Apr-2019 17:59:54 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[02-Apr-2019 17:59:54 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/88_1538980493.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[02-Apr-2019 17:59:54 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[26-Apr-2019 09:06:21 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[26-Apr-2019 09:06:21 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[26-Apr-2019 09:06:21 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg: JPEG library reports unrecoverable error:  in /home/directau/public_html/timthumb.php on line 1101
+[26-Apr-2019 09:06:21 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[26-Apr-2019 09:06:21 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/88_1538980493.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[26-Apr-2019 09:06:21 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[26-Apr-2019 09:06:21 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/77_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[26-Apr-2019 09:06:21 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[26-Apr-2019 09:06:21 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[26-Apr-2019 09:06:21 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[26-Apr-2019 09:06:21 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/11_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[26-Apr-2019 09:06:21 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[30-Apr-2019 14:57:18 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[30-Apr-2019 14:57:18 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/55_1538980493.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[30-Apr-2019 14:57:18 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[07-May-2019 14:13:11 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[07-May-2019 14:13:11 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[07-May-2019 14:13:11 UTC] PHP Warning:  imagejpeg(): gd-jpeg: JPEG library reports unrecoverable error:  in /home/directau/public_html/timthumb.php on line 753
+[07-May-2019 14:13:11 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/55_1538980493.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[07-May-2019 14:13:11 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[07-May-2019 14:13:11 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/88_1538980493.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[07-May-2019 14:13:11 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[07-May-2019 14:13:11 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1073
+[07-May-2019 14:13:11 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1074
+[07-May-2019 14:13:11 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1075
+[07-May-2019 14:13:11 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1076
+[07-May-2019 14:13:11 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1084
+[07-May-2019 14:13:11 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1085
+[07-Jun-2019 13:27:37 UTC] PHP Warning:  file_put_contents(): Only 0 of 40 bytes written, possibly out of free disk space in /home/directau/public_html/timthumb.php on line 806
+[07-Jun-2019 13:27:37 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/55_1538980493.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[07-Jun-2019 13:27:37 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[07-Jun-2019 13:27:37 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/88_1538980493.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[07-Jun-2019 13:27:37 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[07-Jun-2019 13:27:37 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1073
+[07-Jun-2019 13:27:37 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1074
+[07-Jun-2019 13:27:37 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1075
+[07-Jun-2019 13:27:37 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1076
+[07-Jun-2019 13:27:37 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1084
+[07-Jun-2019 13:27:37 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1085
+[13-Jun-2019 11:30:15 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[13-Jun-2019 11:30:15 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[13-Jun-2019 11:30:15 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[13-Jun-2019 11:30:16 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/2_1524737194.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[13-Jun-2019 11:30:16 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/3_1524737194.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[13-Jun-2019 11:30:16 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/4_1524737194.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[13-Jun-2019 11:30:16 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[13-Jun-2019 11:30:16 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[13-Jun-2019 11:30:16 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/77_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/77_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/22_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/11_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/22_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/11_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/33_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[08-Aug-2019 06:09:25 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[19-Sep-2019 12:43:40 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[19-Sep-2019 12:43:40 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/77_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[19-Sep-2019 12:43:40 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[19-Sep-2019 12:43:40 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/55_1538980493.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[19-Sep-2019 12:43:40 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[22-Oct-2019 08:36:20 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[22-Oct-2019 08:36:21 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[22-Oct-2019 08:36:21 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[22-Oct-2019 08:36:21 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1073
+[22-Oct-2019 08:36:21 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1074
+[22-Oct-2019 08:36:21 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1075
+[22-Oct-2019 08:36:21 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1076
+[22-Oct-2019 08:36:21 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1084
+[22-Oct-2019 08:36:21 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1085
+[22-Oct-2019 08:36:21 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/22_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[22-Oct-2019 08:36:21 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[22-Oct-2019 08:36:21 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/55_1538980493.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[22-Oct-2019 08:36:21 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/88_1538980493.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[22-Oct-2019 08:36:21 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[22-Oct-2019 08:36:22 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[01-Nov-2019 15:08:54 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[01-Nov-2019 15:08:54 UTC] PHP Warning:  imagejpeg(): gd-jpeg: JPEG library reports unrecoverable error:  in /home/directau/public_html/timthumb.php on line 753
+[01-Nov-2019 15:08:54 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/77_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[01-Nov-2019 15:08:54 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1073
+[01-Nov-2019 15:08:54 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1074
+[01-Nov-2019 15:08:54 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1075
+[01-Nov-2019 15:08:54 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1076
+[01-Nov-2019 15:08:54 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1084
+[01-Nov-2019 15:08:54 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1085
+[01-Nov-2019 15:08:54 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[01-Nov-2019 15:08:55 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1073
+[01-Nov-2019 15:08:55 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1074
+[01-Nov-2019 15:08:55 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1075
+[01-Nov-2019 15:08:55 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1076
+[01-Nov-2019 15:08:55 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1084
+[01-Nov-2019 15:08:55 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1085
+[01-Nov-2019 15:08:57 UTC] PHP Warning:  file_put_contents(): Only 0 of 40 bytes written, possibly out of free disk space in /home/directau/public_html/timthumb.php on line 806
+[01-Nov-2019 15:08:57 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1073
+[01-Nov-2019 15:08:57 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1074
+[01-Nov-2019 15:08:57 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1075
+[01-Nov-2019 15:08:57 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1076
+[01-Nov-2019 15:08:57 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1084
+[01-Nov-2019 15:08:57 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:806) in /home/directau/public_html/timthumb.php on line 1085
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  imagejpeg(): gd-jpeg: JPEG library reports unrecoverable error:  in /home/directau/public_html/timthumb.php on line 753
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/3_1524737194.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/6_1524737194.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/6_1524737194.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/8_1524737194.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/9_1524737194.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1073
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1074
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1075
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1076
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1084
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1085
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/6_1524737194.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[26-Nov-2019 15:06:14 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[29-Nov-2019 08:18:46 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[29-Nov-2019 08:18:46 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/11_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[29-Nov-2019 08:18:46 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/77_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1073
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/88_1538980493.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1074
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1073
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1075
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1074
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1076
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1075
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1084
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1085
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1076
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1084
+[05-Jan-2020 02:45:17 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1085
+[19-Jan-2020 09:58:48 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[19-Jan-2020 09:58:48 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/77_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[19-Jan-2020 09:58:48 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[19-Jan-2020 09:58:48 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[19-Jan-2020 09:58:48 UTC] PHP Warning:  imagejpeg(): gd-jpeg: JPEG library reports unrecoverable error:  in /home/directau/public_html/timthumb.php on line 753
+[19-Jan-2020 09:58:48 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[19-Jan-2020 09:58:48 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/77_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[19-Jan-2020 09:58:48 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[19-Jan-2020 09:58:49 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/22_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[19-Jan-2020 09:58:49 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/22_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[19-Jan-2020 09:58:49 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/33_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[19-Jan-2020 09:58:49 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/33_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[19-Jan-2020 09:58:49 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[19-Jan-2020 09:58:49 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[19-Jan-2020 09:58:49 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[19-Jan-2020 09:58:49 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[19-Jan-2020 09:58:49 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1073
+[19-Jan-2020 09:58:49 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1074
+[19-Jan-2020 09:58:49 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1075
+[19-Jan-2020 09:58:49 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1076
+[19-Jan-2020 09:58:49 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1084
+[19-Jan-2020 09:58:49 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:753) in /home/directau/public_html/timthumb.php on line 1085
+[20-Jan-2020 06:51:48 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[20-Jan-2020 06:51:48 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/77_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[20-Jan-2020 06:51:48 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[21-Jan-2020 16:58:23 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[21-Jan-2020 16:58:23 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[21-Jan-2020 16:58:23 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[21-Jan-2020 16:58:23 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/33_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[21-Jan-2020 16:58:23 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/88_1538980493.jpg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[21-Jan-2020 16:58:23 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[21-Jan-2020 16:58:23 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[21-Jan-2020 16:58:23 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/33_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[21-Jan-2020 16:58:23 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[30-Jan-2020 04:28:19 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[30-Jan-2020 04:28:19 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[30-Jan-2020 04:28:19 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/22_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[30-Jan-2020 04:28:19 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[30-Jan-2020 04:28:19 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[30-Jan-2020 04:28:19 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/22_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[30-Jan-2020 04:28:19 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[30-Jan-2020 04:28:19 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/22_1538980493.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[30-Jan-2020 04:28:19 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[02-Nov-2020 09:25:09 UTC] PHP Warning:  imagecreatefrompng(): '/home/directau/public_html/uploads/vehicles/1Benz CLA200 import UK 2020_1588859538.png' is not a valid PNG file in /home/directau/public_html/timthumb.php on line 1105
+[02-Nov-2020 09:25:09 UTC] PHP Warning:  imagecreatefromjpeg(): gd-jpeg, libjpeg: recoverable error: Premature end of JPEG file
+ in /home/directau/public_html/timthumb.php on line 1101
+[02-Nov-2020 09:25:09 UTC] PHP Warning:  imagealphablending() expects parameter 1 to be resource, boolean given in /home/directau/public_html/timthumb.php on line 1106
+[02-Nov-2020 09:25:09 UTC] PHP Warning:  imagesavealpha() expects parameter 1 to be resource, boolean given in /home/directau/public_html/timthumb.php on line 1107
+[02-Nov-2020 09:25:09 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1105) in /home/directau/public_html/timthumb.php on line 424
+[02-Nov-2020 09:25:09 UTC] PHP Warning:  imagecreatefromjpeg(): '/home/directau/public_html/uploads/vehicles/2_1568632948.jpeg' is not a valid JPEG file in /home/directau/public_html/timthumb.php on line 1101
+[02-Nov-2020 09:25:10 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/directau/public_html/timthumb.php:1101) in /home/directau/public_html/timthumb.php on line 424
+[17-Jan-2021 14:33:15 UTC] PHP Warning:  fopen(./cache/timthumb_int_3f79e14c61c556e62a79b765f7057b5b.timthumb.txt): failed to open stream: No such file or directory in /home/directau/public_html/timthumb.php on line 1036
+[22-Mar-2021 16:04:46 UTC] PHP Warning:  fopen(./cache/timthumb_int_3a58a8a8b68dd2a588931682629d021d.timthumb.txt): failed to open stream: No such file or directory in /home/directau/public_html/timthumb.php on line 1036
