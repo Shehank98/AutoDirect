@@ -1,0 +1,16 @@
+<!-- @dsCard group="Foundations" height=110 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Icon — preview</title>
+<style>body{margin:0;background:var(--surface-100)} #root{padding:16px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var A = window.AD, h = React.createElement;
+function render(el) { ReactDOM.createRoot(document.getElementById('root')).render(el); }
+var names=['search','car','gavel','compare','heart','gauge','fuel','gear','calendar','ship','doc','shield','pin','phone','whatsapp','mail','user','clock','bell','filter','grid','list','star','lock'];
+render(h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(64px,1fr))',gap:8}},names.map(function(n){
+  return h('div',{key:n,style:{display:'grid',justifyItems:'center',gap:6,padding:'10px 4px',borderRadius:10,background:'var(--surface-200)',border:'1px solid var(--line)'}},h(A.Icon,{name:n,size:22}),h('span',{className:'ad-mono',style:{fontSize:10.5,color:'var(--ink-muted)'}},n));})));
+</script>
+</body>
+</html>

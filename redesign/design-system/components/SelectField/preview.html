@@ -1,0 +1,18 @@
+<!-- @dsCard group="Forms" height=130 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SelectField — preview</title>
+<style>body{margin:0;background:var(--surface-100)} #root{padding:16px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var A = window.AD, h = React.createElement;
+function render(el) { ReactDOM.createRoot(document.getElementById('root')).render(el); }
+function Demo(){var s=React.useState(''),m=s[0],set=s[1];var t=React.useState(''),md=t[0],setMd=t[1];
+return h('div',{className:'ad-form__grid',style:{maxWidth:560}},
+ h(A.SelectField,{label:'Make',placeholder:'Any make',options:Object.keys(A.data.makes),value:m,onChange:function(e){set(e.target.value);setMd('')}}),
+ h(A.SelectField,{label:'Model',placeholder:m?'Any '+m:'Choose a make first',disabled:!m,options:m?A.data.makes[m]:[],value:md,onChange:function(e){setMd(e.target.value)}}));}
+render(h(Demo));
+</script>
+</body>
+</html>

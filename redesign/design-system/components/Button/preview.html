@@ -1,0 +1,19 @@
+<!-- @dsCard group="Actions" height=150 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Button — preview</title>
+<style>body{margin:0;background:var(--surface-100)} #root{padding:16px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var A = window.AD, h = React.createElement;
+function render(el) { ReactDOM.createRoot(document.getElementById('root')).render(el); }
+function Demo(){var s=React.useState(false),l=s[0],set=s[1];
+return h('div',{style:{display:'grid',gap:14}},
+  h('div',{className:'ad-row'},h(A.Button,{icon:'doc'},'Request a quote'),h(A.Button,{variant:'accent',icon:'gavel'},'Place proxy bid'),h(A.Button,{variant:'secondary',icon:'compare'},'Compare'),h(A.Button,{variant:'ghost',iconRight:'arrow-right'},'All stock'),h(A.Button,{variant:'danger',icon:'trash'},'Delete')),
+  h('div',{className:'ad-row'},h(A.Button,{size:'l',iconRight:'arrow-right'},'Show 42 vehicles'),h(A.Button,{size:'s',variant:'secondary',icon:'user'},'Sign in'),h(A.Button,{variant:'secondary',icon:'heart','aria-label':'Save'}),h(A.Button,{disabled:true},'Pick one more'),
+    h(A.Button,{loading:l,onClick:function(){set(true);setTimeout(function(){set(false)},1500)}},l?'Sending…':'Click to load')));}
+render(h(Demo));
+</script>
+</body>
+</html>

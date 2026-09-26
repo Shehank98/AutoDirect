@@ -1,0 +1,19 @@
+<!-- @dsCard group="Discovery" height=470 width=900 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>VehicleCard — preview</title>
+<style>body{margin:0;background:var(--surface-100)} #root{padding:16px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var A = window.AD, h = React.createElement;
+function render(el) { ReactDOM.createRoot(document.getElementById('root')).render(el); }
+function Demo(){var s=React.useState(['AD-2417']),c=s[0],set=s[1];var t=React.useState([]),sv=t[0],setSv=t[1];
+function tog(l,f,id){f(l.indexOf(id)>=0?l.filter(function(x){return x!==id}):l.concat([id]))}
+var v=A.data.vehicles;
+return h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(250px,1fr))',gap:20}},[v[0],v[2],v[4]].map(function(x){
+ return h(A.VehicleCard,{key:x.id,vehicle:x,compared:c.indexOf(x.id)>=0,onCompare:function(){tog(c,set,x.id)},saved:sv.indexOf(x.id)>=0,onSave:function(){tog(sv,setSv,x.id)}});}));}
+render(h(Demo));
+</script>
+</body>
+</html>

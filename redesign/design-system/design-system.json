@@ -1,0 +1,79 @@
+{
+  "v": 3,
+  "layout": "files",
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-09-26T16:29:10Z"
+  },
+  "title": "AutoDirect",
+  "namespace": "AD",
+  "libraries": [
+    {
+      "name": "react",
+      "version": "18"
+    },
+    {
+      "name": "react-dom",
+      "version": "18"
+    }
+  ],
+  "sections": {},
+  "groups": [
+    "Photography"
+  ],
+  "assetGroups": {
+    "Photography": {
+      "name": "Photography",
+      "tile": "m",
+      "order": [
+        "corolla-axio-red.jpg",
+        "honda-grace-white.jpg",
+        "nissan-xtrail-grey.jpg",
+        "nissan-xtrail-pearl.jpg",
+        "auction-sheet-annotated.jpg"
+      ],
+      "files": {
+        "corolla-axio-red.jpg": {
+          "name": "corolla-axio-red.jpg",
+          "blob": "12c0309a0914177440279439eef8c136",
+          "size": 57622,
+          "type": "image/jpeg"
+        },
+        "honda-grace-white.jpg": {
+          "name": "honda-grace-white.jpg",
+          "blob": "fa166471b1b65e0c78fa9181ef01f5b5",
+          "size": 51058,
+          "type": "image/jpeg"
+        },
+        "nissan-xtrail-grey.jpg": {
+          "name": "nissan-xtrail-grey.jpg",
+          "blob": "58f3ed8bad94380a45e7f6aa97b6b7d5",
+          "size": 136564,
+          "type": "image/jpeg"
+        },
+        "nissan-xtrail-pearl.jpg": {
+          "name": "nissan-xtrail-pearl.jpg",
+          "blob": "6d49d4905ffd57a7cfdd9d897eba48f0",
+          "size": 32567,
+          "type": "image/jpeg"
+        },
+        "auction-sheet-annotated.jpg": {
+          "name": "auction-sheet-annotated.jpg",
+          "blob": "2168e158b8e264874d2e26de99f20f37",
+          "size": 442685,
+          "type": "image/jpeg"
+        }
+      }
+    }
+  },
+  "blobs": {},
+  "docs": {
+    "sections": []
+  },
+  "lastChange": {
+    "by": "Shehan",
+    "at": "2026-09-26T16:29:10Z",
+    "via": "Claude Code",
+    "note": "Rebranded AutoDirect design system: tokens, 37 interactive components, full page mockups"
+  }
+}

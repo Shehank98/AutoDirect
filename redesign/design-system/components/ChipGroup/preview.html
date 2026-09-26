@@ -1,0 +1,18 @@
+<!-- @dsCard group="Forms" height=130 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ChipGroup — preview</title>
+<style>body{margin:0;background:var(--surface-100)} #root{padding:16px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var A = window.AD, h = React.createElement;
+function render(el) { ReactDOM.createRoot(document.getElementById('root')).render(el); }
+function Demo(){var s=React.useState(['Toyota','Nissan']),v=s[0],set=s[1];var g=React.useState('4.5'),gr=g[0],setG=g[1];
+return h('div',{style:{display:'grid',gap:16}},
+ h(A.ChipGroup,{multiple:true,label:'Make',value:v,onChange:set,options:[{value:'Toyota',label:'Toyota',count:2},{value:'Honda',label:'Honda',count:2},{value:'Nissan',label:'Nissan',count:2},{value:'Suzuki',label:'Suzuki',count:0}]}),
+ h(A.ChipGroup,{label:'Minimum grade',value:gr,onChange:setG,options:['3.5','4','4.5','5','S']}));}
+render(h(Demo));
+</script>
+</body>
+</html>

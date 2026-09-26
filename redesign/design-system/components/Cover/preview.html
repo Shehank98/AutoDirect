@@ -1,0 +1,40 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>AutoDirect — cover</title>
+<style>
+  html, body { margin: 0; background: var(--surface-100); }
+  .cv { position: relative; width: 960px; height: 288px; overflow: hidden; background: var(--surface-100); }
+  .cv svg { position: absolute; inset: 0; }
+  .b-brand { fill: var(--brand); } .b-accent { fill: var(--accent); } .b-hi { fill: var(--highlight); } .b-ink { fill: var(--ink); }
+  .tile { rx: var(--radius-l); }
+  .ring { fill: none; stroke-width: 3; }
+  .r-on-brand { stroke: var(--on-brand); } .r-on-accent { stroke: var(--on-accent); } .r-ground { stroke: var(--surface-100); } .r-ink { stroke: var(--ink-on-highlight); }
+  .txt { position: absolute; left: 40px; bottom: 36px; max-width: 440px; }
+  .name { font-family: var(--font-display); font-size: 72px; line-height: .92; font-weight: 800; letter-spacing: -.03em; color: var(--ink); margin: 0; }
+  .name b { color: var(--brand); font-weight: 800; }
+  .tag { margin: 12px 0 0; font-family: var(--font-sans); font-size: 14px; color: var(--ink-muted); }
+</style></head>
+<body>
+<div class="cv">
+  <svg viewBox="0 0 960 288" width="960" height="288" aria-hidden="true">
+    <!-- blocks: brand 240×208, accent 208×160, highlight 160×56, ink 288×68; corners radius-l (18px), bleeding top, right and bottom
+         arrangement: one tall brand slab with an accent satellite and two low bands, a flush modular grid with a 12px (space-3) gutter
+         pattern row: literal motif — the hanko seal. Double rings (the GradeSeal) stamped across block edges, because the grade seal is the brand's signature
+         scales: gaps space-3 (12px), ring radii 24/40/56 = multiples of space-1..space-2, stroke 3, tiles radius-l -->
+    <rect class="b-brand tile" x="500" y="-18" width="240" height="226" />
+    <rect class="b-accent tile" x="752" y="48" width="226" height="160" />
+    <rect class="b-hi tile" x="500" y="220" width="160" height="86" />
+    <rect class="b-ink tile" x="672" y="220" width="306" height="86" />
+    <g transform="rotate(-8 620 100)"><circle class="ring r-on-brand" cx="620" cy="100" r="56"/><circle class="ring r-on-brand" cx="620" cy="100" r="47"/></g>
+    <g transform="rotate(-8 862 128)"><circle class="ring r-on-accent" cx="862" cy="128" r="40"/><circle class="ring r-on-accent" cx="862" cy="128" r="32"/></g>
+    <g><circle class="ring r-ink" cx="580" cy="262" r="24"/><circle class="ring r-ink" cx="580" cy="262" r="17"/></g>
+    <g><circle class="ring r-ground" cx="880" cy="262" r="24"/><circle class="ring r-ground" cx="880" cy="262" r="17"/></g>
+  </svg>
+  <div class="txt">
+    <h1 class="name">Auto<b>Direct</b></h1>
+    <p class="tag">Bid in Tokyo. Drive in Colombo.</p>
+  </div>
+</div>
+</body>
+</html>

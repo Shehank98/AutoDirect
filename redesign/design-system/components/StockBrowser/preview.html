@@ -1,0 +1,14 @@
+<!-- @dsCard group="Discovery" height=1100 width=1240 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>StockBrowser — preview</title>
+<style>body{margin:0;background:var(--surface-100)} #root{padding:24px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var A = window.AD, h = React.createElement;
+function render(el) { ReactDOM.createRoot(document.getElementById('root')).render(el); }
+render(h(A.StockBrowser,{initialCompare:['AD-2417','AD-2421']}));
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<!-- @dsCard group="Status" height=110 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>StatusBadge — preview</title>
+<style>body{margin:0;background:var(--surface-100)} #root{padding:16px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var A = window.AD, h = React.createElement;
+function render(el) { ReactDOM.createRoot(document.getElementById('root')).render(el); }
+render(h('div',{style:{display:'grid',gap:10}},
+ h('div',{className:'ad-row'},h('span',{className:'ad-label',style:{width:84}},'Stock'),['Available','Reserved','In transit','Sold'].map(function(s){return h(A.StatusBadge,{key:s,status:s})})),
+ h('div',{className:'ad-row'},h('span',{className:'ad-label',style:{width:84}},'Import'),['Requested','Bidding','Won','Outbid','LC opened','Shipped','Delivered'].map(function(s){return h(A.StatusBadge,{key:s,status:s})}))));
+</script>
+</body>
+</html>

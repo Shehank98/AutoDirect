@@ -1,0 +1,17 @@
+<!-- @dsCard group="Navigation" height=330 width=1240 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SiteHeader — preview</title>
+<style>body{margin:0;background:var(--surface-100)} #root{padding:0px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var A = window.AD, h = React.createElement;
+function render(el) { ReactDOM.createRoot(document.getElementById('root')).render(el); }
+function Demo(){var s=React.useState('stock'),a=s[0],set=s[1];
+return h('div',null,h(A.SiteHeader,{active:a,onNavigate:set,compareCount:2,user:'Kasun Perera'}),h('div',{style:{height:220}}),
+ h('div',{style:{padding:'0 24px'}},h(A.SiteHeader,{active:'auction',onNavigate:function(){}})));}
+render(h(Demo));
+</script>
+</body>
+</html>

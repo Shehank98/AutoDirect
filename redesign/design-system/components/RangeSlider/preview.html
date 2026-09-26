@@ -1,0 +1,18 @@
+<!-- @dsCard group="Forms" height=150 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>RangeSlider — preview</title>
+<style>body{margin:0;background:var(--surface-100)} #root{padding:16px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var A = window.AD, h = React.createElement;
+function render(el) { ReactDOM.createRoot(document.getElementById('root')).render(el); }
+function Demo(){var s=React.useState([4000000,15000000]),v=s[0],set=s[1];var t=React.useState([10,30]),d=t[0],setD=t[1];
+return h('div',{style:{display:'grid',gap:28,maxWidth:420}},
+ h(A.RangeSlider,{label:'Price',min:2000000,max:20000000,step:250000,value:v,onChange:set,format:A.format.lkr}),
+ h(A.RangeSlider,{single:true,label:'Down payment',min:10,max:70,step:5,value:d,onChange:setD,format:function(x){return x+'%'}}));}
+render(h(Demo));
+</script>
+</body>
+</html>

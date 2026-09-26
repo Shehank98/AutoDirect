@@ -1,0 +1,19 @@
+<!-- @dsCard group="Forms" height=260 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>TextField — preview</title>
+<style>body{margin:0;background:var(--surface-100)} #root{padding:16px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var A = window.AD, h = React.createElement;
+function render(el) { ReactDOM.createRoot(document.getElementById('root')).render(el); }
+render(h('div',{className:'ad-form__grid',style:{maxWidth:640}},
+ h(A.TextField,{label:'Full name',placeholder:'Kasun Perera'}),
+ h(A.TextField,{label:'Mobile',type:'tel',defaultValue:'0771234',error:'Use a Sri Lankan mobile, e.g. 077 123 4567.'}),
+ h(A.TextField,{label:'Chassis code',mono:true,defaultValue:'NKE165',hint:'Narrows to one generation'}),
+ h(A.TextField,{label:'Vehicle price',prefix:'LKR',defaultValue:'17,250,000'}),
+ h(A.TextField,{icon:'search',placeholder:'Model, chassis or ref','aria-label':'Search',className:'ad-span2'})));
+</script>
+</body>
+</html>
