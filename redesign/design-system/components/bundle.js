@@ -334,7 +334,7 @@
               h("span", { className: "ad-hide-sm" }, p.user.split(" ")[0]), h(Icon, { name: "chevron-down", size: 14 })),
             menu === "acct" ? h("div", { className: "ad-menu ad-menu--right" },
               [["home", "Dashboard"], ["doc", "My inquiries"], ["gavel", "Auction requests"], ["heart", "Saved vehicles"], ["settings", "Profile settings"], ["logout", "Sign out"]].map(function (m) {
-                return h("a", { key: m[1], href: "#", className: "ad-menu__row", onClick: go("account") }, h(Icon, { name: m[0], size: 16 }), m[1]);
+                return h("a", { key: m[1], href: "#", className: "ad-menu__row", onClick: go(m[1] === "Sign out" ? "logout" : "account") }, h(Icon, { name: m[0], size: 16 }), m[1]);
               })) : null)
             : h(Button, { variant: "secondary", size: "s", icon: "user", onClick: function () { p.onNavigate && p.onNavigate("login"); } }, "Sign in"),
           h(Button, { variant: "accent", size: "s", icon: "gavel", className: "ad-hide-md", onClick: function () { p.onNavigate && p.onNavigate("request"); } }, "Request a bid"),
@@ -343,6 +343,7 @@
   }
 
   /* ---------- SiteFooter ---------- */
+  var FOOT_ROUTES = { "Our stock": "stock", "Live auction": "auction", "Compare vehicles": "compare", "Request a bid": "request", "How to buy": "buy", "Reading an auction sheet": "sheet", "Import vocabulary": "vocab", "About us": "about", "Sign in": "login", "Create account": "register", "My inquiries": "account", "Auction requests": "account", "Staff admin": "admin" };
   function SiteFooter(p) {
     var s = useState(""), email = s[0], setEmail = s[1];
     var d = useState("idle"), state = d[0], setState = d[1];
@@ -370,7 +371,7 @@
               state === "error" ? h("p", { className: "ad-footer__err" }, "Enter a valid email address.") : null)),
           cols.map(function (c) {
             return h("div", { key: c[0], className: "ad-footer__col" }, h("h4", { className: "ad-label" }, c[0]),
-              h("ul", null, c[1].map(function (l) { return h("li", { key: l }, h("a", { href: "#" }, l)); })));
+              h("ul", null, c[1].map(function (l) { return h("li", { key: l }, h("a", { href: "#", onClick: function (e) { e.preventDefault(); p.onNavigate && p.onNavigate(FOOT_ROUTES[l] || "home"); } }, l)); })));
           }),
           h("div", { className: "ad-footer__col" }, h("h4", { className: "ad-label" }, "Visit"),
             h("ul", { className: "ad-footer__contact" },
@@ -378,10 +379,10 @@
               h("li", null, h(Icon, { name: "phone", size: 15 }), "+94 11 212 3456"),
               h("li", null, h(Icon, { name: "clock", size: 15 }), "Mon–Sat · 9.00–6.00")))),
         h("div", { className: "ad-footer__makes" }, h("span", { className: "ad-label" }, "Popular makes"),
-          Object.keys(MAKES).map(function (m) { return h("a", { key: m, href: "#" }, m); })),
+          Object.keys(MAKES).map(function (m) { return h("a", { key: m, href: "#", onClick: function (e) { e.preventDefault(); p.onNavigate && p.onNavigate("stock", { make: m }); } }, m); })),
         h("div", { className: "ad-footer__bottom" },
           h("span", null, "© 2026 AutoDirect (Pvt) Ltd. All rights reserved."),
-          h("span", null, h("a", { href: "#" }, "Privacy"), " · ", h("a", { href: "#" }, "Terms"), " · ", h("a", { href: "#" }, "Instagram")))));
+          h("span", null, h("a", { href: "#" }, "Privacy"), " · ", h("a", { href: "#" }, "Terms"), " · ", h("a", { href: "https://www.instagram.com/directautoimport.lk/", target: "_blank", rel: "noopener" }, "Instagram"), " · ", h("a", { href: "#", onClick: function (e) { e.preventDefault(); p.onNavigate && p.onNavigate("admin"); } }, "Staff admin")))));
   }
 
   /* ---------- HeroSearch ---------- */
@@ -471,9 +472,10 @@
   function StockBrowser(p) {
     var vehicles = p.vehicles || VEHICLES;
     var s1 = useState(""), q = s1[0], setQ = s1[1];
-    var s2 = useState([]), makes = s2[0], setMakes = s2[1];
-    var s3 = useState([]), types = s3[0], setTypes = s3[1];
-    var s4 = useState([2000000, 20000000]), price = s4[0], setPrice = s4[1];
+    var init = p.initial || {};
+    var s2 = useState(init.make ? [init.make] : []), makes = s2[0], setMakes = s2[1];
+    var s3 = useState(init.type ? [init.type] : []), types = s3[0], setTypes = s3[1];
+    var s4 = useState(init.budget ? [Math.max(2000000, init.budget[0]), Math.min(20000000, init.budget[1])] : [2000000, 20000000]), price = s4[0], setPrice = s4[1];
     var s5 = useState([2012, 2024]), years = s5[0], setYears = s5[1];
     var s6 = useState(""), minGrade = s6[0], setMinGrade = s6[1];
     var s7 = useState("new"), sort = s7[0], setSort = s7[1];
@@ -542,7 +544,7 @@
             onCompare: function () { toggleCmp(v.id); }, saved: saved.indexOf(v.id) >= 0,
             onSave: function () { setSaved(saved.indexOf(v.id) >= 0 ? saved.filter(function (x) { return x !== v.id; }) : saved.concat([v.id])); }, onOpen: p.onOpen });
         })) : h(Empty, { title: "Nothing matches those filters", text: "Loosen a filter — or let us bid for the exact car at this week’s Japan auctions." },
-          h("div", { className: "ad-row" }, h(Button, { variant: "secondary", onClick: clearAll }, "Clear filters"), h(Button, { variant: "accent", icon: "gavel" }, "Request from auction"))),
+          h("div", { className: "ad-row" }, h(Button, { variant: "secondary", onClick: clearAll }, "Clear filters"), h(Button, { variant: "accent", icon: "gavel", onClick: p.onRequest }, "Request from auction"))),
         h(CompareTray, { items: cmpItems, onRemove: toggleCmp, onClear: function () { setCmp([]); }, onCompare: function () { p.onCompare && p.onCompare(cmpItems); } })));
   }
 
@@ -594,7 +596,7 @@
               }));
             })),
           h("tfoot", null, h("tr", null, h("th", null), list.map(function (v) {
-            return h("td", { key: v.id }, h(Button, { size: "s", block: true, variant: v.status === "Sold" ? "secondary" : "primary", disabled: v.status === "Sold" }, v.status === "Sold" ? "Sold" : "Request quote"));
+            return h("td", { key: v.id }, h(Button, { size: "s", block: true, variant: v.status === "Sold" ? "secondary" : "primary", disabled: v.status === "Sold", onClick: function () { p.onQuote && p.onQuote(v); } }, v.status === "Sold" ? "Sold" : "Request quote"));
           }))))));
   }
 
@@ -698,7 +700,7 @@
       h("h3", { className: "ad-h2" }, kind === "quote" ? "Quote requested" : "Viewing booked"),
       h("p", null, "We’ll reach you on ", h("b", null, pref), " within 2 working hours."),
       h("p", { className: "ad-mono ad-muted" }, "Reference INQ-24831"),
-      h("div", { className: "ad-row" }, h(Button, { variant: "secondary", icon: "doc" }, "Track in My inquiries"), h(Button, { variant: "ghost", onClick: function () { setState("idle"); } }, "Send another")));
+      h("div", { className: "ad-row" }, h(Button, { variant: "secondary", icon: "doc", onClick: p.onTrack }, "Track in My inquiries"), h(Button, { variant: "ghost", onClick: function () { setState("idle"); } }, "Send another")));
     return h("form", { className: "ad-form", onSubmit: submit, noValidate: true },
       h("div", { className: "ad-form__head" },
         h(Tabs, { block: true, label: "Inquiry type", tabs: [{ id: "quote", label: "Request a quote", icon: "doc" }, { id: "viewing", label: "Book a viewing", icon: "calendar" }], value: kind, onChange: setKind })),
@@ -894,7 +896,7 @@
         h("div", null, h("div", { className: "ad-label" }, "Step " + (i + 1) + " of 5 · " + cur.d), h("h3", { className: "ad-h2" }, cur.t), h("p", { className: "ad-bodyl" }, cur.body),
           h("div", { className: "ad-row" },
             i > 0 ? h(Button, { variant: "ghost", size: "s", icon: "arrow-left", onClick: function () { setI(i - 1); } }, "Previous") : null,
-            i < 4 ? h(Button, { variant: "secondary", size: "s", iconRight: "arrow-right", onClick: function () { setI(i + 1); } }, "Next: " + STEPS[i + 1].t) : h(Button, { variant: "accent", size: "s", icon: "gavel" }, "Start with a request")))),
+            i < 4 ? h(Button, { variant: "secondary", size: "s", iconRight: "arrow-right", onClick: function () { setI(i + 1); } }, "Next: " + STEPS[i + 1].t) : h(Button, { variant: "accent", size: "s", icon: "gavel", onClick: p.onStart }, "Start with a request")))),
       h("div", { className: "ad-faq" }, h("button", { type: "button", "aria-expanded": faq, onClick: function () { setFaq(!faq); } }, h(Icon, { name: "shield", size: 18 }), "Why do we ask for a deposit?", h(Icon, { name: "chevron-down", size: 16, className: "ad-faq__chev" })),
         faq ? h("p", null, "Deposits are 100% refundable. They protect you and us from last-minute cancellations and spam bids — we bid and pay for your car with our own resources, so every request has to be genuine.") : null));
   }
@@ -967,7 +969,7 @@
       h("div", { className: "ad-success__icon" }, h(Icon, { name: mode === "forgot" ? "mail" : "check", size: 26, stroke: 2 })),
       h("h3", { className: "ad-h2" }, mode === "login" ? "Welcome back" : mode === "register" ? "Account created" : "Check your inbox"),
       h("p", { className: "ad-muted" }, mode === "forgot" ? "A reset link is on its way to " + d.email + "." : "Your inquiries and auction requests are in My account."),
-      h(Button, { variant: "secondary", onClick: function () { setState("idle"); setMode("login"); } }, mode === "forgot" ? "Back to sign in" : "Go to dashboard"));
+      h(Button, { variant: "secondary", onClick: function () { if (mode !== "forgot" && p.onDone) { p.onDone(d.name || d.email.split("@")[0]); return; } setState("idle"); setMode("login"); } }, mode === "forgot" ? "Back to sign in" : "Go to dashboard"));
     return h("form", { className: "ad-auth", onSubmit: submit, noValidate: true },
       h(Logo, { size: 20 }),
       mode === "forgot" ? h("div", null, h("h2", { className: "ad-h2" }, "Reset password"), h("p", { className: "ad-muted ad-small" }, "We don’t store your password. We’ll email a secure link to set a new one."))
@@ -1047,7 +1049,7 @@
         h("nav", { "aria-label": "Account" }, nav.map(function (n) {
           return h("button", { key: n[0], type: "button", className: cx("ad-dash__link", tab === n[0] && "is-on"), "aria-current": tab === n[0] ? "page" : undefined, onClick: function () { setTab(n[0]); } },
             h(Icon, { name: n[1], size: 17 }), h("span", null, n[2]), n[3] ? h("span", { className: "ad-dash__n" }, n[3]) : null);
-        }), h("button", { type: "button", className: "ad-dash__link" }, h(Icon, { name: "logout", size: 17 }), h("span", null, "Sign out")))),
+        }), h("button", { type: "button", className: "ad-dash__link", onClick: p.onSignOut }, h(Icon, { name: "logout", size: 17 }), h("span", null, "Sign out")))),
       h("div", { className: "ad-dash__main" }, body));
   }
 
