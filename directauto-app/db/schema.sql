@@ -1,4 +1,4 @@
--- DirectAuto Import — PostgreSQL schema
+-- DirectAuto Import - PostgreSQL schema
 -- Rebuilt from the legacy MySQL car_auction database.
 -- Data lives in Postgres; images are stored in Firebase Storage (we keep the URLs here),
 -- and authentication is handled by Firebase Auth (we key user profiles by the Firebase UID).

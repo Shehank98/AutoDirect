@@ -1,4 +1,4 @@
-# AutoDirect — Japan auction imports for Sri Lanka
+# AutoDirect - Japan auction imports for Sri Lanka
 
 Car store + Japan live-auction request site. **Storefront and admin are one React single-page app**
 (no build step) served by a Node/Express API, backed by PostgreSQL, with Firebase for sign-in and image storage.
@@ -17,7 +17,7 @@ Browser (React SPA)  ──►  Express (this repo)  ──►  PostgreSQL   veh
 | Storefront: routing, API client, auth, pages | `public/app/app.js` |
 | **Admin console** (lazy-loaded at `/admin`) | `public/app/admin.js` |
 | App shell | `public/index.html` (served for every non-file route) |
-| API | `src/routes/*` — `catalog` (public), `inquiries`, `lots`, `account`, `admin` |
+| API | `src/routes/*` - `catalog` (public), `inquiries`, `lots`, `account`, `admin` |
 | Schema / seed / migration | `db/` (runs automatically on boot) |
 | React 18 (vendored, no CDN) | `public/vendor/` |
 
@@ -40,7 +40,7 @@ Sign in with a Firebase account whose email is in `ADMIN_EMAILS` (or that anothe
 - **Brands, Models, Body types, Colours, Features** – with logo/icon upload
 - **Auction floor** – lots with countdown; customers place proxy bids on them
 - **Inquiries / Auction requests** – open one, set the **order stage** (Requested → Bidding → Won → LC opened → Shipped → Arrived → Delivered), ETA and a note; the customer sees it in My account
-- **Customers** (grant/revoke admin) and **Newsletter** — both with CSV export
+- **Customers** (grant/revoke admin) and **Newsletter** - both with CSV export
 
 Photos go to Firebase Storage; removing a photo or deleting a vehicle deletes the file too.
 
@@ -48,7 +48,7 @@ Photos go to Firebase Storage; removing a photo or deleting a vehicle deletes th
 ```bash
 cp .env.example .env     # set DATABASE_URL (+ Firebase when you want sign-in / uploads)
 npm install
-npm start                # http://localhost:3000 — creates the schema and loads sample cars
+npm start                # http://localhost:3000 - creates the schema and loads sample cars
 ```
 Without Firebase variables the public site works fully; sign-in, bids and the admin need Firebase.
 
@@ -62,12 +62,12 @@ Without Firebase variables the public site works fully; sign-in, bids and the ad
 1. Create a project → enable **Authentication → Email/Password** and **Storage**.
 2. **Project settings → Service accounts → Generate new private key** → paste the JSON (single line) into `FIREBASE_SERVICE_ACCOUNT`; set `FIREBASE_STORAGE_BUCKET`.
 3. **Project settings → General → Web app** → copy the config into `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_APP_ID`.
-4. `ADMIN_EMAILS=you@example.com` — those emails become admins on first sign-in. Register that account on `/register`, then open `/admin`.
+4. `ADMIN_EMAILS=you@example.com` - those emails become admins on first sign-in. Register that account on `/register`, then open `/admin`.
 
 See `.env.example` for every variable (contact details, yen rate, demo data).
 
 ## Notes
-- The storefront loads the whole published catalogue in one request (`GET /api/catalog`) and filters in the browser — instant and
+- The storefront loads the whole published catalogue in one request (`GET /api/catalog`) and filters in the browser - instant and
   fine for hundreds of cars. If stock grows into the thousands, move filtering to `GET /api/vehicles` (already paginated).
 - Saved cars and the compare list live in the browser (localStorage); everything else is in Postgres.
 - Page titles update per route, but pages are rendered in the browser (no server-side rendering).

@@ -1,4 +1,4 @@
-/* AutoDirect storefront — router, API client, Firebase auth and pages.
+/* AutoDirect storefront - router, API client, Firebase auth and pages.
    Components live in ds.js (window.AD); this file wires them to the Express API. */
 (function () {
   "use strict";
@@ -77,9 +77,9 @@
   /* ------------------------------------------------------------------ Firebase auth */
   var FRIENDLY = {
     "auth/invalid-credential": "Incorrect email or password.", "auth/wrong-password": "Incorrect email or password.", "auth/user-not-found": "Incorrect email or password.",
-    "auth/invalid-email": "Enter a valid email address.", "auth/email-already-in-use": "An account with this email already exists — try signing in.",
+    "auth/invalid-email": "Enter a valid email address.", "auth/email-already-in-use": "An account with this email already exists. Try signing in.",
     "auth/weak-password": "Choose a stronger password (at least 8 characters).", "auth/too-many-requests": "Too many attempts. Please wait a moment and try again.",
-    "auth/network-request-failed": "Network problem — check your connection and try again."
+    "auth/network-request-failed": "Network problem. Check your connection and try again."
   };
   function initFirebase() {
     return api.get("/api/config").then(function (cfg) {
@@ -90,7 +90,7 @@
     }).catch(function () { return null; });
   }
   function fbError(e) { return new Error(FRIENDLY[e.code] || e.message || "Something went wrong."); }
-  function needFb() { if (!fb) throw new Error("Sign-in isn’t available yet — please call us instead."); return fb; }
+  function needFb() { if (!fb) throw new Error("Sign-in isn’t available yet. Please call us instead."); return fb; }
 
   hooks.auth = function (mode, d) {
     return Promise.resolve().then(function () {
@@ -127,9 +127,14 @@
   /* ------------------------------------------------------------------ small helpers */
   function byRef(id) { return D.vehicles.filter(function (v) { return v.id === id; })[0]; }
   function bySeo(seo) { return D.vehicles.filter(function (v) { return v.seo === seo; })[0]; }
-  function setMeta(title) { document.title = (title ? title + " — " : "") + "AutoDirect"; }
+  function setMeta(title) { document.title = (title ? title + " | " : "") + "AutoDirect"; }
 
   function PageHead(p) {
+    // "bare" pages show only the breadcrumb and action; the title stays as a visually hidden h1.
+    if (p.bare) return h("section", { className: "ad-sec ad-pagehead" }, h("div", { className: "ad-wrap" }, h("h1", { className: "ad-sr" }, p.title),
+      h("div", { className: "ad-row ad-row--between" },
+        p.crumb ? h("nav", { className: "ad-crumbs", "aria-label": "Breadcrumb" }, h("a", { href: "/", onClick: function (e) { e.preventDefault(); hooks.go("home"); } }, "Home"), h(A.Icon, { name: "chevron-right", size: 14 }), h("span", { "aria-current": "page" }, p.crumb)) : h("span"),
+        p.action || null)));
     return h("section", { className: "ad-sec ad-pagehead" }, h("div", { className: "ad-wrap" },
       p.crumb ? h("nav", { className: "ad-crumbs", "aria-label": "Breadcrumb" }, h("a", { href: "/", onClick: function (e) { e.preventDefault(); hooks.go("home"); } }, "Home"), h(A.Icon, { name: "chevron-right", size: 14 }), h("span", { "aria-current": "page" }, p.crumb)) : null,
       h("div", { className: "ad-sec__head" },
@@ -185,7 +190,7 @@
 
   function Stock(p) {
     return h(Frag, null,
-      h(PageHead, { crumb: "Our stock", kicker: "Our stock", title: "Imported, cleared, ready", lead: "Every car here landed through our own auction desk. Prices include duty and clearance." }),
+      h(PageHead, { bare: true, crumb: "Our stock", title: "Our stock" }),
       h("div", { className: "ad-wrap ad-pagebody" }, h(A.StockBrowser, {
         key: JSON.stringify(p.filters), initial: p.filters, vehicles: D.vehicles,
         cmp: p.cmp, onToggleCmp: p.toggleCmp, onClearCmp: p.clearCmp, saved: p.saved, onToggleSave: p.toggleSave,
@@ -216,8 +221,8 @@
           h("div", { className: "ad-row" }, h(A.StatusBadge, { status: v.status }), v.isNew ? h(A.Badge, { tone: "highlight" }, "New arrival") : null, h("span", { className: "ad-mono ad-muted ad-small" }, v.id)),
           h("h1", { className: "ad-h1" }, fmt.title(v)), h("p", { className: "ad-muted" }, [v.grade, v.color].filter(Boolean).join(" · ")),
           h("ul", { className: "ad-vcard__specs ad-vp__specs" },
-            h(A.Spec, { icon: "gauge" }, v.mileage ? fmt.num(v.mileage) + " km" : "—"), h(A.Spec, { icon: "fuel" }, v.fuel || "—"),
-            h(A.Spec, { icon: "gear" }, v.trans || "—"), h(A.Spec, { icon: "car" }, v.engine ? v.engine + " cc" : "—")),
+            h(A.Spec, { icon: "gauge" }, v.mileage ? fmt.num(v.mileage) + " km" : "-"), h(A.Spec, { icon: "fuel" }, v.fuel || "-"),
+            h(A.Spec, { icon: "gear" }, v.trans || "-"), h(A.Spec, { icon: "car" }, v.engine ? v.engine + " cc" : "-")),
           h("div", { className: "ad-vp__price" }, h("div", null, h("div", { className: "ad-label" }, sold ? "Sold for" : "Price, duty paid"), h("div", { className: "ad-price" }, fmt.lkrFull(v.price)),
             monthly ? h("button", { type: "button", className: "ad-link ad-small", onClick: function () { goTab("loan"); } }, "≈ " + fmt.lkrFull(Math.round(monthly)) + "/month · 30% down, 5 yrs") : null),
             v.auctionGrade ? h(A.GradeSeal, { grade: v.auctionGrade, interior: v.interior, size: 64 }) : null),
@@ -238,13 +243,13 @@
   function Compare(p) {
     var list = p.cmp.map(byRef).filter(Boolean);
     return h(Frag, null,
-      h(PageHead, { crumb: "Compare", kicker: "Compare", title: "Side by side", lead: "Best value in each row is marked. Remove a car with ×, or add up to four from Our stock.", action: h(A.Button, { variant: "secondary", icon: "plus", onClick: function () { p.nav("stock"); } }, "Add from stock") }),
+      h(PageHead, { bare: true, crumb: "Compare", title: "Compare vehicles", action: h(A.Button, { variant: "secondary", icon: "plus", onClick: function () { p.nav("stock"); } }, "Add from stock") }),
       h("div", { className: "ad-wrap ad-pagebody" }, h(A.CompareTable, { key: p.cmp.join(","), vehicles: list, onRemove: p.toggleCmp, onQuote: function (v) { p.nav("vehicle", v.seo); } })));
   }
 
   function Auction(p) {
     return h(Frag, null,
-      h(PageHead, { crumb: "Live auction", kicker: D.lots.length ? "Japan auctions · live this week" : "Japan auctions", live: D.lots.length > 0, title: "Live auction", lead: "Lots our team is watching this week. Set a proxy maximum and we bid only what’s needed to win.", action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a specific car") }),
+      h(PageHead, { bare: true, crumb: "Live auction", title: "Live auction", action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a specific car") }),
       h("div", { className: "ad-wrap ad-pagebody" },
         D.lots.length ? h("div", { className: "ad-grid2" }, D.lots.map(function (l) { return h(A.AuctionLotCard, { key: l.id, lot: l }); }))
           : h(A.Empty, { icon: "gavel", title: "No lots listed right now", text: "Thousands of cars cross the block each week. Tell us what you want and we’ll shortlist matching lots." }),
@@ -309,7 +314,7 @@
       ["clock", "Faster, complete service", "Minimum paperwork and one team that handles the whole purchase for you."]
     ];
     return h(Frag, null,
-      h(PageHead, { crumb: "About", kicker: "About AutoDirect", title: "Simple, candid and real", lead: "We make importing your next car from Japan straightforward, from the first shortlist to the day you drive it home." }),
+      h(PageHead, { bare: true, crumb: "About", title: "About us" }),
       h("div", { className: "ad-wrap ad-pagebody" },
         h("div", { className: "ad-values" }, pts.map(function (x) { return h("div", { key: x[1] }, h("span", { className: "ad-contact__ic" }, h(A.Icon, { name: x[0], size: 20 })), h("h2", { className: "ad-h3" }, x[1]), h("p", { className: "ad-muted" }, x[2])); })),
         h(CTA, { title: "Visit us in Malabe or Colombo 07", text: "See landed stock in person, or sit down with our LC desk." },
@@ -317,7 +322,7 @@
   }
 
   function Contact() {
-    return h(Frag, null, h(PageHead, { crumb: "Contact", kicker: "Contact", title: "We’re easy to reach" }), h("div", { className: "ad-wrap ad-pagebody" }, h(A.ContactPanel, null)));
+    return h(Frag, null, h(PageHead, { bare: true, crumb: "Contact", title: "Contact us" }), h("div", { className: "ad-wrap ad-pagebody" }, h(A.ContactPanel, null)));
   }
 
   function NotFound(p) {

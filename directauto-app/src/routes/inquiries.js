@@ -7,7 +7,7 @@ const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || ''));
 const clip = (s, n) => String(s == null ? '' : s).slice(0, n);
 const KINDS = ['Stock quote', 'Viewing', 'Contact', 'Sell your car'];
 
-// POST /api/inquiries — quote request, viewing booking, or a contact-page message.
+// POST /api/inquiries - quote request, viewing booking, or a contact-page message.
 router.post('/inquiries', async (req, res, next) => {
   try {
     const b = req.body || {};
@@ -36,7 +36,7 @@ router.post('/inquiries', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// POST /api/newsletter — footer subscribe form.
+// POST /api/newsletter - footer subscribe form.
 router.post('/newsletter', async (req, res, next) => {
   try {
     const { name, email } = req.body || {};
@@ -47,7 +47,7 @@ router.post('/newsletter', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// POST /api/live-inquiries — "request a bid": tell us the car, we find the lot.
+// POST /api/live-inquiries - "request a bid": tell us the car, we find the lot.
 router.post('/live-inquiries', async (req, res, next) => {
   try {
     const b = req.body || {};

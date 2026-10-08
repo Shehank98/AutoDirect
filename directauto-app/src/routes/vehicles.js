@@ -5,7 +5,7 @@ const router = express.Router();
 
 const { VEHICLE_SELECT } = require('../vehicleQuery');
 
-// GET /api/vehicles  — filterable, paginated listing.
+// GET /api/vehicles  - filterable, paginated listing.
 router.get('/', async (req, res, next) => {
   try {
     const q = req.query;
@@ -84,7 +84,7 @@ router.get('/latest', async (_req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// GET /api/vehicles/:seo  — full detail by SEO url (or numeric id).
+// GET /api/vehicles/:seo  - full detail by SEO url (or numeric id).
 router.get('/:seo', async (req, res, next) => {
   try {
     const seo = req.params.seo;

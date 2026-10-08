@@ -55,17 +55,17 @@
   }
   var GLOSSARY = [
     { term: "Highest bidder wins", cat: "Auction", def: "Japanese car auctions work like any other auction: the highest bidder wins the lot." },
-    { term: "Proxy bidding", cat: "Auction", def: "Bids are placed by proxy, so even with a high maximum you only pay just over the next-highest bidder.", example: "Your maximum is ¥500,000 and the next-highest bid is ¥400,000 — you win at ¥401,000, not ¥500,000." },
+    { term: "Proxy bidding", cat: "Auction", def: "Bids are placed by proxy, so even with a high maximum you only pay just over the next-highest bidder.", example: "Your maximum is ¥500,000 and the next-highest bid is ¥400,000, you win at ¥401,000, not ¥500,000." },
     { term: "Auction sheet", cat: "Auction", def: "The inspection report written at the auction house (USS, TAA, JU…). It records grade, first registration, mileage, chassis number and every scratch, dent and repair. We share the original with an English translation before every bid." },
     { term: "Auction grade", cat: "Auction", def: "The overall score on the auction sheet, from S (as new) through 6, 5, 4.5, 4, 3.5 down to R/RA (repaired). Interior is graded separately A–E." },
     { term: "Bid price", cat: "Auction", def: "The highest price a bidder is willing to pay for a lot." },
-    { term: "FOB — Free on Board", cat: "Pricing", def: "The vehicle price plus transport, insurance and loading costs up to the port of departure in Japan." },
-    { term: "C&F — Cost and Freight", cat: "Pricing", def: "The vehicle price including all costs and freight to the destination port (Colombo)." },
-    { term: "CIF — Cost, Insurance and Freight", cat: "Pricing", def: "Vehicle price, insurance during delivery and shipping freight. Risk passes to the buyer after delivery at the destination port." },
-    { term: "LC — Letter of Credit", cat: "Payment & docs", def: "A bank guarantee used to pay for the vehicle. The LC is opened within 7 days of the pro-forma invoice; we help prepare the bank documents." },
+    { term: "FOB (Free on Board)", cat: "Pricing", def: "The vehicle price plus transport, insurance and loading costs up to the port of departure in Japan." },
+    { term: "C&F (Cost and Freight)", cat: "Pricing", def: "The vehicle price including all costs and freight to the destination port (Colombo)." },
+    { term: "CIF (Cost, Insurance and Freight)", cat: "Pricing", def: "Vehicle price, insurance during delivery and shipping freight. Risk passes to the buyer after delivery at the destination port." },
+    { term: "LC (Letter of Credit)", cat: "Payment & docs", def: "A bank guarantee used to pay for the vehicle. The LC is opened within 7 days of the pro-forma invoice; we help prepare the bank documents." },
     { term: "Pro-forma invoice", cat: "Payment & docs", def: "The preliminary invoice issued after a successful bid. Your bank needs it to open the LC." },
-    { term: "B/L — Bill of Lading", cat: "Payment & docs", def: "The official shipping document signed by the carrier, listing the cargo in transit from Japan to Sri Lanka." },
-    { term: "Arrival date", cat: "Shipping", def: "The date the vessel is due at the port of delivery — usually about 20 days after loading." },
+    { term: "B/L (Bill of Lading)", cat: "Payment & docs", def: "The official shipping document signed by the carrier, listing the cargo in transit from Japan to Sri Lanka." },
+    { term: "Arrival date", cat: "Shipping", def: "The date the vessel is due at the port of delivery, usually about 20 days after loading." },
     { term: "Clearance agent", cat: "Shipping", def: "A nominated third party who clears the vehicle through Sri Lanka Customs. Duty and levies are paid directly to Customs." }
   ];
 
@@ -358,10 +358,10 @@
       h("div", { className: "ad-wrap" },
         h("div", { className: "ad-footer__top" },
           h("div", { className: "ad-footer__brand" }, h(Logo, { size: 26, inverse: true }),
-            h("p", null, "Japanese auction imports for Sri Lanka — original auction sheets, refundable deposits and door-to-door tracking."),
+            h("p", null, "Japanese auction imports for Sri Lanka, with original auction sheets, refundable deposits and door-to-door tracking."),
             h("form", { className: "ad-footer__sub", onSubmit: sub, noValidate: true },
               h("label", { htmlFor: "ad-ft-email", className: "ad-label" }, "New arrivals, weekly"),
-              state === "done" ? h("p", { className: "ad-footer__ok", role: "status" }, h(Icon, { name: "check", size: 16 }), "Subscribed — thank you!")
+              state === "done" ? h("p", { className: "ad-footer__ok", role: "status" }, h(Icon, { name: "check", size: 16 }), "Subscribed. Thank you!")
                 : h("div", { className: "ad-footer__subrow" },
                   h("input", { id: "ad-ft-email", type: "email", placeholder: "you@email.com", value: email, onChange: function (e) { setEmail(e.target.value); setState("idle"); }, "aria-invalid": state === "error" || undefined }),
                   h(Button, { type: "submit", variant: "accent", size: "s", iconRight: "arrow-right", loading: state === "busy" }, "Subscribe")),
@@ -430,7 +430,7 @@
           h(Button, { type: "submit", variant: mode === "stock" ? "primary" : "accent", size: "l", icon: "search", block: true },
             mode === "stock" ? "Show " + count + " vehicle" + (count === 1 ? "" : "s") : "Search auctions"),
           h("p", { className: "ad-hs__note", role: sent ? "status" : undefined },
-            mode === "stock" ? (sent ? count + " matches — opening Our stock…" : "Live count updates as you choose")
+            mode === "stock" ? (sent ? count + " matches. Opening Our stock…" : "Live count updates as you choose")
               : (sent ? "Sign in to see full auction data for your search." : "Weekly USS, TAA & JU auctions · sign in for full data")))));
   }
 
@@ -447,8 +447,8 @@
         h("div", { className: "ad-vcard__meta ad-mono" }, v.id, h("span", { "aria-hidden": true }, "·"), v.chassis),
         h("h3", { className: "ad-vcard__title" }, h("a", { href: "/our-stock/" + encodeURIComponent(v.seo || v.id), onClick: function (e) { e.preventDefault(); p.onOpen && p.onOpen(v); } }, title(v)), h("span", null, v.grade)),
         h("ul", { className: "ad-vcard__specs" },
-          h(Spec, { icon: "gauge" }, v.mileage ? num(v.mileage) + " km" : "—"), h(Spec, { icon: "fuel" }, v.fuel || "—"),
-          h(Spec, { icon: "gear" }, v.trans === "Automatic" ? "Auto" : (v.trans || "—")), h(Spec, { icon: "car" }, v.engine ? v.engine + " cc" : "—")),
+          h(Spec, { icon: "gauge" }, v.mileage ? num(v.mileage) + " km" : "-"), h(Spec, { icon: "fuel" }, v.fuel || "-"),
+          h(Spec, { icon: "gear" }, v.trans === "Automatic" ? "Auto" : (v.trans || "-")), h(Spec, { icon: "car" }, v.engine ? v.engine + " cc" : "-")),
         h("div", { className: "ad-vcard__foot" },
           h("div", null, h("div", { className: "ad-label" }, v.status === "Sold" ? "Sold for" : "Price"), h("div", { className: "ad-vcard__price" }, lkr(v.price))),
           p.onCompare ? h("label", { className: cx("ad-cmp", p.compared && "is-on", p.compareDisabled && !p.compared && "is-disabled") },
@@ -559,17 +559,17 @@
           return h(VehicleCard, { key: v.id, vehicle: v, layout: view === "list" ? "row" : "card", compared: cmp.indexOf(v.id) >= 0, compareDisabled: cmp.length >= 4,
             onCompare: function () { toggleCmp(v.id); }, saved: saved.indexOf(v.id) >= 0,
             onSave: function () { p.onToggleSave && p.onToggleSave(v.id); }, onOpen: p.onOpen });
-        })) : h(Empty, { title: "Nothing matches those filters", text: "Loosen a filter — or let us bid for the exact car at this week’s Japan auctions." },
+        })) : h(Empty, { title: "Nothing matches those filters", text: "Loosen a filter, or let us bid for the exact car at this week’s Japan auctions." },
           h("div", { className: "ad-row" }, h(Button, { variant: "secondary", onClick: clearAll }, "Clear filters"), h(Button, { variant: "accent", icon: "gavel", onClick: p.onRequest }, "Request from auction"))),
         h(CompareTray, { items: cmpItems, onRemove: toggleCmp, onClear: function () { p.onClearCmp && p.onClearCmp(); }, onCompare: function () { p.onCompare && p.onCompare(cmpItems); } })));
   }
 
   /* ---------- CompareTable ---------- */
   var CMP_ROWS = [
-    ["Price", function (v) { return lkr(v.price); }, "price", "min"], ["Year", function (v) { return v.year || "—"; }, "year", "max"],
-    ["Mileage", function (v) { return v.mileage ? num(v.mileage) + " km" : "—"; }, "mileage", "min"], ["Auction grade", function (v) { return v.auctionGrade ? v.auctionGrade + " · int. " + (v.interior || "—") : "—"; }, "auctionGrade", "grade"],
-    ["Engine", function (v) { return v.engine ? v.engine + " cc" : "—"; }], ["Fuel", function (v) { return v.fuel || "—"; }], ["Transmission", function (v) { return v.trans || "—"; }],
-    ["Body", function (v) { return v.type || "—"; }], ["Colour", function (v) { return v.color || "—"; }], ["Location", function (v) { return v.location || "—"; }], ["Chassis", function (v) { return v.chassis || "—"; }, null, null, true],
+    ["Price", function (v) { return lkr(v.price); }, "price", "min"], ["Year", function (v) { return v.year || "-"; }, "year", "max"],
+    ["Mileage", function (v) { return v.mileage ? num(v.mileage) + " km" : "-"; }, "mileage", "min"], ["Auction grade", function (v) { return v.auctionGrade ? v.auctionGrade + " · int. " + (v.interior || "-") : "-"; }, "auctionGrade", "grade"],
+    ["Engine", function (v) { return v.engine ? v.engine + " cc" : "-"; }], ["Fuel", function (v) { return v.fuel || "-"; }], ["Transmission", function (v) { return v.trans || "-"; }],
+    ["Body", function (v) { return v.type || "-"; }], ["Colour", function (v) { return v.color || "-"; }], ["Location", function (v) { return v.location || "-"; }], ["Chassis", function (v) { return v.chassis || "-"; }, null, null, true],
     ["Status", function (v) { return h(StatusBadge, { status: v.status }); }, "status"]
   ];
   function CompareTable(p) {
@@ -608,7 +608,7 @@
             feats.map(function (f) {
               return h("tr", { key: f }, h("th", { scope: "row" }, f), list.map(function (v) {
                 var hv = v.features.indexOf(f) >= 0;
-                return h("td", { key: v.id }, hv ? h("span", { className: "ad-yes" }, h(Icon, { name: "check", size: 16, stroke: 2.2 }), h("span", { className: "ad-sr" }, "Yes")) : h("span", { className: "ad-no" }, "—", h("span", { className: "ad-sr" }, "No")));
+                return h("td", { key: v.id }, hv ? h("span", { className: "ad-yes" }, h(Icon, { name: "check", size: 16, stroke: 2.2 }), h("span", { className: "ad-sr" }, "Yes")) : h("span", { className: "ad-no" }, "-", h("span", { className: "ad-sr" }, "No")));
               }));
             })),
           h("tfoot", null, h("tr", null, h("th", null), list.map(function (v) {
@@ -626,7 +626,7 @@
     var cur = items[i];
     return h("div", { className: "ad-gallery", onKeyDown: key },
       h("div", { className: cx("ad-gallery__stage", cur.sheet && "is-sheet") },
-        cur.src ? h("button", { type: "button", className: "ad-gallery__img", onClick: function () { setZoom(true); }, "aria-label": "Enlarge " + cur.label }, h("img", { src: cur.src, alt: (p.alt || "Vehicle") + " — " + cur.label })) : h(PhotoPending, { label: cur.label }),
+        cur.src ? h("button", { type: "button", className: "ad-gallery__img", onClick: function () { setZoom(true); }, "aria-label": "Enlarge " + cur.label }, h("img", { src: cur.src, alt: (p.alt || "Vehicle") + ", " + cur.label })) : h(PhotoPending, { label: cur.label }),
         h("span", { className: "ad-gallery__count ad-mono" }, (i + 1) + " / " + items.length + " · " + cur.label),
         items.length > 1 ? h("button", { type: "button", className: "ad-gallery__nav is-prev", onClick: function () { go(-1); }, "aria-label": "Previous photo" }, h(Icon, { name: "chevron-left" })) : null,
         items.length > 1 ? h("button", { type: "button", className: "ad-gallery__nav is-next", onClick: function () { go(1); }, "aria-label": "Next photo" }, h(Icon, { name: "chevron-right" })) : null),
@@ -641,7 +641,7 @@
   /* ---------- SpecSheet ---------- */
   function SpecSheet(p) {
     var v = p.vehicle;
-    var rows = [["Ref", v.id, true], ["Chassis no.", v.chassis || "—", true], ["Year", v.year || "—"], ["Mileage", v.mileage ? num(v.mileage) + " km" : "—"], ["Engine", v.engine ? v.engine + " cc" : "—"], ["Fuel", v.fuel || "—"], ["Transmission", v.trans || "—"], ["Drive", v.drive || "—"], ["Body", v.type || "—"], ["Colour", v.color || "—"], ["Grade", v.grade || "—"], ["Location", v.location || "—"]];
+    var rows = [["Ref", v.id, true], ["Chassis no.", v.chassis || "-", true], ["Year", v.year || "-"], ["Mileage", v.mileage ? num(v.mileage) + " km" : "-"], ["Engine", v.engine ? v.engine + " cc" : "-"], ["Fuel", v.fuel || "-"], ["Transmission", v.trans || "-"], ["Drive", v.drive || "-"], ["Body", v.type || "-"], ["Colour", v.color || "-"], ["Grade", v.grade || "-"], ["Location", v.location || "-"]];
     return h("div", { className: "ad-specs" },
       v.auctionGrade ? h("div", { className: "ad-specs__report" },
         h(GradeSeal, { grade: v.auctionGrade, interior: v.interior, size: 72 }),
@@ -770,7 +770,7 @@
           h("div", { className: cx(urgent && "is-urgent") }, h("div", { className: "ad-label" }, "Closes in"), h("div", { className: "ad-lotcard__num", role: "timer", "aria-live": "off" }, isFinite(left) ? fmtT(left) : "Open"), h("div", { className: "ad-small ad-muted" }, jst ? "Japan time " + jst : "Ask for closing time"))),
         state === "leading"
           ? h("div", { className: "ad-lotcard__lead", role: "status" }, h(Icon, { name: "check", size: 18, stroke: 2.2 }),
-            h("div", null, h("strong", null, "You’re leading"), h("span", null, "Proxy max " + yen(max) + " — we only bid what’s needed.")),
+            h("div", null, h("strong", null, "You’re leading"), h("span", null, "Proxy max " + yen(max) + ". We only bid what’s needed.")),
             h(Button, { variant: "ghost", size: "s", onClick: function () { setState("idle"); } }, "Edit"))
           : h("div", { className: "ad-lotcard__bid" },
             h("label", { className: "ad-label", htmlFor: "ad-max-" + lot.lot }, "Your maximum (proxy)"),
@@ -788,11 +788,11 @@
     S: ["Rust", "Surface rust"], C: ["Corrosion", "Corroded metal"], P: ["Paint", "Paint marked or faded"], X: ["Replace", "Panel needs replacing"],
     XX: ["Replaced", "Panel has been replaced"], Y: ["Crack", "Hole or crack"], G: ["Glass chip", "Stone chip in the windscreen"]
   };
-  var SIZES = { "1": "small — about a thumbnail", "2": "medium — about a coin to a palm", "3": "large — bigger than a palm" };
+  var SIZES = { "1": "small, about a thumbnail", "2": "medium, about a coin to a palm", "3": "large, bigger than a palm" };
   var GRADES = [
-    ["S", "As new — under ~1,000 km, showroom condition."], ["6", "Almost new, very low mileage."], ["5", "Excellent — low mileage, very few marks."],
-    ["4.5", "Very good — minor marks only. Our most-requested grade."], ["4", "Good — small scratches or dents, fixable."], ["3.5", "Fair — visible marks, higher mileage or some repair."],
-    ["3", "Rough — needs cosmetic work."], ["R", "Repaired accident history (RA = minor repair). We’ll tell you exactly where."]
+    ["S", "As new, under ~1,000 km, showroom condition."], ["6", "Almost new, very low mileage."], ["5", "Excellent, low mileage, very few marks."],
+    ["4.5", "Very good, minor marks only. Our most-requested grade."], ["4", "Good, small scratches or dents, fixable."], ["3.5", "Fair, visible marks, higher mileage or some repair."],
+    ["3", "Rough, needs cosmetic work."], ["R", "Repaired accident history (RA = minor repair). We’ll tell you exactly where."]
   ];
   var MARKS = [
     { id: "m1", code: "A1", panel: "Bonnet", x: 120, y: 58 },
@@ -831,10 +831,10 @@
       h("div", { className: "ad-decoder__side" },
         info ? h("div", { className: "ad-decoder__card", "aria-live": "polite" },
           h("div", { className: "ad-decoder__code ad-mono" }, mark.code),
-          h("div", null, h("div", { className: "ad-label" }, mark.panel), h("p", { className: "ad-h3" }, info.kind + (info.size ? " · " + info.size.split(" — ")[0] : "")),
+          h("div", null, h("div", { className: "ad-label" }, mark.panel), h("p", { className: "ad-h3" }, info.kind + (info.size ? " · " + info.size.split(", ")[0] : "")),
             h("p", { className: "ad-muted ad-small" }, info.text + (info.size ? ", " + info.size + "." : ".")))) : null,
         h("div", { className: "ad-decoder__try" },
-          h(TextField, { label: "Decode any code", placeholder: "e.g. B2, XX, S1", mono: true, value: code, onChange: function (e) { setCode(e.target.value); }, hint: typed ? typed.kind + (typed.size ? " · " + typed.size : "") + " — " + typed.text : code ? "Not a standard code — ask us, we translate every sheet." : "Letter = damage type, number 1–3 = size." })),
+          h(TextField, { label: "Decode any code", placeholder: "e.g. B2, XX, S1", mono: true, value: code, onChange: function (e) { setCode(e.target.value); }, hint: typed ? typed.kind + (typed.size ? " · " + typed.size : "") + ": " + typed.text : code ? "Not a standard code. Ask us, we translate every sheet." : "Letter = damage type, number 1–3 = size." })),
         h("div", null, h("div", { className: "ad-label" }, "Overall grade"),
           h("div", { className: "ad-gradescale", role: "radiogroup", "aria-label": "Overall grade" }, GRADES.map(function (gr) {
             return h("button", { key: gr[0], type: "button", role: "radio", "aria-checked": grade === gr[0], className: cx(grade === gr[0] && "is-on"), onClick: function () { setGrade(gr[0]); } }, gr[0]);
@@ -931,7 +931,7 @@
             i > 0 ? h(Button, { variant: "ghost", size: "s", icon: "arrow-left", onClick: function () { setI(i - 1); } }, "Previous") : null,
             i < 4 ? h(Button, { variant: "secondary", size: "s", iconRight: "arrow-right", onClick: function () { setI(i + 1); } }, "Next: " + STEPS[i + 1].t) : h(Button, { variant: "accent", size: "s", icon: "gavel", onClick: p.onStart }, "Start with a request")))),
       h("div", { className: "ad-faq" }, h("button", { type: "button", "aria-expanded": faq, onClick: function () { setFaq(!faq); } }, h(Icon, { name: "shield", size: 18 }), "Why do we ask for a deposit?", h(Icon, { name: "chevron-down", size: 16, className: "ad-faq__chev" })),
-        faq ? h("p", null, "Deposits are 100% refundable. They protect you and us from last-minute cancellations and spam bids — we bid and pay for your car with our own resources, so every request has to be genuine.") : null));
+        faq ? h("p", null, "Deposits are 100% refundable. They protect you and us from last-minute cancellations and spam bids. We bid and pay for your car with our own resources, so every request has to be genuine.") : null));
   }
 
   /* ---------- Glossary ---------- */
@@ -949,7 +949,7 @@
     }
     return h("div", { className: "ad-gloss" },
       h("div", { className: "ad-gloss__bar" },
-        h(TextField, { icon: "search", placeholder: "Search 13 import terms — try “LC”", value: q, onChange: function (e) { setQ(e.target.value); }, "aria-label": "Search terms" }),
+        h(TextField, { icon: "search", placeholder: "Search 13 import terms, try “LC”", value: q, onChange: function (e) { setQ(e.target.value); }, "aria-label": "Search terms" }),
         h(ChipGroup, { label: "Category", value: cat, onChange: setCat, options: cats.map(function (x) { return { value: x, label: x, count: x === "All" ? terms.length : terms.filter(function (t) { return t.cat === x; }).length }; }) })),
       list.length ? h("dl", { className: "ad-gloss__list" }, list.map(function (t) {
         var on = open === t.term;
@@ -957,7 +957,7 @@
           h("dt", null, h("button", { type: "button", "aria-expanded": on, onClick: function () { setOpen(on ? null : t.term); } },
             h("span", null, mark(t.term)), h("span", { className: "ad-gloss__cat" }, t.cat), h(Icon, { name: "chevron-down", size: 16 }))),
           on ? h("dd", null, h("p", null, mark(t.def)), t.example ? h("p", { className: "ad-gloss__ex" }, h("span", { className: "ad-label" }, "Example"), t.example) : null) : null);
-      })) : h(Empty, { title: "No term matches “" + q + "”", text: "Ask us on WhatsApp — we’ll explain and add it here." }));
+      })) : h(Empty, { title: "No term matches “" + q + "”", text: "Ask us on WhatsApp and we’ll explain and add it here." }));
   }
 
   /* ---------- Testimonials ---------- */
@@ -1125,8 +1125,6 @@
     }
     return h("div", { className: "ad-contact" },
       h("div", { className: "ad-contact__info" },
-        h("h2", { className: "ad-h1" }, "Talk to a real person"),
-        h("p", { className: "ad-muted" }, "Two locations, one team. Most messages answered within two working hours."),
         h("ul", null,
           [["pin", "Malabe showroom", "Visit and inspect stock"], ["pin", "Colombo 07 office", "LC & documentation desk"], ["phone", SITE.phone, SITE.hours, "tel:" + SITE.phone.replace(/[^+0-9]/g, "")], ["whatsapp", "WhatsApp", "Auction alerts & quick questions", "https://wa.me/" + SITE.whatsapp], ["mail", SITE.email, "Quotes and paperwork", "mailto:" + SITE.email]].map(function (r) {
             return h("li", { key: r[1] }, h("span", { className: "ad-contact__ic" }, h(Icon, { name: r[0], size: 18 })), h("span", null, r[3] ? h("a", { href: r[3], className: "ad-link" }, r[1]) : h("b", null, r[1]), h("span", { className: "ad-muted ad-small" }, r[2])));

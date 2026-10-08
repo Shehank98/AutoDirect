@@ -106,7 +106,7 @@ const BOOL_FIELDS = ['is_featured', 'is_latest'];
 function buildVehiclePayload(body) {
   const v = {};
   for (const f of VEHICLE_FIELDS) if (body[f] !== undefined) v[f] = body[f];
-  // Blank form inputs arrive as '' — store them as NULL in numeric columns.
+  // Blank form inputs arrive as '' - store them as NULL in numeric columns.
   for (const f of INT_FIELDS) if (f in v) v[f] = v[f] === '' || v[f] === null ? null : parseInt(v[f], 10);
   if ('price' in v) v.price = v.price === '' || v.price === null ? null : parseFloat(v.price);
   for (const f of BOOL_FIELDS) if (f in v) v[f] = v[f] === true || v[f] === 'true' || v[f] === 1;

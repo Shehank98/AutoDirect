@@ -1,4 +1,4 @@
-// DirectAuto Import — Express server.
+// DirectAuto Import - Express server.
 // Serves the static HTML/CSS/JS frontend from /public and the JSON API under /api.
 require('dotenv').config();
 const path = require('path');
@@ -72,7 +72,7 @@ async function start() {
     if (process.env.DATABASE_URL) {
       await migrate();
     } else {
-      console.warn('[start] DATABASE_URL not set — skipping migrate. The API will error until Postgres is connected.');
+      console.warn('[start] DATABASE_URL not set - skipping migrate. The API will error until Postgres is connected.');
     }
   } catch (err) {
     console.error('[start] migration failed (continuing to boot):', err.message);

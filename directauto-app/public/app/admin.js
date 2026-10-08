@@ -1,4 +1,4 @@
-/* AutoDirect admin console — loaded on demand when someone opens /admin.
+/* AutoDirect admin console - loaded on demand when someone opens /admin.
    Built from the same components as the storefront (window.AD) and wired to /api/admin/*. */
 (function () {
   "use strict";
@@ -11,8 +11,8 @@
   var DRIVES = ["2WD", "4WD", "AWD"];
 
   /* ------------------------------------------------------------ helpers */
-  function day(d) { return d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—"; }
-  function dayTime(d) { return d ? new Date(d).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"; }
+  function day(d) { return d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "-"; }
+  function dayTime(d) { return d ? new Date(d).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "-"; }
   function toLocalInput(d) { if (!d) return ""; var x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 16); }
   function isoDate(d) { return d ? new Date(d).toISOString().slice(0, 10) : ""; }
   function opts(list, labelKey) { return list.map(function (o) { return typeof o === "object" ? { value: String(o.id), label: o[labelKey || "name"] } : { value: String(o), label: String(o) }; }); }
@@ -115,7 +115,7 @@
       h("div", { className: "ad-label" }, "Specifications"),
       h("div", { className: "ad-form__grid ad-form__grid--3" },
         txt("mileage", "Mileage (km)", { inputMode: "numeric" }), txt("engine_capacity", "Engine (cc)", { inputMode: "numeric" }),
-        sel("fuel_type", "Fuel", opts(FUELS), "—"), sel("transmission", "Transmission", opts(GEARS), "—"), sel("drive_type", "Drive", opts(DRIVES), "—"),
+        sel("fuel_type", "Fuel", opts(FUELS), "-"), sel("transmission", "Transmission", opts(GEARS), "-"), sel("drive_type", "Drive", opts(DRIVES), "-"),
         txt("auction_grade", "Auction grade", { placeholder: "4.5" }), txt("grade", "Interior grade", { placeholder: "A–E" }),
         txt("seats", "Seats", { type: "number", min: 0 }), txt("doors", "Doors", { type: "number", min: 0 }), txt("other_color", "Other colour notes"),
         h("div", { className: "ad-span3" }, txt("conditions", "Condition", { maxLength: 500 })),
@@ -159,7 +159,7 @@
     function blank() { return { status: 1, stock_status: "Available", is_latest: true, is_featured: false, location: "Japan", images: [], feature_ids: [] }; }
     return h(Frag, null,
       h("div", { className: "ad-kpis" }, [["In stock", st.in_stock, "car"], ["In transit", st.in_transit, "ship"], ["New inquiries", st.new_inquiries, "doc"], ["Subscribers", st.subscribers, "mail"]].map(function (k) {
-        return h("div", { key: k[0], className: "ad-kpi" }, h(A.Icon, { name: k[2], size: 18 }), h("span", { className: "ad-label" }, k[0]), h("b", null, k[1] == null ? "—" : k[1]));
+        return h("div", { key: k[0], className: "ad-kpi" }, h(A.Icon, { name: k[2], size: 18 }), h("span", { className: "ad-label" }, k[0]), h("b", null, k[1] == null ? "-" : k[1]));
       })),
       h("div", { className: "ad-dt__bar" },
         h(A.Tabs, { variant: "line", label: "Status", tabs: ["All"].concat(STOCK_STATUS).map(function (x) { return { id: x, label: x, count: x === "All" ? rows.length : rows.filter(function (v) { return v.stock_status === x; }).length }; }), value: tab, onChange: setTab }),
@@ -178,7 +178,7 @@
             h("td", null, h("div", { className: "ad-dt__veh" }, h(Thumb, { src: (v.images || [])[0] }),
               h("span", null, h("b", null, vtitle(v, L)), h("span", { className: "ad-mono ad-muted ad-small" }, "AD-" + String(v.id).padStart(4, "0") + (v.chassi_id ? " · " + v.chassi_id : "")),
                 v.status === 0 ? h("span", { className: "ad-small", style: { color: "var(--warning)" } }, "Hidden from website") : null))),
-            h("td", { className: "ad-num" }, v.price ? fmt.lkr(Number(v.price)) : "On request"), h("td", null, v.auction_grade ? v.auction_grade + " / " + (v.grade || "—") : "—"), h("td", null, v.location || "—"),
+            h("td", { className: "ad-num" }, v.price ? fmt.lkr(Number(v.price)) : "On request"), h("td", null, v.auction_grade ? v.auction_grade + " / " + (v.grade || "-") : "-"), h("td", null, v.location || "-"),
             h("td", null, h(A.SelectField, { "aria-label": "Sales status of " + v.id, options: STOCK_STATUS, value: v.stock_status, className: "ad-select--s", onChange: function (e) { patch(v, { stock_status: e.target.value }, "Status updated"); } })),
             h("td", null, h(A.Switch, { label: "Feature " + v.id + " on home page", hideLabel: true, checked: !!v.is_featured, onChange: function (x) { patch(v, { is_featured: x }); } })),
             h("td", { className: "ad-dt__act" }, h(A.Button, { variant: "ghost", size: "s", icon: "edit", "aria-label": "Edit " + vtitle(v, L), onClick: function () { setEditing(v); } }),
@@ -270,9 +270,9 @@
           return h("tr", { key: r.id },
             h("td", { className: "ad-dt__cb" }, h(Thumb, { src: r.image })),
             h("td", null, h("b", null, [r.year, r.make, r.model, r.trim].filter(Boolean).join(" ")), h("span", { className: "ad-mono ad-muted ad-small", style: { display: "block" } }, "Lot " + r.lot_no + (r.chassis ? " · " + r.chassis : ""))),
-            h("td", null, [r.house, r.auction_date].filter(Boolean).join(" · ") || "—"),
+            h("td", null, [r.house, r.auction_date].filter(Boolean).join(" · ") || "-"),
             h("td", null, r.ends_at ? dayTime(r.ends_at) : "No end time", ended ? h("span", { style: { marginLeft: 8 } }, h(A.Badge, { tone: "danger" }, "Closed")) : null),
-            h("td", { className: "ad-num" }, r.current_price || r.start_price ? fmt.yen(r.current_price || r.start_price) : "—"),
+            h("td", { className: "ad-num" }, r.current_price || r.start_price ? fmt.yen(r.current_price || r.start_price) : "-"),
             h("td", null, h(A.Switch, { label: "Show lot " + r.lot_no, hideLabel: true, checked: r.status === 1, onChange: function (x) { patch(r, { status: x ? 1 : 0 }); } })),
             h("td", { className: "ad-dt__act" }, h(A.Button, { variant: "ghost", size: "s", icon: "edit", "aria-label": "Edit lot " + r.lot_no, onClick: function () { setEdit(r); } }),
               h(A.Button, { variant: "ghost", size: "s", icon: "trash", "aria-label": "Delete lot " + r.lot_no, onClick: function () { setDel(r); } })));
@@ -354,7 +354,7 @@
       h("dl", { className: "ad-facts" }, facts.filter(function (x) { return x[1]; }).map(function (x) { return h("div", { key: x[0] }, h("dt", { className: "ad-label" }, x[0]), h("dd", null, x[0] === "Email" ? h("a", { className: "ad-link", href: "mailto:" + x[1] }, x[1]) : x[0] === "Phone" ? h("a", { className: "ad-link", href: "tel:" + x[1] }, x[1]) : x[1])); })),
       r.message ? h("p", { className: "ad-quote-box" }, r.message) : null,
       h("form", { className: "ad-modal__form", onSubmit: save },
-        h("div", { className: "ad-label" }, "Order tracking — visible to the customer in My account"),
+        h("div", { className: "ad-label" }, "Order tracking (visible to the customer in My account)"),
         h("div", { className: "ad-form__grid" },
           h(A.SelectField, { label: "Stage", options: STAGES.map(function (x, i) { return { value: String(i), label: x }; }), value: f.stage, onChange: function (e) { setF(Object.assign({}, f, { stage: e.target.value })); } }),
           h(A.TextField, { label: "ETA Colombo", type: "date", optional: true, value: f.eta, onChange: function (e) { setF(Object.assign({}, f, { eta: e.target.value })); } }),
@@ -377,7 +377,7 @@
           h(A.Button, { variant: "secondary", icon: "doc", onClick: function () { csv([["Name", "Email", "Phone", "City", "Requests", "Joined"]].concat(d.data.map(function (r) { return [r.name, r.email, r.phone, r.address, r.requests, day(r.created_at)]; })), "customers.csv"); } }, "Export CSV"))),
       h(Table, { cols: [{ label: "Customer" }, { label: "Phone" }, { label: "Requests" }, { label: "Joined" }, { label: "Admin" }], empty: rows.length ? null : h(A.Empty, { icon: "users", title: "No customers yet" }),
         rows: rows.map(function (r) {
-          return h("tr", { key: r.uid }, h("td", null, h("b", null, r.name || "—"), h("span", { className: "ad-muted ad-small", style: { display: "block" } }, r.email)), h("td", null, r.phone || "—"), h("td", { className: "ad-num" }, r.requests), h("td", null, day(r.created_at)),
+          return h("tr", { key: r.uid }, h("td", null, h("b", null, r.name || "-"), h("span", { className: "ad-muted ad-small", style: { display: "block" } }, r.email)), h("td", null, r.phone || "-"), h("td", { className: "ad-num" }, r.requests), h("td", null, day(r.created_at)),
             h("td", null, h(A.Switch, { label: "Admin access for " + r.email, hideLabel: true, checked: !!r.is_admin, onChange: function (x) { setAdmin(r, x); } })));
         }) }));
   }
@@ -390,7 +390,7 @@
         h(A.Button, { variant: "secondary", icon: "doc", onClick: function () { csv([["Email", "Name", "Joined"]].concat(d.data.map(function (r) { return [r.email, r.name, day(r.created_at)]; })), "subscribers.csv"); } }, "Export CSV")),
       h(Table, { cols: [{ label: "Subscriber" }, { label: "Name" }, { label: "Joined" }, { label: "" }], empty: d.data.length ? null : h(A.Empty, { icon: "mail", title: "No subscribers yet" }),
         rows: d.data.map(function (r) {
-          return h("tr", { key: r.id }, h("td", null, h("b", null, r.email)), h("td", null, r.name || "—"), h("td", null, day(r.created_at)),
+          return h("tr", { key: r.id }, h("td", null, h("b", null, r.email)), h("td", null, r.name || "-"), h("td", null, day(r.created_at)),
             h("td", { className: "ad-dt__act" }, h(A.Button, { variant: "ghost", size: "s", icon: "trash", "aria-label": "Remove " + r.email, onClick: function () { api.del("/api/admin/newsletters/" + r.id).then(function () { d.reload(); p.say("Removed"); }); } })));
         }) }));
   }

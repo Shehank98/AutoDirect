@@ -38,7 +38,7 @@ async function attachUser(req, _res, next) {
     req.firebaseUser = decoded;
     req.user = await upsertProfile(decoded);
   } catch (err) {
-    // Invalid/expired token — treat as anonymous.
+    // Invalid/expired token - treat as anonymous.
     req.authError = err.message;
   }
   next();

@@ -6,10 +6,10 @@ const router = express.Router();
 
 router.use(requireAuth);
 
-// GET /api/account/me  — current profile.
+// GET /api/account/me  - current profile.
 router.get('/me', (req, res) => res.json(req.user));
 
-// PUT /api/account/me  — update profile details.
+// PUT /api/account/me  - update profile details.
 router.put('/me', async (req, res, next) => {
   try {
     const { name, phone, address } = req.body || {};
@@ -22,7 +22,7 @@ router.put('/me', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// GET /api/account/inquiries  — this user's vehicle inquiries.
+// GET /api/account/inquiries  - this user's vehicle inquiries.
 router.get('/inquiries', async (req, res, next) => {
   try {
     const { rows } = await db.query(
@@ -40,7 +40,7 @@ router.get('/inquiries', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// GET /api/account/live-inquiries  — this user's auction requests.
+// GET /api/account/live-inquiries  - this user's auction requests.
 router.get('/live-inquiries', async (req, res, next) => {
   try {
     const { rows } = await db.query(
@@ -50,7 +50,7 @@ router.get('/live-inquiries', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// GET /api/account/orders — every inquiry and auction request in one list, in the shape the
+// GET /api/account/orders - every inquiry and auction request in one list, in the shape the
 // order tracker renders (stage 0..6 is updated by the sales team from the admin).
 router.get('/orders', async (req, res, next) => {
   try {

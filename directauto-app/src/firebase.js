@@ -1,4 +1,4 @@
-// Firebase Admin SDK — used to (1) verify Firebase Auth ID tokens sent by the browser,
+// Firebase Admin SDK - used to (1) verify Firebase Auth ID tokens sent by the browser,
 // and (2) upload car images to Firebase Storage from the admin panel.
 //
 // It initialises lazily and degrades gracefully: if no service-account credentials are
@@ -16,7 +16,7 @@ function init() {
       const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
       if (!raw) {
         initError = new Error('FIREBASE_SERVICE_ACCOUNT is not set');
-        console.warn('[firebase] not configured — auth & image upload are disabled until FIREBASE_SERVICE_ACCOUNT is set.');
+        console.warn('[firebase] not configured - auth & image upload are disabled until FIREBASE_SERVICE_ACCOUNT is set.');
         return null;
       }
       const serviceAccount = JSON.parse(raw);
