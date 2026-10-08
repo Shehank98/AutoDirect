@@ -34,6 +34,8 @@ api.get('/config', (_req, res) => res.json({
 }));
 
 api.use('/', require('./src/routes/taxonomy'));
+api.use('/', require('./src/routes/catalog'));
+api.use('/', require('./src/routes/lots'));
 api.use('/vehicles', require('./src/routes/vehicles'));
 api.use('/', require('./src/routes/inquiries'));
 api.use('/account', require('./src/routes/account'));
@@ -42,22 +44,20 @@ api.use('/admin', require('./src/routes/admin'));
 app.use('/api', api);
 
 // ---------------- Static frontend ----------------
+// The storefront and admin are one single-page app (public/index.html + public/app/*).
+// Real files (assets, JS, images) are served as-is; every other GET path is a client-side
+// route (/our-stock/<seo-url>, /my-account, /admin ...) and gets the app shell.
 const PUBLIC_DIR = path.join(__dirname, 'public');
-app.use(express.static(PUBLIC_DIR, { extensions: ['html'] }));
-
-// Vehicle detail pretty URL: /our-stock/<seo-url> -> serve the vehicle page shell.
-app.get('/our-stock/:seo', (req, res, next) => {
-  if (req.params.seo.includes('.')) return next(); // let static assets pass
-  res.sendFile(path.join(PUBLIC_DIR, 'vehicle.html'));
-});
-
-// Account area: /my-account and any sub-path -> the account dashboard shell.
-app.get(['/my-account', '/my-account/*'], (_req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'my-account.html'));
-});
+app.use(express.static(PUBLIC_DIR, { index: false }));
 
 // 404 for unknown API routes.
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));
+
+// SPA fallback (must come after the API 404 above so unknown /api paths stay JSON).
+app.get('*', (req, res, next) => {
+  if (path.extname(req.path)) return next(); // a missing file is a real 404
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
 
 // Central error handler.
 app.use((err, _req, res, _next) => {

@@ -2,214 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DirectAuto Import — Car Store &amp; Japan Live Auction</title>
-  <link rel="shortcut icon" href="/assets/images/favicon-icon/favicon.png">
-  <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
-  <link rel="stylesheet" href="/assets/css/style.css">
-  <link rel="stylesheet" href="/assets/css/owl.carousel.css">
-  <link rel="stylesheet" href="/assets/css/owl.transitions.css">
-  <link rel="stylesheet" href="/assets/css/slick.css">
-  <link rel="stylesheet" href="/assets/css/bootstrap-slider.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-  <link rel="stylesheet" href="/assets/css/orange.css" title="orange">
-  <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>AutoDirect — Japanese auction car imports for Sri Lanka</title>
+  <meta name="description" content="Browse imported cars in stock or let AutoDirect bid for your exact car at Japanese auctions, with the original auction sheet translated before every bid.">
+  <meta name="theme-color" content="#0e4f45">
+  <link rel="icon" href="/assets/images/favicon-icon/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@500;600&display=swap">
+  <link rel="stylesheet" href="/app/ad.css">
   <style>
-    #home-banner{background:#1c2331 url('/assets/images/4.jpg') center/cover no-repeat;position:relative;}
-    #home-banner:after{content:'';position:absolute;inset:0;background:rgba(20,26,42,.6);}
-    #home-banner .banner_text{position:relative;z-index:2;padding:120px 0;}
-    .home-search-card{background:#fff;box-shadow:0 6px 24px rgba(0,0,0,.12);border-radius:6px;padding:24px;margin-top:-70px;position:relative;z-index:5;}
-    /* Browse by brand / body type / location */
-    .browse-section h3{font-size:16px;font-weight:700;color:#333;margin:0 0 14px;}
-    .browse-group{margin-bottom:34px;}
-    .browse-grid{display:grid;gap:10px;}
-    .browse-grid.brands{grid-template-columns:repeat(6,1fr);}
-    .browse-grid.types{grid-template-columns:repeat(5,1fr);}
-    .browse-grid.locations{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
-    .browse-item{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #ddd;border-radius:4px;padding:10px 12px;color:#333;text-decoration:none;min-height:56px;transition:border-color .15s,box-shadow .15s;}
-    .browse-item:hover,.browse-item:focus{border-color:#f76b1c;box-shadow:0 2px 8px rgba(247,107,28,.18);text-decoration:none;color:#333;}
-    .browse-item .b-icon{flex:0 0 38px;height:30px;display:flex;align-items:center;justify-content:center;color:#777;font-size:24px;}
-    .browse-item .b-icon img{max-width:38px;max-height:30px;}
-    .browse-item .b-initial{width:30px;height:30px;border-radius:50%;background:#eef0f4;color:#555;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;}
-    .browse-item .b-text{min-width:0;line-height:1.25;}
-    .browse-item .b-name{display:block;font-size:13px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .browse-item .b-count{display:block;font-size:11px;color:#888;}
-    .browse-item.empty{opacity:.55;}
-    @media(max-width:991px){.browse-grid.brands{grid-template-columns:repeat(3,1fr);}.browse-grid.types{grid-template-columns:repeat(3,1fr);}}
-    @media(max-width:479px){.browse-grid.brands,.browse-grid.types{grid-template-columns:repeat(2,1fr);}}
+    #app > .ad-boot { min-height: 100vh; display: grid; place-content: center; gap: 12px; text-align: center; font: 15px/22px var(--font-sans); color: var(--ink-muted); }
+    #app > .ad-boot .ad-spinner { margin: 0 auto; width: 24px; height: 24px; color: var(--brand); }
   </style>
 </head>
 <body>
-  <div id="site-header"></div>
+  <div id="app"><div class="ad-boot"><span class="ad-spinner" aria-hidden="true"></span>Loading AutoDirect…</div></div>
+  <noscript><p style="padding:24px;font-family:sans-serif">AutoDirect needs JavaScript to browse the stock. Call or WhatsApp +94 768 65 65 15 and we’ll help.</p></noscript>
 
-  <!--Banner-->
-  <section id="home-banner">
-    <div class="container">
-      <div class="banner_text text-center white-text">
-        <h1 style="color:#fff;font-weight:700;">Find Your Perfect Vehicle</h1>
-        <p style="color:#eee;font-size:18px;">Quality used cars &amp; direct Japan auction access — imported to Sri Lanka.</p>
-      </div>
-    </div>
-  </section>
-
-  <!--Search-->
-  <section class="container">
-    <div class="home-search-card">
-      <form id="home-search" class="row" onsubmit="return false;">
-        <div class="col-md-3 col-sm-6 form-group">
-          <label>Make</label>
-          <select id="f-manufacturer" class="form-control"><option value="">Any Make</option></select>
-        </div>
-        <div class="col-md-3 col-sm-6 form-group">
-          <label>Model</label>
-          <select id="f-model" class="form-control"><option value="">Any Model</option></select>
-        </div>
-        <div class="col-md-2 col-sm-4 form-group">
-          <label>Type</label>
-          <select id="f-type" class="form-control"><option value="">Any Type</option></select>
-        </div>
-        <div class="col-md-2 col-sm-4 form-group">
-          <label>Max Price</label>
-          <select id="f-price" class="form-control">
-            <option value="">Any</option>
-            <option value="3000000">Rs. 3M</option>
-            <option value="5000000">Rs. 5M</option>
-            <option value="8000000">Rs. 8M</option>
-            <option value="15000000">Rs. 15M</option>
-          </select>
-        </div>
-        <div class="col-md-2 col-sm-4 form-group" style="display:flex;align-items:flex-end;">
-          <button id="home-search-btn" class="btn btn-block"><i class="fa fa-search"></i> Search</button>
-        </div>
-      </form>
-    </div>
-  </section>
-
-  <!--Featured-->
-  <section class="section-padding">
-    <div class="container">
-      <div class="section-header text-center">
-        <h2>Featured Vehicles</h2>
-        <p>Hand-picked cars ready for you.</p>
-      </div>
-      <div class="row" id="featured-cars"><p class="text-center">Loading…</p></div>
-    </div>
-  </section>
-
-  <!--Latest-->
-  <section class="section-padding gray-bg">
-    <div class="container">
-      <div class="section-header text-center">
-        <h2>Latest Arrivals</h2>
-        <p>Newly added to our stock.</p>
-      </div>
-      <div class="row" id="latest-cars"><p class="text-center">Loading…</p></div>
-      <div class="text-center" style="margin-top:20px;">
-        <a href="/our-stock" class="btn">Browse All Stock <i class="fa fa-angle-right"></i></a>
-      </div>
-    </div>
-  </section>
-
-  <!--Why choose us-->
-  <section class="section-padding">
-    <div class="container">
-      <div class="section-header text-center"><h2>Why Choose Us</h2></div>
-      <div class="row text-center">
-        <div class="col-md-3 col-sm-6"><div class="why-box"><i class="fa fa-car fa-3x" style="color:#f76b1c;"></i><h5>Quality Vehicles</h5><p>Every car is auction-graded and inspected.</p></div></div>
-        <div class="col-md-3 col-sm-6"><div class="why-box"><i class="fa fa-gavel fa-3x" style="color:#f76b1c;"></i><h5>Live Auction Access</h5><p>Bid on cars directly from Japan auctions.</p></div></div>
-        <div class="col-md-3 col-sm-6"><div class="why-box"><i class="fa fa-shield fa-3x" style="color:#f76b1c;"></i><h5>Trusted Imports</h5><p>Transparent grading and honest pricing.</p></div></div>
-        <div class="col-md-3 col-sm-6"><div class="why-box"><i class="fa fa-handshake-o fa-3x" style="color:#f76b1c;"></i><h5>Full Support</h5><p>We handle shipping and paperwork end to end.</p></div></div>
-      </div>
-    </div>
-  </section>
-
-  <!--Browse by brand / body type / inventory location-->
-  <section class="section-padding gray-bg browse-section" id="browse">
-    <div class="container">
-      <div class="browse-group">
-        <h3>Browse by car brand</h3>
-        <div class="browse-grid brands" id="browse-brands"></div>
-      </div>
-      <div class="browse-group">
-        <h3>Browse by Body Type</h3>
-        <div class="browse-grid types" id="browse-types"></div>
-      </div>
-      <div class="browse-group" style="margin-bottom:0;">
-        <h3>Browse by Inventory Location</h3>
-        <div class="browse-grid locations" id="browse-locations"></div>
-      </div>
-    </div>
-  </section>
-
-  <div id="site-footer"></div>
-
-  <script src="/assets/js/jquery.min.js"></script>
-  <script src="/assets/js/bootstrap.min.js"></script>
-  <script src="/assets/js/app.js"></script>
-  <script>
-    DA.pageInit = async function () {
-      // Populate search dropdowns
-      const [makes, types] = await Promise.all([DA.api.get('/api/manufacturers'), DA.api.get('/api/types')]);
-      const mSel = document.getElementById('f-manufacturer');
-      makes.forEach((m) => mSel.insertAdjacentHTML('beforeend', '<option value="' + m.id + '">' + DA.esc(m.name) + '</option>'));
-      const tSel = document.getElementById('f-type');
-      types.forEach((t) => tSel.insertAdjacentHTML('beforeend', '<option value="' + t.id + '">' + DA.esc(t.name) + '</option>'));
-
-      mSel.addEventListener('change', async () => {
-        const modelSel = document.getElementById('f-model');
-        modelSel.innerHTML = '<option value="">Any Model</option>';
-        if (!mSel.value) return;
-        const models = await DA.api.get('/api/models?manufacturer=' + mSel.value);
-        models.forEach((mo) => modelSel.insertAdjacentHTML('beforeend', '<option value="' + mo.id + '">' + DA.esc(mo.name) + '</option>'));
-      });
-
-      document.getElementById('home-search-btn').addEventListener('click', () => {
-        const p = new URLSearchParams();
-        const map = { manufacturer: 'f-manufacturer', model: 'f-model', type: 'f-type', max_price: 'f-price' };
-        Object.keys(map).forEach((k) => { const v = document.getElementById(map[k]).value; if (v) p.set(k, v); });
-        location.href = '/our-stock' + (p.toString() ? '?' + p.toString() : '');
-      });
-
-      // Featured + latest
-      const render = (id, list) => {
-        const el = document.getElementById(id);
-        el.innerHTML = list.length ? list.map(DA.vehicleCard).join('') : '<p class="text-center text-muted">No vehicles yet.</p>';
-      };
-      try { render('featured-cars', await DA.api.get('/api/vehicles/featured')); } catch (e) { render('featured-cars', []); }
-      try {
-        let latest = await DA.api.get('/api/vehicles/latest');
-        if (!latest.length) { const r = await DA.api.get('/api/vehicles?limit=6'); latest = r.data; }
-        render('latest-cars', latest);
-      } catch (e) { render('latest-cars', []); }
-      // "Browse by..." section — every tile links to Our Stock pre-filtered.
-      try {
-        const b = await DA.api.get('/api/browse');
-        const tile = (href, icon, name, count) =>
-          '<a class="browse-item' + (count ? '' : ' empty') + '" href="' + href + '">' +
-          '<span class="b-icon">' + icon + '</span>' +
-          '<span class="b-text"><span class="b-name">' + DA.esc(name) + '</span><span class="b-count">(' + Number(count).toLocaleString() + ')</span></span></a>';
-        const typeIcon = (n) => {
-          n = n.toLowerCase();
-          if (/bus/.test(n)) return 'fa-bus';
-          if (/truck|pick|heavy/.test(n)) return 'fa-truck';
-          if (/van/.test(n)) return 'fa-bus';
-          return 'fa-car';
-        };
-        document.getElementById('browse-brands').innerHTML = b.brands.map((x) => tile(
-          '/our-stock?manufacturer=' + x.id,
-          x.image ? '<img src="' + DA.esc(x.image) + '" alt="" onerror="this.outerHTML=\'<span class=b-initial>' + DA.esc(x.name.charAt(0)) + '</span>\'">'
-                  : '<span class="b-initial">' + DA.esc(x.name.charAt(0)) + '</span>',
-          x.name, x.count)).join('');
-        document.getElementById('browse-types').innerHTML = b.types.map((x) => tile(
-          '/our-stock?type=' + x.id,
-          x.image ? '<img src="' + DA.esc(x.image) + '" alt="">' : '<i class="fa ' + typeIcon(x.name) + '"></i>',
-          x.name, x.count)).join('');
-        document.getElementById('browse-locations').innerHTML = b.locations.map((x) => tile(
-          '/our-stock?location=' + encodeURIComponent(x.name),
-          '<img src="https://flagcdn.com/w40/' + x.code + '.png" alt="" style="border:1px solid #eee;">',
-          x.name, x.count)).join('');
-      } catch (e) { const el = document.getElementById('browse'); if (el) el.style.display = 'none'; }
-    };
-  </script>
+  <script src="/vendor/react.production.min.js"></script>
+  <script src="/vendor/react-dom.production.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js" defer></script>
+  <script src="/app/ds.js"></script>
+  <script src="/app/app.js" defer></script>
 </body>
 </html>

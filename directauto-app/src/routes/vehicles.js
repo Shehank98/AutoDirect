@@ -3,27 +3,7 @@ const express = require('express');
 const db = require('../../db/pool');
 const router = express.Router();
 
-// A single reusable SELECT that joins taxonomy names and rolls up feature names,
-// so the frontend gets ready-to-render objects.
-const VEHICLE_SELECT = `
-  SELECT v.*,
-         t.name  AS type_name,
-         m.name  AS manufacturer_name,
-         mo.name AS model_name,
-         c.name  AS color_name,
-         c.code  AS color_code,
-         COALESCE(
-           (SELECT json_agg(f.name ORDER BY f.name)
-              FROM vehicle_feature f
-             WHERE f.id = ANY (SELECT jsonb_array_elements_text(v.feature_ids)::int)),
-           '[]'
-         ) AS feature_names
-    FROM vehicle v
-    LEFT JOIN vehicle_type         t  ON t.id  = v.vehicle_type
-    LEFT JOIN vehicle_manufacturer m  ON m.id  = v.vehicle_manufacturer
-    LEFT JOIN vehicle_model        mo ON mo.id = v.vehicle_model
-    LEFT JOIN vehicle_color        c  ON c.id  = v.main_color
-`;
+const { VEHICLE_SELECT } = require('../vehicleQuery');
 
 // GET /api/vehicles  — filterable, paginated listing.
 router.get('/', async (req, res, next) => {

@@ -47,12 +47,13 @@ async function migrate() {
     await client.query(schema);
 
     const { rows } = await client.query('SELECT COUNT(*)::int AS n FROM vehicle');
-    if (rows[0].n === 0) {
+    const seedDemo = String(process.env.SEED_DEMO_DATA || 'true').toLowerCase() !== 'false';
+    if (rows[0].n === 0 && seedDemo) {
       console.log('[migrate] empty database — loading sample data...');
       await client.query(seed);
       console.log('[migrate] sample data loaded.');
     } else {
-      console.log(`[migrate] database already has ${rows[0].n} vehicles — skipping seed.`);
+      console.log(rows[0].n ? `[migrate] database already has ${rows[0].n} vehicles — skipping seed.` : '[migrate] SEED_DEMO_DATA=false — skipping sample data.');
     }
     await ensureBrowseDefaults(client);
     console.log('[migrate] done.');

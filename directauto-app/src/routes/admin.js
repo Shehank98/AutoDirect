@@ -28,13 +28,17 @@ router.get('/stats', async (_req, res, next) => {
       inquiries:     await q('SELECT COUNT(*)::int n FROM inquiries'),
       new_inquiries: await q('SELECT COUNT(*)::int n FROM inquiries WHERE status = 0'),
       live_requests: await q('SELECT COUNT(*)::int n FROM live_inquiries'),
+      in_stock:      await q("SELECT COUNT(*)::int n FROM vehicle WHERE status = 1 AND stock_status = 'Available'"),
+      in_transit:    await q("SELECT COUNT(*)::int n FROM vehicle WHERE status = 1 AND stock_status = 'In transit'"),
+      open_requests: await q('SELECT COUNT(*)::int n FROM live_inquiries WHERE stage = 0'),
+      customers:     await q('SELECT COUNT(*)::int n FROM profiles'),
       subscribers:   await q('SELECT COUNT(*)::int n FROM newsletters'),
     });
   } catch (e) { next(e); }
 });
 
 // ---------- Image upload -> Firebase Storage ----------
-const FOLDERS = ['vehicles', 'brands', 'types'];
+const FOLDERS = ['vehicles', 'brands', 'types', 'lots'];
 
 router.post('/upload', upload.array('images', 12), async (req, res, next) => {
   try {
@@ -93,7 +97,7 @@ const VEHICLE_FIELDS = [
   'vehicle_type', 'vehicle_manufacturer', 'vehicle_model', 'main_color', 'other_color',
   'description', 'year', 'chassi_id', 'conditions', 'seats', 'doors', 'passengers',
   'engine_capacity', 'mileage', 'fuel_type', 'transmission', 'drive_type',
-  'auction_grade', 'grade', 'price', 'location', 'images', 'feature_ids', 'is_featured', 'is_latest', 'status',
+  'auction_grade', 'grade', 'price', 'location', 'trim', 'stock_status', 'images', 'feature_ids', 'is_featured', 'is_latest', 'status',
 ];
 
 const INT_FIELDS = ['vehicle_type', 'vehicle_manufacturer', 'vehicle_model', 'main_color', 'seats', 'doors', 'passengers', 'status'];
@@ -187,15 +191,27 @@ router.get('/inquiries', async (_req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.put('/inquiries/:id', async (req, res, next) => {
-  try {
-    const { rows } = await db.query(
-      'UPDATE inquiries SET status = $2 WHERE id = $1 RETURNING *',
-      [parseInt(req.params.id, 10), parseInt(req.body.status, 10) || 0]
-    );
-    res.json(rows[0] || {});
-  } catch (e) { next(e); }
-});
+// Update tracking info (stage 0..6, customer-visible note, ETA) and the handled flag.
+function trackingUpdate(table) {
+  return async (req, res, next) => {
+    try {
+      const b = req.body || {};
+      const sets = [], params = [];
+      const add = (col, val) => { params.push(val); sets.push(`${col} = $${params.length}`); };
+      if (b.status !== undefined) add('status', parseInt(b.status, 10) ? 1 : 0);
+      if (b.stage !== undefined) add('stage', Math.min(6, Math.max(0, parseInt(b.stage, 10) || 0)));
+      if (b.note !== undefined) add('note', String(b.note).slice(0, 500));
+      if (b.eta !== undefined) add('eta', b.eta || null);
+      if (!sets.length) return res.status(400).json({ error: 'Nothing to update.' });
+      params.push(parseInt(req.params.id, 10));
+      const { rows } = await db.query(`UPDATE ${table} SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING *`, params);
+      if (!rows.length) return res.status(404).json({ error: 'Not found.' });
+      res.json(rows[0]);
+    } catch (e) { next(e); }
+  };
+}
+
+router.put('/inquiries/:id', trackingUpdate('inquiries'));
 
 router.delete('/inquiries/:id', async (req, res, next) => {
   try {
@@ -204,21 +220,99 @@ router.delete('/inquiries/:id', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.put('/live-inquiries/:id', async (req, res, next) => {
-  try {
-    const { rows } = await db.query(
-      'UPDATE live_inquiries SET status = $2 WHERE id = $1 RETURNING *',
-      [parseInt(req.params.id, 10), parseInt(req.body.status, 10) || 0]
-    );
-    res.json(rows[0] || {});
-  } catch (e) { next(e); }
-});
+router.put('/live-inquiries/:id', trackingUpdate('live_inquiries'));
 
 router.get('/live-inquiries', async (_req, res, next) => {
   try {
     const { rows } = await db.query('SELECT * FROM live_inquiries ORDER BY created_at DESC');
     res.json(rows);
   } catch (e) { next(e); }
+});
+
+router.delete('/live-inquiries/:id', async (req, res, next) => {
+  try {
+    await db.query('DELETE FROM live_inquiries WHERE id = $1', [parseInt(req.params.id, 10)]);
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// ---------- Auction lots ("this week's auction floor") ----------
+const LOT_FIELDS = ['lot_no', 'house', 'auction_date', 'ends_at', 'make', 'model', 'trim', 'year', 'chassis', 'mileage',
+  'auction_grade', 'interior', 'start_price', 'current_price', 'image', 'status'];
+const LOT_INTS = ['year', 'mileage', 'start_price', 'current_price', 'status'];
+
+function lotPayload(body) {
+  const v = {};
+  for (const f of LOT_FIELDS) if (body[f] !== undefined) v[f] = body[f];
+  for (const f of LOT_INTS) if (f in v) v[f] = v[f] === '' || v[f] === null ? null : parseInt(v[f], 10);
+  if ('ends_at' in v && !v.ends_at) v.ends_at = null;
+  if ('status' in v && v.status === null) v.status = 1;
+  return v;
+}
+
+router.get('/lots', async (_req, res, next) => {
+  try { res.json((await db.query('SELECT * FROM auction_lots ORDER BY ends_at DESC NULLS LAST, id DESC')).rows); } catch (e) { next(e); }
+});
+
+router.post('/lots', async (req, res, next) => {
+  try {
+    const v = lotPayload(req.body);
+    if (!v.lot_no || !v.make || !v.model) return res.status(400).json({ error: 'Lot number, make and model are required.' });
+    const cols = Object.keys(v);
+    const { rows } = await db.query(
+      `INSERT INTO auction_lots (${cols.join(', ')}) VALUES (${cols.map((_, i) => `$${i + 1}`).join(', ')}) RETURNING *`, Object.values(v));
+    res.status(201).json(rows[0]);
+  } catch (e) { next(e); }
+});
+
+router.put('/lots/:id', async (req, res, next) => {
+  try {
+    const v = lotPayload(req.body);
+    const cols = Object.keys(v);
+    if (!cols.length) return res.status(400).json({ error: 'Nothing to update.' });
+    const params = Object.values(v); params.push(parseInt(req.params.id, 10));
+    const { rows } = await db.query(
+      `UPDATE auction_lots SET ${cols.map((c, i) => `${c} = $${i + 1}`).join(', ')} WHERE id = $${params.length} RETURNING *`, params);
+    if (!rows.length) return res.status(404).json({ error: 'Lot not found.' });
+    res.json(rows[0]);
+  } catch (e) { next(e); }
+});
+
+router.delete('/lots/:id', async (req, res, next) => {
+  try {
+    const { rows } = await db.query('DELETE FROM auction_lots WHERE id = $1 RETURNING image', [parseInt(req.params.id, 10)]);
+    if (rows[0]) deleteStoredImages([rows[0].image]);
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// ---------- People ----------
+router.get('/customers', async (_req, res, next) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT p.uid, p.name, p.email, p.phone, p.address, p.is_admin, p.created_at,
+              (SELECT COUNT(*)::int FROM inquiries i WHERE i.uid = p.uid) + (SELECT COUNT(*)::int FROM live_inquiries l WHERE l.uid = p.uid) AS requests
+         FROM profiles p ORDER BY p.created_at DESC`);
+    res.json(rows);
+  } catch (e) { next(e); }
+});
+
+router.put('/customers/:uid', async (req, res, next) => {
+  try {
+    const makeAdmin = !!(req.body && req.body.is_admin);
+    if (!makeAdmin && req.params.uid === req.user.uid) return res.status(400).json({ error: "You can't remove your own admin access." });
+    const { rows } = await db.query('UPDATE profiles SET is_admin = $2, updated_at = now() WHERE uid = $1 RETURNING uid, is_admin', [req.params.uid, makeAdmin]);
+    if (!rows.length) return res.status(404).json({ error: 'User not found.' });
+    res.json(rows[0]);
+  } catch (e) { next(e); }
+});
+
+router.get('/newsletters', async (_req, res, next) => {
+  try { res.json((await db.query('SELECT * FROM newsletters ORDER BY created_at DESC')).rows); } catch (e) { next(e); }
+});
+
+router.delete('/newsletters/:id', async (req, res, next) => {
+  try { await db.query('DELETE FROM newsletters WHERE id = $1', [parseInt(req.params.id, 10)]); res.json({ ok: true }); } catch (e) { next(e); }
 });
 
 // ---------- Taxonomy management (list / create / edit / delete) ----------

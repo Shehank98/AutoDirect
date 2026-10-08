@@ -1,83 +1,76 @@
-# DirectAuto Import — rebuilt (HTML/CSS/JS + Node/Express + PostgreSQL + Firebase)
+# AutoDirect — Japan auction imports for Sri Lanka
 
-A fresh rebuild of the DirectAuto Import car store & Japan live-auction site, keeping the
-original design and features but on a modern stack. Everything lives in this one folder.
-
-## Architecture
+Car store + Japan live-auction request site. **Storefront and admin are one React single-page app**
+(no build step) served by a Node/Express API, backed by PostgreSQL, with Firebase for sign-in and image storage.
 
 ```
-Browser (HTML/CSS/JS)  ──►  Node/Express (this app)  ──►  PostgreSQL   (vehicle data, inquiries, profiles)
-        │                                              └►  Firebase     (Auth = login, Storage = car images)
-        └──────────────────  Firebase Auth (browser SDK) ──┘
+Browser (React SPA)  ──►  Express (this repo)  ──►  PostgreSQL   vehicles, requests, customers, lots
+        │                                      └►  Firebase     Auth (sign-in) + Storage (photos)
+        └─ Firebase Auth (browser SDK) ──────────┘
 ```
 
-- **Frontend** — static HTML/CSS/JS in `public/` (reuses the original theme in `public/assets`).
-- **API** — Express routes under `/api` (`src/routes`), backed by Postgres (`db/`).
-- **Auth** — Firebase Authentication. The browser signs in; the server verifies the ID token
-  (`src/auth.js` + `src/firebase.js`) and keys a `profiles` row by the Firebase UID.
-- **Images** — uploaded to Firebase Storage from the admin API (`/api/admin/upload`); the URL
-  is stored in Postgres.
+## What's in the box
 
-## What's built (phases)
+| Area | Where |
+|------|-------|
+| Design system + components (from the Claude design) | `public/app/ad.css`, `public/app/ds.js` |
+| Storefront: routing, API client, auth, pages | `public/app/app.js` |
+| **Admin console** (lazy-loaded at `/admin`) | `public/app/admin.js` |
+| App shell | `public/index.html` (served for every non-file route) |
+| API | `src/routes/*` — `catalog` (public), `inquiries`, `lots`, `account`, `admin` |
+| Schema / seed / migration | `db/` (runs automatically on boot) |
+| React 18 (vendored, no CDN) | `public/vendor/` |
 
-| Phase | Status | Includes |
-|-------|--------|----------|
-| 1 — Buyer site | ✅ Done | Home, Our Stock (filters, sort, pagination), Vehicle detail + inquiry, Contact, About, How-to-Buy, Auction-sheet guide, Vocabulary, Compare, Newsletter, Live-auction request |
-| 2 — Accounts | ✅ Mostly done | Firebase login/register, My Account dashboard (profile, my inquiries, auction requests). *Turns on once Firebase env vars are set.* |
-| 3 — Admin panel | ✅ Done | `/admin` — dashboard, vehicle add/edit/hide/delete with multi-image upload (Firebase Storage), inquiries, auction requests, and management of brands (with logos), models, body types, colours and features. |
-| Browse section | ✅ Done | Bottom of the home page: **Browse by car brand / body type / inventory location**, each tile with a live vehicle count linking to a pre-filtered Our Stock. |
+### Storefront pages
+Home (hero search, featured, auction floor, how-to-buy, auction-sheet decoder, **Browse by brand / body type / inventory location**),
+Our stock (filters incl. location), vehicle detail (gallery, specs, loan calculator, quote/viewing form), Compare, Live auction
+(proxy bids), Request a bid, How to buy, Auction-sheet guide, Vocabulary, About, Contact, Sign in / Register, My account
+(inquiries with order tracker, auction requests, saved cars, profile).
 
-## Admin panel
+URLs are real paths (`/our-stock/<seo-url>`, `/compare`, `/my-account` …), so old links keep working.
 
-Open **`/admin`** and sign in with a Firebase email/password account whose email is listed in
-`ADMIN_EMAILS` (create that user once under Firebase → Authentication → Users, or via `/register`).
-Other accounts are rejected. Images uploaded in the admin go to Firebase Storage
-(`vehicles/`, `brands/`, `types/`); removing an image from a vehicle, or deleting the vehicle,
-deletes the file from Storage too.
+### Browse section (bottom of the home page)
+Tiles for every brand, body type and location with live counts of published cars; clicking one opens Our stock pre-filtered
+(`/our-stock?make=Toyota`, `?type=SUV`, `?location=Japan`). Brands/types with no stock are tucked behind "Show N more".
+Brand logos and body-type icons are uploaded in the admin; locations are listed in `src/locations.js`.
 
-## Browse by brand / body type / location
+### Admin (`/admin`)
+Sign in with a Firebase account whose email is in `ADMIN_EMAILS` (or that another admin switched on under **Customers**).
+- **Vehicles** – add/edit/delete, photos (cover + reorder), features, sales status (Available / Reserved / In transit / Sold), featured, publish/hide, bulk actions
+- **Brands, Models, Body types, Colours, Features** – with logo/icon upload
+- **Auction floor** – lots with countdown; customers place proxy bids on them
+- **Inquiries / Auction requests** – open one, set the **order stage** (Requested → Bidding → Won → LC opened → Shipped → Arrived → Delivered), ETA and a note; the customer sees it in My account
+- **Customers** (grant/revoke admin) and **Newsletter** — both with CSV export
 
-- Brands and body types come from the admin **Brands** / **Body types** pages; upload a logo/icon there
-  (brands without a logo show their initial). The first deploy adds the standard 24 brands and 13 body
-  types once — afterwards the admin owns them.
-- Inventory locations (Japan, Korea, Singapore, Thailand, China, UK, UAE) are set per vehicle in the
-  admin form. Edit the list in `src/locations.js`.
-- Counts are published vehicles only, from `GET /api/browse`. Tiles link to
-  `/our-stock?manufacturer=<id>`, `?type=<id>` and `?location=<name>`.
+Photos go to Firebase Storage; removing a photo or deleting a vehicle deletes the file too.
 
 ## Run locally
-
 ```bash
-cp .env.example .env          # fill in DATABASE_URL (+ Firebase later)
+cp .env.example .env     # set DATABASE_URL (+ Firebase when you want sign-in / uploads)
 npm install
-npm start                     # http://localhost:3000  (auto-creates schema + sample data)
+npm start                # http://localhost:3000 — creates the schema and loads sample cars
 ```
+Without Firebase variables the public site works fully; sign-in, bids and the admin need Firebase.
 
 ## Deploy on Railway
+1. **New Project → Deploy from GitHub repo**; service **Root Directory** = `directauto-app`.
+2. **New → Database → PostgreSQL**; on the app service add `DATABASE_URL = ${{Postgres.DATABASE_URL}}`.
+3. Add the Firebase variables below, set `ADMIN_EMAILS`, redeploy. Health check: `/api/health`.
+4. Set `SEED_DEMO_DATA=false` before the first boot if you don't want the 7 sample cars.
 
-1. **New Project → Deploy from GitHub repo**, pick this repo.
-2. Service **Settings → Build → Root Directory** = `directauto-app`. Railway (Nixpacks)
-   auto-detects Node and runs `node server.js`.
-3. **New → Database → Add PostgreSQL** in the same project.
-4. On the app service → **Variables**, add a reference variable:
-   `DATABASE_URL = ${{Postgres.DATABASE_URL}}`
-   The app creates the tables and loads sample cars automatically on first boot.
-5. Open the generated domain — the site is live. (The API health check is `/api/health`.)
+### Firebase
+1. Create a project → enable **Authentication → Email/Password** and **Storage**.
+2. **Project settings → Service accounts → Generate new private key** → paste the JSON (single line) into `FIREBASE_SERVICE_ACCOUNT`; set `FIREBASE_STORAGE_BUCKET`.
+3. **Project settings → General → Web app** → copy the config into `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_APP_ID`.
+4. `ADMIN_EMAILS=you@example.com` — those emails become admins on first sign-in. Register that account on `/register`, then open `/admin`.
 
-### Turn on accounts + image upload (Firebase)
-
-1. Create a Firebase project → enable **Authentication → Email/Password** and **Storage**.
-2. **Project settings → Service accounts → Generate new private key.** Paste the whole JSON
-   (single line) into the `FIREBASE_SERVICE_ACCOUNT` variable, and set `FIREBASE_STORAGE_BUCKET`
-   to `your-project-id.appspot.com`.
-3. **Project settings → General → Your apps (Web)** — copy the web config into the
-   `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_MESSAGING_SENDER_ID`,
-   `FIREBASE_APP_ID` variables. (See `.env.example`.)
-4. Set `ADMIN_EMAILS` to the email(s) that should become admins on first login.
-5. Redeploy. Login/Register and the account area now work; admin-only APIs unlock for admins.
+See `.env.example` for every variable (contact details, yen rate, demo data).
 
 ## Notes
-
-- Sample data is only loaded when the `vehicle` table is empty. Delete rows / drop tables to reseed.
-- Vehicle images in sample data point at demo pictures in `/assets/images`. Real cars added via the
-  admin panel will use Firebase Storage URLs.
+- The storefront loads the whole published catalogue in one request (`GET /api/catalog`) and filters in the browser — instant and
+  fine for hundreds of cars. If stock grows into the thousands, move filtering to `GET /api/vehicles` (already paginated).
+- Saved cars and the compare list live in the browser (localStorage); everything else is in Postgres.
+- Page titles update per route, but pages are rendered in the browser (no server-side rendering).
+- Not built: outgoing email notifications for inquiries, online payments.
+- `public/assets/` still holds the previous theme's CSS/JS/fonts (unused by the app) plus images that older sample data and brand
+  logos reference; the unused CSS/JS/fonts can be deleted.
