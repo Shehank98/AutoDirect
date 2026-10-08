@@ -113,3 +113,5 @@ VALUES
    'Diesel', 'Automatic', '4WD', '4.5', 'A', 7100000,
    '["/assets/images/5.jpg","/assets/images/4.jpg"]',
    '[1,2,3,4,5,6,7,9,10]', true, false, 1);
+
+UPDATE vehicle SET location = 'Japan' WHERE location = '' OR location IS NULL;

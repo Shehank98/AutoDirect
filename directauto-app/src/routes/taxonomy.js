@@ -1,6 +1,7 @@
 // Reference data used to build the search filters and dropdowns.
 const express = require('express');
 const db = require('../../db/pool');
+const locations = require('../locations');
 const router = express.Router();
 
 const active = 'status = 1';
@@ -53,5 +54,31 @@ router.get('/features', async (_req, res, next) => {
     res.json(rows);
   } catch (e) { next(e); }
 });
+
+// Everything the home page "Browse by..." section needs, with published-vehicle counts.
+router.get('/browse', async (_req, res, next) => {
+  try {
+    const [brands, types, locs] = await Promise.all([
+      db.query(`SELECT m.id, m.name, m.image, COUNT(v.id)::int AS count
+                  FROM vehicle_manufacturer m
+                  LEFT JOIN vehicle v ON v.vehicle_manufacturer = m.id AND v.status = 1
+                 WHERE m.${active} GROUP BY m.id ORDER BY count DESC, m.name`),
+      db.query(`SELECT t.id, t.name, t.image, COUNT(v.id)::int AS count
+                  FROM vehicle_type t
+                  LEFT JOIN vehicle v ON v.vehicle_type = t.id AND v.status = 1
+                 WHERE t.${active} GROUP BY t.id ORDER BY count DESC, t.name`),
+      db.query(`SELECT location AS name, COUNT(*)::int AS count FROM vehicle
+                 WHERE status = 1 AND location <> '' GROUP BY location`),
+    ]);
+    const byLoc = Object.fromEntries(locs.rows.map((r) => [r.name, r.count]));
+    res.json({
+      brands: brands.rows,
+      types: types.rows,
+      locations: locations.map((l) => ({ ...l, count: byLoc[l.name] || 0 })),
+    });
+  } catch (e) { next(e); }
+});
+
+router.get('/locations', (_req, res) => res.json(locations));
 
 module.exports = router;

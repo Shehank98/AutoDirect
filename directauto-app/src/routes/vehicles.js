@@ -37,6 +37,7 @@ router.get('/', async (req, res, next) => {
     if (q.model)        add('v.vehicle_model = $?', parseInt(q.model, 10));
     if (q.type)         add('v.vehicle_type = $?', parseInt(q.type, 10));
     if (q.color)        add('v.main_color = $?', parseInt(q.color, 10));
+    if (q.location)     add('v.location = $?', q.location);
     if (q.fuel_type)    add('v.fuel_type = $?', q.fuel_type);
     if (q.transmission) add('v.transmission = $?', q.transmission);
     if (q.drive_type)   add('v.drive_type = $?', q.drive_type);

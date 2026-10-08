@@ -34,16 +34,22 @@ router.get('/stats', async (_req, res, next) => {
 });
 
 // ---------- Image upload -> Firebase Storage ----------
+const FOLDERS = ['vehicles', 'brands', 'types'];
+
 router.post('/upload', upload.array('images', 12), async (req, res, next) => {
   try {
     if (!isConfigured()) return res.status(503).json({ error: 'Firebase Storage is not configured on the server.' });
     if (!req.files || !req.files.length) return res.status(400).json({ error: 'No files uploaded.' });
+    if (req.files.some((f) => !/^image\/(jpeg|png|webp|gif|svg\+xml)$/.test(f.mimetype))) {
+      return res.status(400).json({ error: 'Only image files (JPG, PNG, WebP, GIF, SVG) are allowed.' });
+    }
+    const folder = FOLDERS.includes(req.query.folder) ? req.query.folder : 'vehicles';
     const b = bucket();
     const urls = [];
     for (const file of req.files) {
-      const ext = (file.originalname.split('.').pop() || 'jpg').toLowerCase();
+      const ext = (file.originalname.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'jpg';
       const token = crypto.randomUUID();
-      const objectName = `vehicles/${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
+      const objectName = `${folder}/${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
       const blob = b.file(objectName);
       await blob.save(file.buffer, {
         contentType: file.mimetype,
@@ -54,6 +60,19 @@ router.post('/upload', upload.array('images', 12), async (req, res, next) => {
     res.status(201).json({ urls });
   } catch (e) { next(e); }
 });
+
+// Best-effort removal of Firebase Storage files that are no longer referenced.
+// Only touches URLs that point at our own bucket; local demo images are ignored.
+async function deleteStoredImages(urls) {
+  if (!isConfigured()) return;
+  const b = bucket();
+  for (const u of urls || []) {
+    try {
+      const m = String(u).match(/^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/([^/]+)\/o\/([^?]+)/);
+      if (m && m[1] === b.name) await b.file(decodeURIComponent(m[2])).delete({ ignoreNotFound: true });
+    } catch (err) { console.warn('[admin] could not delete stored image:', err.message); }
+  }
+}
 
 // ---------- Vehicles CRUD ----------
 router.get('/vehicles', async (_req, res, next) => {
@@ -74,24 +93,40 @@ const VEHICLE_FIELDS = [
   'vehicle_type', 'vehicle_manufacturer', 'vehicle_model', 'main_color', 'other_color',
   'description', 'year', 'chassi_id', 'conditions', 'seats', 'doors', 'passengers',
   'engine_capacity', 'mileage', 'fuel_type', 'transmission', 'drive_type',
-  'auction_grade', 'grade', 'price', 'images', 'feature_ids', 'is_featured', 'is_latest', 'status',
+  'auction_grade', 'grade', 'price', 'location', 'images', 'feature_ids', 'is_featured', 'is_latest', 'status',
 ];
+
+const INT_FIELDS = ['vehicle_type', 'vehicle_manufacturer', 'vehicle_model', 'main_color', 'seats', 'doors', 'passengers', 'status'];
+const BOOL_FIELDS = ['is_featured', 'is_latest'];
 
 function buildVehiclePayload(body) {
   const v = {};
   for (const f of VEHICLE_FIELDS) if (body[f] !== undefined) v[f] = body[f];
+  // Blank form inputs arrive as '' — store them as NULL in numeric columns.
+  for (const f of INT_FIELDS) if (f in v) v[f] = v[f] === '' || v[f] === null ? null : parseInt(v[f], 10);
+  if ('price' in v) v.price = v.price === '' || v.price === null ? null : parseFloat(v.price);
+  for (const f of BOOL_FIELDS) if (f in v) v[f] = v[f] === true || v[f] === 'true' || v[f] === 1;
+  if ('status' in v && v.status === null) v.status = 1;
   // JSON columns
   if (v.images !== undefined) v.images = JSON.stringify(Array.isArray(v.images) ? v.images : []);
   if (v.feature_ids !== undefined) v.feature_ids = JSON.stringify(Array.isArray(v.feature_ids) ? v.feature_ids.map(Number) : []);
   return v;
 }
 
+// "Toyota Aqua 2018" -> "toyota-aqua-2018-<token>" (looked up from the chosen ids).
+async function defaultSeo(v) {
+  const [m, mo] = await Promise.all([
+    v.vehicle_manufacturer ? db.query('SELECT name FROM vehicle_manufacturer WHERE id = $1', [v.vehicle_manufacturer]) : { rows: [] },
+    v.vehicle_model ? db.query('SELECT name FROM vehicle_model WHERE id = $1', [v.vehicle_model]) : { rows: [] },
+  ]);
+  return slugify(`${m.rows[0]?.name || ''}-${mo.rows[0]?.name || ''}-${v.year || ''}`) || 'vehicle';
+}
+
 router.post('/vehicles', async (req, res, next) => {
   try {
     const v = buildVehiclePayload(req.body);
-    let seo = slugify(req.body.seo_url || `${req.body.manufacturer_name || ''}-${req.body.model_name || ''}-${req.body.year || ''}-${Date.now().toString(36)}`);
-    if (!seo) seo = `vehicle-${Date.now().toString(36)}`;
-    v.seo_url = seo;
+    const base = slugify(req.body.seo_url) || await defaultSeo(v);
+    v.seo_url = `${base}-${Date.now().toString(36)}`;
 
     const cols = Object.keys(v);
     const params = Object.values(v);
@@ -108,6 +143,9 @@ router.put('/vehicles/:id', async (req, res, next) => {
     const v = buildVehiclePayload(req.body);
     if (req.body.seo_url) v.seo_url = slugify(req.body.seo_url);
     v.updated_at = new Date().toISOString();
+    const before = v.images !== undefined
+      ? (await db.query('SELECT images FROM vehicle WHERE id = $1', [parseInt(req.params.id, 10)])).rows[0]
+      : null;
     const cols = Object.keys(v);
     if (!cols.length) return res.status(400).json({ error: 'Nothing to update.' });
     const params = Object.values(v);
@@ -117,14 +155,19 @@ router.put('/vehicles/:id', async (req, res, next) => {
       `UPDATE vehicle SET ${set.join(', ')} WHERE id = $${params.length} RETURNING *`, params
     );
     if (!rows.length) return res.status(404).json({ error: 'Vehicle not found.' });
+    if (before) {
+      const kept = new Set(rows[0].images);
+      deleteStoredImages((before.images || []).filter((u) => !kept.has(u)));
+    }
     res.json(rows[0]);
   } catch (e) { next(e); }
 });
 
 router.delete('/vehicles/:id', async (req, res, next) => {
   try {
-    const { rowCount } = await db.query('DELETE FROM vehicle WHERE id = $1', [parseInt(req.params.id, 10)]);
-    if (!rowCount) return res.status(404).json({ error: 'Vehicle not found.' });
+    const { rows } = await db.query('DELETE FROM vehicle WHERE id = $1 RETURNING images', [parseInt(req.params.id, 10)]);
+    if (!rows.length) return res.status(404).json({ error: 'Vehicle not found.' });
+    deleteStoredImages(rows[0].images);
     res.json({ ok: true });
   } catch (e) { next(e); }
 });
@@ -154,6 +197,23 @@ router.put('/inquiries/:id', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+router.delete('/inquiries/:id', async (req, res, next) => {
+  try {
+    await db.query('DELETE FROM inquiries WHERE id = $1', [parseInt(req.params.id, 10)]);
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+router.put('/live-inquiries/:id', async (req, res, next) => {
+  try {
+    const { rows } = await db.query(
+      'UPDATE live_inquiries SET status = $2 WHERE id = $1 RETURNING *',
+      [parseInt(req.params.id, 10), parseInt(req.body.status, 10) || 0]
+    );
+    res.json(rows[0] || {});
+  } catch (e) { next(e); }
+});
+
 router.get('/live-inquiries', async (_req, res, next) => {
   try {
     const { rows } = await db.query('SELECT * FROM live_inquiries ORDER BY created_at DESC');
@@ -161,21 +221,39 @@ router.get('/live-inquiries', async (_req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// ---------- Taxonomy management (create) ----------
+// ---------- Taxonomy management (list / create / edit / delete) ----------
 const taxTables = {
-  types: { table: 'vehicle_type', cols: ['name', 'image'] },
-  manufacturers: { table: 'vehicle_manufacturer', cols: ['name', 'image', 'is_featured'] },
-  models: { table: 'vehicle_model', cols: ['name', 'manufacturer_id'] },
-  colors: { table: 'vehicle_color', cols: ['name', 'code'] },
-  features: { table: 'vehicle_feature', cols: ['name', 'image'] },
+  types: { table: 'vehicle_type', cols: ['name', 'image', 'status'] },
+  manufacturers: { table: 'vehicle_manufacturer', cols: ['name', 'image', 'is_featured', 'status'] },
+  models: { table: 'vehicle_model', cols: ['name', 'manufacturer_id', 'status'] },
+  colors: { table: 'vehicle_color', cols: ['name', 'code', 'status'] },
+  features: { table: 'vehicle_feature', cols: ['name', 'image', 'status'] },
 };
+
+function taxDef(req, res) {
+  const def = taxTables[req.params.kind];
+  if (!def) res.status(404).json({ error: 'Unknown taxonomy.' });
+  return def;
+}
+
+router.get('/taxonomy/:kind', async (req, res, next) => {
+  try {
+    const def = taxDef(req, res); if (!def) return;
+    // Unlike the public API this includes hidden rows, plus how many vehicles use each.
+    const usage = {
+      types: 'vehicle_type', manufacturers: 'vehicle_manufacturer', models: 'vehicle_model', colors: 'main_color',
+    }[req.params.kind];
+    const count = usage ? `(SELECT COUNT(*)::int FROM vehicle v WHERE v.${usage} = t.id)` : '0';
+    const { rows } = await db.query(`SELECT t.*, ${count} AS vehicle_count FROM ${def.table} t ORDER BY t.name`);
+    res.json(rows);
+  } catch (e) { next(e); }
+});
 
 router.post('/taxonomy/:kind', async (req, res, next) => {
   try {
-    const def = taxTables[req.params.kind];
-    if (!def) return res.status(404).json({ error: 'Unknown taxonomy.' });
+    const def = taxDef(req, res); if (!def) return;
     const cols = def.cols.filter((c) => req.body[c] !== undefined);
-    if (!cols.includes('name')) return res.status(400).json({ error: 'Name is required.' });
+    if (!cols.includes('name') || !String(req.body.name).trim()) return res.status(400).json({ error: 'Name is required.' });
     const params = cols.map((c) => req.body[c]);
     const placeholders = cols.map((_, i) => `$${i + 1}`);
     const { rows } = await db.query(
@@ -185,10 +263,24 @@ router.post('/taxonomy/:kind', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+router.put('/taxonomy/:kind/:id', async (req, res, next) => {
+  try {
+    const def = taxDef(req, res); if (!def) return;
+    const cols = def.cols.filter((c) => req.body[c] !== undefined);
+    if (!cols.length) return res.status(400).json({ error: 'Nothing to update.' });
+    const params = cols.map((c) => req.body[c]);
+    params.push(parseInt(req.params.id, 10));
+    const { rows } = await db.query(
+      `UPDATE ${def.table} SET ${cols.map((c, i) => `${c} = $${i + 1}`).join(', ')} WHERE id = $${params.length} RETURNING *`, params
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Not found.' });
+    res.json(rows[0]);
+  } catch (e) { next(e); }
+});
+
 router.delete('/taxonomy/:kind/:id', async (req, res, next) => {
   try {
-    const def = taxTables[req.params.kind];
-    if (!def) return res.status(404).json({ error: 'Unknown taxonomy.' });
+    const def = taxDef(req, res); if (!def) return;
     await db.query(`DELETE FROM ${def.table} WHERE id = $1`, [parseInt(req.params.id, 10)]);
     res.json({ ok: true });
   } catch (e) { next(e); }

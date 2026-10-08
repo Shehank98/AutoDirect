@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS vehicle (
     auction_grade        VARCHAR(50) DEFAULT '',
     grade                VARCHAR(50) DEFAULT '',
     price                NUMERIC(12,2),                 -- new: optional listing price
+    location             VARCHAR(50) DEFAULT '',        -- inventory location (country), e.g. Japan
     images               JSONB NOT NULL DEFAULT '[]',   -- array of Firebase Storage image URLs
     feature_ids          JSONB NOT NULL DEFAULT '[]',   -- array of vehicle_feature ids
     is_featured          BOOLEAN NOT NULL DEFAULT false,
@@ -84,6 +85,16 @@ CREATE INDEX IF NOT EXISTS idx_vehicle_status       ON vehicle(status);
 CREATE INDEX IF NOT EXISTS idx_vehicle_manufacturer ON vehicle(vehicle_manufacturer);
 CREATE INDEX IF NOT EXISTS idx_vehicle_model        ON vehicle(vehicle_model);
 CREATE INDEX IF NOT EXISTS idx_vehicle_type         ON vehicle(vehicle_type);
+
+-- Databases created before the location field existed.
+ALTER TABLE vehicle ADD COLUMN IF NOT EXISTS location VARCHAR(50) DEFAULT '';
+CREATE INDEX IF NOT EXISTS idx_vehicle_location     ON vehicle(location);
+
+-- Tiny key/value table for one-off data migrations.
+CREATE TABLE IF NOT EXISTS app_meta (
+    key         VARCHAR(100) PRIMARY KEY,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
 -- ---------- Customer-facing data ----------
 

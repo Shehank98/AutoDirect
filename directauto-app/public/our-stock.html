@@ -34,6 +34,7 @@
           <div class="form-group"><label>Model</label><select id="f-model" class="form-control"><option value="">Any</option></select></div>
           <div class="form-group"><label>Type</label><select id="f-type" class="form-control"><option value="">Any</option></select></div>
           <div class="form-group"><label>Colour</label><select id="f-color" class="form-control"><option value="">Any</option></select></div>
+          <div class="form-group"><label>Location</label><select id="f-location" class="form-control"><option value="">Any</option></select></div>
           <div class="form-group"><label>Fuel</label><select id="f-fuel_type" class="form-control"><option value="">Any</option><option>Petrol</option><option>Diesel</option><option>Hybrid</option><option>Electric</option></select></div>
           <div class="form-group"><label>Transmission</label><select id="f-transmission" class="form-control"><option value="">Any</option><option>Automatic</option><option>Manual</option></select></div>
           <div class="row">
@@ -75,7 +76,7 @@
   <script src="/assets/js/bootstrap.min.js"></script>
   <script src="/assets/js/app.js"></script>
   <script>
-    const FILTER_IDS = ['manufacturer','model','type','color','fuel_type','transmission','from_year','to_year','min_price','max_price','search','sort'];
+    const FILTER_IDS = ['manufacturer','model','type','color','location','fuel_type','transmission','from_year','to_year','min_price','max_price','search','sort'];
 
     function currentFilters() {
       const f = {};
@@ -117,6 +118,7 @@
         DA.api.get('/api/manufacturers'), DA.api.get('/api/types'), DA.api.get('/api/colors')
       ]);
       const fill = (id, items) => { const s = document.getElementById(id); items.forEach((it) => s.insertAdjacentHTML('beforeend', '<option value="' + it.id + '">' + DA.esc(it.name) + '</option>')); };
+      (await DA.api.get('/api/locations')).forEach((l) => document.getElementById('f-location').insertAdjacentHTML('beforeend', '<option>' + DA.esc(l.name) + '</option>'));
       fill('f-manufacturer', makes); fill('f-type', types); fill('f-color', colors);
 
       async function loadModels(mid, selected) {

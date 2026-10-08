@@ -19,6 +19,24 @@
     #home-banner:after{content:'';position:absolute;inset:0;background:rgba(20,26,42,.6);}
     #home-banner .banner_text{position:relative;z-index:2;padding:120px 0;}
     .home-search-card{background:#fff;box-shadow:0 6px 24px rgba(0,0,0,.12);border-radius:6px;padding:24px;margin-top:-70px;position:relative;z-index:5;}
+    /* Browse by brand / body type / location */
+    .browse-section h3{font-size:16px;font-weight:700;color:#333;margin:0 0 14px;}
+    .browse-group{margin-bottom:34px;}
+    .browse-grid{display:grid;gap:10px;}
+    .browse-grid.brands{grid-template-columns:repeat(6,1fr);}
+    .browse-grid.types{grid-template-columns:repeat(5,1fr);}
+    .browse-grid.locations{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
+    .browse-item{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #ddd;border-radius:4px;padding:10px 12px;color:#333;text-decoration:none;min-height:56px;transition:border-color .15s,box-shadow .15s;}
+    .browse-item:hover,.browse-item:focus{border-color:#f76b1c;box-shadow:0 2px 8px rgba(247,107,28,.18);text-decoration:none;color:#333;}
+    .browse-item .b-icon{flex:0 0 38px;height:30px;display:flex;align-items:center;justify-content:center;color:#777;font-size:24px;}
+    .browse-item .b-icon img{max-width:38px;max-height:30px;}
+    .browse-item .b-initial{width:30px;height:30px;border-radius:50%;background:#eef0f4;color:#555;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;}
+    .browse-item .b-text{min-width:0;line-height:1.25;}
+    .browse-item .b-name{display:block;font-size:13px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .browse-item .b-count{display:block;font-size:11px;color:#888;}
+    .browse-item.empty{opacity:.55;}
+    @media(max-width:991px){.browse-grid.brands{grid-template-columns:repeat(3,1fr);}.browse-grid.types{grid-template-columns:repeat(3,1fr);}}
+    @media(max-width:479px){.browse-grid.brands,.browse-grid.types{grid-template-columns:repeat(2,1fr);}}
   </style>
 </head>
 <body>
@@ -105,6 +123,24 @@
     </div>
   </section>
 
+  <!--Browse by brand / body type / inventory location-->
+  <section class="section-padding gray-bg browse-section" id="browse">
+    <div class="container">
+      <div class="browse-group">
+        <h3>Browse by car brand</h3>
+        <div class="browse-grid brands" id="browse-brands"></div>
+      </div>
+      <div class="browse-group">
+        <h3>Browse by Body Type</h3>
+        <div class="browse-grid types" id="browse-types"></div>
+      </div>
+      <div class="browse-group" style="margin-bottom:0;">
+        <h3>Browse by Inventory Location</h3>
+        <div class="browse-grid locations" id="browse-locations"></div>
+      </div>
+    </div>
+  </section>
+
   <div id="site-footer"></div>
 
   <script src="/assets/js/jquery.min.js"></script>
@@ -145,6 +181,34 @@
         if (!latest.length) { const r = await DA.api.get('/api/vehicles?limit=6'); latest = r.data; }
         render('latest-cars', latest);
       } catch (e) { render('latest-cars', []); }
+      // "Browse by..." section — every tile links to Our Stock pre-filtered.
+      try {
+        const b = await DA.api.get('/api/browse');
+        const tile = (href, icon, name, count) =>
+          '<a class="browse-item' + (count ? '' : ' empty') + '" href="' + href + '">' +
+          '<span class="b-icon">' + icon + '</span>' +
+          '<span class="b-text"><span class="b-name">' + DA.esc(name) + '</span><span class="b-count">(' + Number(count).toLocaleString() + ')</span></span></a>';
+        const typeIcon = (n) => {
+          n = n.toLowerCase();
+          if (/bus/.test(n)) return 'fa-bus';
+          if (/truck|pick|heavy/.test(n)) return 'fa-truck';
+          if (/van/.test(n)) return 'fa-bus';
+          return 'fa-car';
+        };
+        document.getElementById('browse-brands').innerHTML = b.brands.map((x) => tile(
+          '/our-stock?manufacturer=' + x.id,
+          x.image ? '<img src="' + DA.esc(x.image) + '" alt="" onerror="this.outerHTML=\'<span class=b-initial>' + DA.esc(x.name.charAt(0)) + '</span>\'">'
+                  : '<span class="b-initial">' + DA.esc(x.name.charAt(0)) + '</span>',
+          x.name, x.count)).join('');
+        document.getElementById('browse-types').innerHTML = b.types.map((x) => tile(
+          '/our-stock?type=' + x.id,
+          x.image ? '<img src="' + DA.esc(x.image) + '" alt="">' : '<i class="fa ' + typeIcon(x.name) + '"></i>',
+          x.name, x.count)).join('');
+        document.getElementById('browse-locations').innerHTML = b.locations.map((x) => tile(
+          '/our-stock?location=' + encodeURIComponent(x.name),
+          '<img src="https://flagcdn.com/w40/' + x.code + '.png" alt="" style="border:1px solid #eee;">',
+          x.name, x.count)).join('');
+      } catch (e) { const el = document.getElementById('browse'); if (el) el.style.display = 'none'; }
     };
   </script>
 </body>

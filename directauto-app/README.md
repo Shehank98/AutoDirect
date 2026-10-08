@@ -24,7 +24,26 @@ Browser (HTML/CSS/JS)  ──►  Node/Express (this app)  ──►  PostgreSQL
 |-------|--------|----------|
 | 1 — Buyer site | ✅ Done | Home, Our Stock (filters, sort, pagination), Vehicle detail + inquiry, Contact, About, How-to-Buy, Auction-sheet guide, Vocabulary, Compare, Newsletter, Live-auction request |
 | 2 — Accounts | ✅ Mostly done | Firebase login/register, My Account dashboard (profile, my inquiries, auction requests). *Turns on once Firebase env vars are set.* |
-| 3 — Admin panel UI | ⏳ Next | The admin **API** is built (`/api/admin/*`: vehicle CRUD, image upload, inquiries, taxonomy). The admin **web pages** are the next piece to build. |
+| 3 — Admin panel | ✅ Done | `/admin` — dashboard, vehicle add/edit/hide/delete with multi-image upload (Firebase Storage), inquiries, auction requests, and management of brands (with logos), models, body types, colours and features. |
+| Browse section | ✅ Done | Bottom of the home page: **Browse by car brand / body type / inventory location**, each tile with a live vehicle count linking to a pre-filtered Our Stock. |
+
+## Admin panel
+
+Open **`/admin`** and sign in with a Firebase email/password account whose email is listed in
+`ADMIN_EMAILS` (create that user once under Firebase → Authentication → Users, or via `/register`).
+Other accounts are rejected. Images uploaded in the admin go to Firebase Storage
+(`vehicles/`, `brands/`, `types/`); removing an image from a vehicle, or deleting the vehicle,
+deletes the file from Storage too.
+
+## Browse by brand / body type / location
+
+- Brands and body types come from the admin **Brands** / **Body types** pages; upload a logo/icon there
+  (brands without a logo show their initial). The first deploy adds the standard 24 brands and 13 body
+  types once — afterwards the admin owns them.
+- Inventory locations (Japan, Korea, Singapore, Thailand, China, UK, UAE) are set per vehicle in the
+  admin form. Edit the list in `src/locations.js`.
+- Counts are published vehicles only, from `GET /api/browse`. Tiles link to
+  `/our-stock?manufacturer=<id>`, `?type=<id>` and `?location=<name>`.
 
 ## Run locally
 
