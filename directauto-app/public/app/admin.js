@@ -9,11 +9,11 @@
   var FUELS = ["Petrol", "Diesel", "Hybrid", "Electric", "LPG"];
   var GEARS = ["Automatic", "Manual", "CVT"];
   var DRIVES = ["2WD", "4WD", "AWD"];
+  var CAPS = { uploads: false, sampleImages: true };   // filled from /api/admin/me when the console opens
 
   /* ------------------------------------------------------------ helpers */
   function day(d) { return d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "-"; }
   function dayTime(d) { return d ? new Date(d).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "-"; }
-  function toLocalInput(d) { if (!d) return ""; var x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 16); }
   function isoDate(d) { return d ? new Date(d).toISOString().slice(0, 10) : ""; }
   function opts(list, labelKey) { return list.map(function (o) { return typeof o === "object" ? { value: String(o.id), label: o[labelKey || "name"] } : { value: String(o), label: String(o) }; }); }
   function nameOf(list, id) { var x = list.filter(function (o) { return o.id === id; })[0]; return x ? x.name : ""; }
@@ -24,7 +24,7 @@
   }
   function upload(files, folder) {
     var fd = new FormData(); Array.prototype.forEach.call(files, function (f) { fd.append("images", f); });
-    return api.token().then(function (t) { return fetch("/api/admin/upload?folder=" + folder, { method: "POST", headers: { Authorization: "Bearer " + t }, body: fd }); })
+    return api.authFor("/api/admin/upload").then(function (t) { return fetch("/api/admin/upload?folder=" + folder, { method: "POST", headers: { Authorization: "Bearer " + t }, body: fd }); })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) throw new Error(d.error || "Upload failed"); return d.urls; }); });
   }
   function useLoad(url, deps) {
@@ -49,7 +49,7 @@
   }
   function Table(p) {
     return h("div", { className: "ad-dt" }, h("table", null,
-      h("thead", null, h("tr", null, p.cols.map(function (c, i) { return h("th", { key: i, scope: "col", className: c.center ? "ad-center" : "" }, c.label); }))),
+      h("thead", null, h("tr", null, p.cols.map(function (c, i) { return h("th", { key: i, scope: "col", className: (c.center ? "ad-center " : "") + (i === 0 && typeof c.label === "object" ? "ad-dt__cb" : "") }, c.label); }))),
       h("tbody", null, p.rows)), p.empty);
   }
   function Err(p) { return p.text ? h("p", { className: "ad-field__error", role: "alert" }, h(A.Icon, { name: "info", size: 14 }), p.text) : null; }
@@ -59,6 +59,12 @@
   function ImageField(p) {
     var ref = useRef(null), bs = useState(false), busy = bs[0], setBusy = bs[1], er = useState(""), err = er[0], setErr = er[1];
     var images = p.images || [];
+    if (!CAPS.uploads) {
+      // Without Firebase Storage nothing can be uploaded; a logo can still be a link to an image.
+      if (p.multiple) return h("p", { className: "ad-small ad-muted" }, "Photo upload needs Firebase Storage. Not configured.");
+      return h(A.TextField, { label: "", "aria-label": "Image URL", placeholder: "https://… link to an image (optional)", value: images[0] || "", onChange: function (e) { p.onChange(e.target.value ? [e.target.value.trim()] : []); },
+        hint: "Image upload turns on when Firebase Storage is configured." });
+    }
     function pick(e) {
       var files = e.target.files; if (!files.length) return;
       setBusy(true); setErr("");
@@ -120,8 +126,9 @@
         txt("seats", "Seats", { type: "number", min: 0 }), txt("doors", "Doors", { type: "number", min: 0 }), txt("other_color", "Other colour notes"),
         h("div", { className: "ad-span3" }, txt("conditions", "Condition", { maxLength: 500 })),
         h("div", { className: "ad-span3" }, txt("description", "Description", { multiline: true, rows: 3, maxLength: 500, hint: "Shown on the vehicle page." }))),
-      h("div", { className: "ad-label" }, "Photos"),
-      h(ImageField, { multiple: true, folder: "vehicles", images: f.images, onChange: function (a) { setF(Object.assign({}, f, { images: a })); } }),
+      CAPS.sampleImages
+        ? h("p", { className: "ad-note" }, h(A.Icon, { name: "image", size: 16 }), "Sample car photos are shown on every listing for now, so there is nothing to upload.")
+        : h(Frag, null, h("div", { className: "ad-label" }, "Photos"), h(ImageField, { multiple: true, folder: "vehicles", images: f.images, onChange: function (a) { setF(Object.assign({}, f, { images: a })); } })),
       h("div", { className: "ad-label" }, "Features"),
       h(A.ChipGroup, { multiple: true, label: "Features", value: f.feature_ids.map(String), onChange: function (a) { setF(Object.assign({}, f, { feature_ids: a.map(Number) })); },
         options: L.features.filter(function (x) { return x.status === 1 || f.feature_ids.indexOf(x.id) >= 0; }).map(function (x) { return { value: String(x.id), label: x.name }; }) }),
@@ -169,13 +176,13 @@
         h(A.Button, { size: "s", variant: "secondary", icon: "star", onClick: function () { Promise.all(picked.map(function (id) { return api.put("/api/admin/vehicles/" + id, { is_featured: true }); })).then(function () { d.reload(); setPicked([]); p.say("Featured"); p.changed(); }); } }, "Feature"),
         h(A.Button, { size: "s", variant: "danger", icon: "trash", onClick: function () { setConfirm("bulk"); } }, "Delete"),
         h("button", { type: "button", className: "ad-link", onClick: function () { setPicked([]); } }, "Clear")) : null,
-      h(Table, { cols: [{ label: "" }, { label: "Vehicle" }, { label: "Price" }, { label: "Grade" }, { label: "Location" }, { label: "Sales status" }, { label: "Featured" }, { label: "" }],
+      h(Table, { cols: [{ label: h(A.Checkbox, { ariaLabel: "Select all vehicles", checked: !!allOn, onChange: function (x) { setPicked(x ? list.map(function (v) { return v.id; }) : []); } }) }, { label: "Vehicle" }, { label: "Price" }, { label: "Grade" }, { label: "Location" }, { label: "Sales status" }, { label: "Featured" }, { label: "" }],
         empty: list.length ? null : h(A.Empty, { title: "No vehicles", text: rows.length ? "Nothing matches your search." : "Add your first vehicle to get started." }),
         rows: list.map(function (v) {
           var on = picked.indexOf(v.id) >= 0;
           return h("tr", { key: v.id, className: on ? "is-picked" : "" },
             h("td", { className: "ad-dt__cb" }, h(A.Checkbox, { ariaLabel: "Select vehicle " + v.id, checked: on, onChange: function (x) { setPicked(x ? picked.concat([v.id]) : picked.filter(function (y) { return y !== v.id; })); } })),
-            h("td", null, h("div", { className: "ad-dt__veh" }, h(Thumb, { src: (v.images || [])[0] }),
+            h("td", null, h("div", { className: "ad-dt__veh" }, h(Thumb, { src: v.thumb }),
               h("span", null, h("b", null, vtitle(v, L)), h("span", { className: "ad-mono ad-muted ad-small" }, "AD-" + String(v.id).padStart(4, "0") + (v.chassi_id ? " · " + v.chassi_id : "")),
                 v.status === 0 ? h("span", { className: "ad-small", style: { color: "var(--warning)" } }, "Hidden from website") : null))),
             h("td", { className: "ad-num" }, v.price ? fmt.lkr(Number(v.price)) : "On request"), h("td", null, v.auction_grade ? v.auction_grade + " / " + (v.grade || "-") : "-"), h("td", null, v.location || "-"),
@@ -251,56 +258,6 @@
         h(A.Switch, { label: "Active (visible on the website)", checked: f.status === 1, onChange: function (x) { setF(Object.assign({}, f, { status: x ? 1 : 0 })); } }),
         h(Err, { text: err }),
         h("div", { className: "ad-row ad-row--end" }, h(A.Button, { variant: "ghost", onClick: p.onClose }, "Cancel"), h(A.Button, { type: "submit", loading: busy }, "Save"))));
-  }
-
-  /* ------------------------------------------------------------ auction lots */
-  function Lots(p) {
-    var d = useLoad("/api/admin/lots");
-    var s1 = useState(null), edit = s1[0], setEdit = s1[1], s2 = useState(null), del = s2[0], setDel = s2[1];
-    if (d.error) return h(Err, { text: d.error });
-    if (!d.data) return h("p", { className: "ad-muted" }, "Loading…");
-    function patch(r, body) { api.put("/api/admin/lots/" + r.id, body).then(function (x) { d.set(d.data.map(function (y) { return y.id === r.id ? x : y; })); p.changed(); }, function (e) { p.say(e.message, "danger"); }); }
-    return h(Frag, null,
-      h("div", { className: "ad-dt__bar" }, h("p", { className: "ad-muted" }, "Lots shown on the home page and Live auction page until they close. Customers place proxy bids on them."),
-        h(A.Button, { icon: "plus", onClick: function () { setEdit({ status: 1 }); } }, "Add lot")),
-      h(Table, { cols: [{ label: "" }, { label: "Lot" }, { label: "Auction" }, { label: "Closes" }, { label: "Current bid" }, { label: "Visible" }, { label: "" }],
-        empty: d.data.length ? null : h(A.Empty, { icon: "gavel", title: "No auction lots", text: "Add a lot you’re watching this week and it appears on the site with a live countdown." }),
-        rows: d.data.map(function (r) {
-          var ended = r.ends_at && new Date(r.ends_at) < new Date();
-          return h("tr", { key: r.id },
-            h("td", { className: "ad-dt__cb" }, h(Thumb, { src: r.image })),
-            h("td", null, h("b", null, [r.year, r.make, r.model, r.trim].filter(Boolean).join(" ")), h("span", { className: "ad-mono ad-muted ad-small", style: { display: "block" } }, "Lot " + r.lot_no + (r.chassis ? " · " + r.chassis : ""))),
-            h("td", null, [r.house, r.auction_date].filter(Boolean).join(" · ") || "-"),
-            h("td", null, r.ends_at ? dayTime(r.ends_at) : "No end time", ended ? h("span", { style: { marginLeft: 8 } }, h(A.Badge, { tone: "danger" }, "Closed")) : null),
-            h("td", { className: "ad-num" }, r.current_price || r.start_price ? fmt.yen(r.current_price || r.start_price) : "-"),
-            h("td", null, h(A.Switch, { label: "Show lot " + r.lot_no, hideLabel: true, checked: r.status === 1, onChange: function (x) { patch(r, { status: x ? 1 : 0 }); } })),
-            h("td", { className: "ad-dt__act" }, h(A.Button, { variant: "ghost", size: "s", icon: "edit", "aria-label": "Edit lot " + r.lot_no, onClick: function () { setEdit(r); } }),
-              h(A.Button, { variant: "ghost", size: "s", icon: "trash", "aria-label": "Delete lot " + r.lot_no, onClick: function () { setDel(r); } })));
-        }) }),
-      edit ? h(LotModal, { row: edit, onClose: function () { setEdit(null); }, onSaved: function () { setEdit(null); d.reload(); p.say("Lot saved"); p.changed(); } }) : null,
-      del ? h(Confirm, { title: "Delete lot " + del.lot_no + "?", text: "Bids already placed on it stay in Auction requests.", onCancel: function () { setDel(null); }, onOk: function () { api.del("/api/admin/lots/" + del.id).then(function () { setDel(null); d.reload(); p.say("Deleted"); p.changed(); }); } }) : null);
-  }
-  function LotModal(p) {
-    var r = p.row, isNew = !r.id;
-    var s = useState({ lot_no: r.lot_no || "", house: r.house || "", auction_date: r.auction_date || "", ends_at: toLocalInput(r.ends_at), make: r.make || "", model: r.model || "", trim: r.trim || "", year: r.year || "",
-      chassis: r.chassis || "", mileage: r.mileage || "", auction_grade: r.auction_grade || "", interior: r.interior || "", start_price: r.start_price || "", current_price: r.current_price || "", image: r.image || "", status: r.status == null ? 1 : r.status }), f = s[0], setF = s[1];
-    var bs = useState(false), busy = bs[0], setBusy = bs[1], er = useState(""), err = er[0], setErr = er[1];
-    function t(k, label, extra) { return h(A.TextField, Object.assign({ label: label, value: f[k], onChange: function (e) { var o = Object.assign({}, f); o[k] = e.target.value; setF(o); } }, extra || {})); }
-    function save(e) {
-      e.preventDefault(); setErr(""); if (!f.lot_no.trim() || !f.make.trim() || !f.model.trim()) { setErr("Lot number, make and model are required."); return; }
-      var body = Object.assign({}, f, { ends_at: f.ends_at ? new Date(f.ends_at).toISOString() : null }); setBusy(true);
-      (isNew ? api.post("/api/admin/lots", body) : api.put("/api/admin/lots/" + r.id, body)).then(p.onSaved, function (x) { setErr(x.message); setBusy(false); });
-    }
-    return h(Modal, { title: isNew ? "Add auction lot" : "Edit lot " + r.lot_no, wide: true, onClose: p.onClose },
-      h("form", { className: "ad-modal__form", onSubmit: save },
-        h("div", { className: "ad-form__grid" }, t("lot_no", "Lot number", { mono: true }), t("house", "Auction house", { placeholder: "USS Tokyo" }), t("auction_date", "Auction day (shown)", { placeholder: "Sat 26 Sep" }),
-          t("ends_at", "Closes at", { type: "datetime-local", hint: "Your local time. Drives the countdown." }),
-          t("make", "Make"), t("model", "Model"), t("trim", "Grade / trim"), t("year", "Year", { type: "number" }), t("chassis", "Chassis", { mono: true }), t("mileage", "Mileage (km)", { type: "number" }),
-          t("auction_grade", "Auction grade"), t("interior", "Interior grade"), t("start_price", "Start price (¥)", { type: "number" }), t("current_price", "Current bid (¥)", { type: "number", hint: "Update as bidding moves." })),
-        h("div", null, h("div", { className: "ad-field__label" }, "Photo"), h(ImageField, { folder: "lots", images: f.image ? [f.image] : [], onChange: function (a) { setF(Object.assign({}, f, { image: a[0] || "" })); } })),
-        h(A.Switch, { label: "Visible on the website", checked: f.status === 1, onChange: function (x) { setF(Object.assign({}, f, { status: x ? 1 : 0 })); } }),
-        h(Err, { text: err }),
-        h("div", { className: "ad-row ad-row--end" }, h(A.Button, { variant: "ghost", onClick: p.onClose }, "Cancel"), h(A.Button, { type: "submit", loading: busy }, "Save lot"))));
   }
 
   /* ------------------------------------------------------------ inquiries + auction requests (shared) */
@@ -398,7 +355,6 @@
   /* ------------------------------------------------------------ console shell */
   var NAV = [
     ["Inventory", [["vehicles", "car", "Vehicles"], ["manufacturers", "tag", "Brands"], ["models", "layers", "Models"], ["types", "grid", "Body types"], ["colours", "palette", "Colours"], ["features", "check", "Features"]]],
-    ["Auction", [["lots", "gavel", "Auction floor"]]],
     ["People", [["inquiries", "doc", "Inquiries"], ["requests", "send", "Auction requests"], ["customers", "users", "Customers"], ["newsletters", "mail", "Newsletter"]]]
   ];
   function Console(p) {
@@ -407,8 +363,8 @@
     var l = useLoad("/api/admin/stats");
     var lk = useState(null), L = lk[0], setL = lk[1], ver = useState(0), lv = ver[0], setLv = ver[1];
     useEffect(function () {
-      Promise.all(["types", "manufacturers", "models", "colors", "features"].map(function (k) { return api.get("/api/admin/taxonomy/" + k); }).concat([api.get("/api/locations")]))
-        .then(function (r) { setL({ types: r[0], manufacturers: r[1], models: r[2], colors: r[3], features: r[4], locations: r[5] }); }, function (e) { setNote({ text: e.message, tone: "danger" }); });
+      Promise.all(["types", "manufacturers", "models", "colors", "features"].map(function (k) { return api.get("/api/admin/taxonomy/" + k); }).concat([api.get("/api/locations"), api.get("/api/admin/me")]))
+        .then(function (r) { CAPS.uploads = !!r[6].uploads; CAPS.sampleImages = !!r[6].sampleImages; setL({ types: r[0], manufacturers: r[1], models: r[2], colors: r[3], features: r[4], locations: r[5] }); }, function (e) { setNote({ text: e.message, tone: "danger" }); });
     }, [lv]);
     useEffect(function () { if (!note) return; var t = setTimeout(function () { setNote(null); }, note.tone === "danger" ? 7000 : 2600); return function () { clearTimeout(t); }; }, [note]);
     function say(text, tone) { setNote({ text: text, tone: tone || "ok" }); }
@@ -417,7 +373,7 @@
     var common = { say: say, changed: p.onDataChanged || function () {}, L: L, reloadL: function () { setLv(lv + 1); }, refreshStats: l.reload };
     var body = !L ? h("p", { className: "ad-muted" }, "Loading…") :
       mod === "vehicles" ? h(Vehicles, common) : TAX[mod] ? h(Taxonomy, Object.assign({ mod: mod, key: mod }, common)) :
-      mod === "lots" ? h(Lots, common) : mod === "inquiries" || mod === "requests" ? h(Tracking, Object.assign({ mod: mod, key: mod }, common)) :
+      mod === "inquiries" || mod === "requests" ? h(Tracking, Object.assign({ mod: mod, key: mod }, common)) :
       mod === "customers" ? h(Customers, common) : h(Newsletters, common);
     var newInq = l.data ? l.data.new_inquiries : 0;
     return h("div", { className: "ad-admin" },

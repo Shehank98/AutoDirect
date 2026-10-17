@@ -6,9 +6,20 @@ const multer = require('multer');
 const db = require('../../db/pool');
 const { requireAdmin } = require('../auth');
 const { bucket, isConfigured } = require('../firebase');
+const samples = require('../samples');
+const { invalidate } = require('./catalog');
 
 const router = express.Router();
 router.use(requireAdmin);
+// Any change made in the admin must show up on the public site right away.
+router.use((req, res, next) => { if (req.method !== 'GET') res.on('finish', invalidate); next(); });
+
+// Who is signed in, and which optional features are available right now.
+router.get('/me', (req, res) => res.json({
+  username: req.admin ? req.admin.username : req.user.email,
+  uploads: isConfigured(),               // Firebase Storage available for photo upload
+  sampleImages: samples.enabled(),       // listings show the bundled sample photos
+}));
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
 
@@ -38,7 +49,7 @@ router.get('/stats', async (_req, res, next) => {
 });
 
 // ---------- Image upload -> Firebase Storage ----------
-const FOLDERS = ['vehicles', 'brands', 'types', 'lots'];
+const FOLDERS = ['vehicles', 'brands', 'types'];
 
 router.post('/upload', upload.array('images', 12), async (req, res, next) => {
   try {
@@ -82,14 +93,16 @@ async function deleteStoredImages(urls) {
 router.get('/vehicles', async (_req, res, next) => {
   try {
     const { rows } = await db.query(
-      `SELECT v.*, m.name AS manufacturer_name, mo.name AS model_name, t.name AS type_name
+      `SELECT v.*, m.name AS manufacturer_name, mo.name AS model_name, t.name AS type_name, c.name AS color_name
          FROM vehicle v
          LEFT JOIN vehicle_manufacturer m ON m.id = v.vehicle_manufacturer
          LEFT JOIN vehicle_model mo ON mo.id = v.vehicle_model
          LEFT JOIN vehicle_type t ON t.id = v.vehicle_type
+         LEFT JOIN vehicle_color c ON c.id = v.main_color
         ORDER BY v.created_at DESC`
     );
-    res.json(rows);
+    // `thumb` is what the storefront will actually show for this car (sample photo or first stored photo).
+    res.json(rows.map((v) => ({ ...v, thumb: samples.enabled() ? samples.sampleImages(v)[0] : (v.images || [])[0] || null })));
   } catch (e) { next(e); }
 });
 
@@ -236,56 +249,6 @@ router.delete('/live-inquiries/:id', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// ---------- Auction lots ("this week's auction floor") ----------
-const LOT_FIELDS = ['lot_no', 'house', 'auction_date', 'ends_at', 'make', 'model', 'trim', 'year', 'chassis', 'mileage',
-  'auction_grade', 'interior', 'start_price', 'current_price', 'image', 'status'];
-const LOT_INTS = ['year', 'mileage', 'start_price', 'current_price', 'status'];
-
-function lotPayload(body) {
-  const v = {};
-  for (const f of LOT_FIELDS) if (body[f] !== undefined) v[f] = body[f];
-  for (const f of LOT_INTS) if (f in v) v[f] = v[f] === '' || v[f] === null ? null : parseInt(v[f], 10);
-  if ('ends_at' in v && !v.ends_at) v.ends_at = null;
-  if ('status' in v && v.status === null) v.status = 1;
-  return v;
-}
-
-router.get('/lots', async (_req, res, next) => {
-  try { res.json((await db.query('SELECT * FROM auction_lots ORDER BY ends_at DESC NULLS LAST, id DESC')).rows); } catch (e) { next(e); }
-});
-
-router.post('/lots', async (req, res, next) => {
-  try {
-    const v = lotPayload(req.body);
-    if (!v.lot_no || !v.make || !v.model) return res.status(400).json({ error: 'Lot number, make and model are required.' });
-    const cols = Object.keys(v);
-    const { rows } = await db.query(
-      `INSERT INTO auction_lots (${cols.join(', ')}) VALUES (${cols.map((_, i) => `$${i + 1}`).join(', ')}) RETURNING *`, Object.values(v));
-    res.status(201).json(rows[0]);
-  } catch (e) { next(e); }
-});
-
-router.put('/lots/:id', async (req, res, next) => {
-  try {
-    const v = lotPayload(req.body);
-    const cols = Object.keys(v);
-    if (!cols.length) return res.status(400).json({ error: 'Nothing to update.' });
-    const params = Object.values(v); params.push(parseInt(req.params.id, 10));
-    const { rows } = await db.query(
-      `UPDATE auction_lots SET ${cols.map((c, i) => `${c} = $${i + 1}`).join(', ')} WHERE id = $${params.length} RETURNING *`, params);
-    if (!rows.length) return res.status(404).json({ error: 'Lot not found.' });
-    res.json(rows[0]);
-  } catch (e) { next(e); }
-});
-
-router.delete('/lots/:id', async (req, res, next) => {
-  try {
-    const { rows } = await db.query('DELETE FROM auction_lots WHERE id = $1 RETURNING image', [parseInt(req.params.id, 10)]);
-    if (rows[0]) deleteStoredImages([rows[0].image]);
-    res.json({ ok: true });
-  } catch (e) { next(e); }
-});
-
 // ---------- People ----------
 router.get('/customers', async (_req, res, next) => {
   try {
@@ -300,7 +263,7 @@ router.get('/customers', async (_req, res, next) => {
 router.put('/customers/:uid', async (req, res, next) => {
   try {
     const makeAdmin = !!(req.body && req.body.is_admin);
-    if (!makeAdmin && req.params.uid === req.user.uid) return res.status(400).json({ error: "You can't remove your own admin access." });
+    if (!makeAdmin && req.user && req.params.uid === req.user.uid) return res.status(400).json({ error: "You can't remove your own admin access." });
     const { rows } = await db.query('UPDATE profiles SET is_admin = $2, updated_at = now() WHERE uid = $1 RETURNING uid, is_admin', [req.params.uid, makeAdmin]);
     if (!rows.length) return res.status(404).json({ error: 'User not found.' });
     res.json(rows[0]);

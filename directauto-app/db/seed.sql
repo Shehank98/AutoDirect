@@ -43,7 +43,7 @@ INSERT INTO vehicle_feature (name) VALUES
   ('Airbags'), ('Alloy Wheels'), ('Navigation'), ('Reverse Camera'),
   ('Sunroof'), ('Leather Seats'), ('Push Start'), ('Cruise Control');
 
--- Vehicles (FKs resolved by name). Sample photos ship in /app/img.
+-- Vehicles (FKs resolved by name). Photos come from the sample pool in public/samples (USE_SAMPLE_IMAGES).
 INSERT INTO vehicle
   (vehicle_type, vehicle_manufacturer, vehicle_model, seo_url, main_color, trim, description,
    year, chassi_id, conditions, seats, doors, passengers, engine_capacity, mileage,
@@ -54,25 +54,25 @@ VALUES
    (SELECT id FROM vehicle_model WHERE name='Corolla Axio'), 'toyota-corolla-axio-2019',
    (SELECT id FROM vehicle_color WHERE name='Red Mica'), 'Hybrid WxB', 'Sample vehicle - replace in the admin.',
    '2019', 'NKE165-7185540', '', 5, 4, 5, '1500', '38200', 'Hybrid', 'Automatic', '2WD', '4.5', 'B', 11850000, 'Japan', 'Available',
-   '["/app/img/corolla-axio.jpg"]', '[1,2,3,4,5,8,11,12]', true, true, 1),
+   '[]', '[1,2,3,4,5,8,11,12]', true, true, 1),
 
   ((SELECT id FROM vehicle_type WHERE name='Sedan'), (SELECT id FROM vehicle_manufacturer WHERE name='Honda'),
    (SELECT id FROM vehicle_model WHERE name='Grace'), 'honda-grace-2018',
    (SELECT id FROM vehicle_color WHERE name='Pearl White'), 'Hybrid EX', 'Sample vehicle - replace in the admin.',
    '2018', 'GM4-1204519', '', 5, 4, 5, '1500', '45600', 'Hybrid', 'Automatic', '2WD', '4', 'B', 9950000, 'Japan', 'Available',
-   '["/app/img/honda-grace.jpg"]', '[1,2,3,4,5,8,11]', true, false, 1),
+   '[]', '[1,2,3,4,5,8,11]', true, false, 1),
 
   ((SELECT id FROM vehicle_type WHERE name='SUV'), (SELECT id FROM vehicle_manufacturer WHERE name='Nissan'),
    (SELECT id FROM vehicle_model WHERE name='X-Trail'), 'nissan-x-trail-2018',
    (SELECT id FROM vehicle_color WHERE name='Gun Grey'), '20Xi Hybrid', 'Sample vehicle - replace in the admin.',
    '2018', 'HNT32-172311', '', 7, 5, 7, '2000', '52800', 'Hybrid', 'Automatic', '4WD', '4', 'C', 16400000, 'Japan', 'Reserved',
-   '["/app/img/xtrail-grey.jpg"]', '[1,2,3,4,5,8,11,7]', true, false, 1),
+   '[]', '[1,2,3,4,5,8,11,7]', true, false, 1),
 
   ((SELECT id FROM vehicle_type WHERE name='SUV'), (SELECT id FROM vehicle_manufacturer WHERE name='Nissan'),
    (SELECT id FROM vehicle_model WHERE name='X-Trail'), 'nissan-x-trail-2019',
    (SELECT id FROM vehicle_color WHERE name='Pearl White'), '20X Hybrid', 'Sample vehicle - replace in the admin.',
    '2019', 'HNT32-178214', '', 7, 5, 7, '2000', '31500', 'Hybrid', 'Automatic', '4WD', '4.5', 'A', 17250000, 'Japan', 'In transit',
-   '["/app/img/xtrail-pearl.jpg"]', '[1,2,3,4,5,6,7,8,9,10,11,12]', true, true, 1),
+   '[]', '[1,2,3,4,5,6,7,8,9,10,11,12]', true, true, 1),
 
   ((SELECT id FROM vehicle_type WHERE name='Hatchback'), (SELECT id FROM vehicle_manufacturer WHERE name='Toyota'),
    (SELECT id FROM vehicle_model WHERE name='Aqua'), 'toyota-aqua-2020',

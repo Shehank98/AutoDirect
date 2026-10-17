@@ -16,7 +16,7 @@ router.put('/me', async (req, res, next) => {
     const { rows } = await db.query(
       `UPDATE profiles SET name = $2, phone = $3, address = $4, updated_at = now()
         WHERE uid = $1 RETURNING *`,
-      [req.user.uid, name || '', phone || '', address || '']
+      [req.user.uid, String(name || '').slice(0, 200), String(phone || '').slice(0, 50), String(address || '').slice(0, 500)]
     );
     res.json(rows[0]);
   } catch (e) { next(e); }

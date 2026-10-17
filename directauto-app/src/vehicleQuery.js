@@ -20,11 +20,14 @@ const VEHICLE_SELECT = `
     LEFT JOIN vehicle_color        c  ON c.id  = v.main_color
 `;
 
+const samples = require('./samples');
+
 const digits = (s) => { const n = parseInt(String(s == null ? '' : s).replace(/[^0-9]/g, ''), 10); return Number.isFinite(n) ? n : 0; };
 const refOf = (id) => 'AD-' + String(id).padStart(4, '0');
 
 function toVehicle(r) {
-  const images = Array.isArray(r.images) ? r.images : [];
+  // Sample photos stand in for stored images while USE_SAMPLE_IMAGES is on (see src/samples.js).
+  const images = samples.enabled() ? samples.sampleImages(r) : (Array.isArray(r.images) ? r.images : []);
   return {
     id: refOf(r.id),          // public reference, used as the React key and in the compare list
     dbId: r.id,               // numeric id, used when posting an inquiry
@@ -58,13 +61,4 @@ function toVehicle(r) {
   };
 }
 
-function toLot(r) {
-  return {
-    id: r.id, lot: r.lot_no, house: r.house, date: r.auction_date, endsAt: r.ends_at,
-    make: r.make, model: r.model, grade: r.trim, year: r.year, chassis: r.chassis, mileage: r.mileage || 0,
-    auctionGrade: r.auction_grade, interior: r.interior, start: r.start_price, current: r.current_price || r.start_price || 0,
-    img: r.image || null,
-  };
-}
-
-module.exports = { VEHICLE_SELECT, toVehicle, toLot, refOf };
+module.exports = { VEHICLE_SELECT, toVehicle, refOf };

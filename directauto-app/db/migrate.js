@@ -43,6 +43,8 @@ async function migrate() {
 
   const client = await pool.connect();
   try {
+    // Two instances booting at once (a Railway redeploy overlap) must not run the migration together.
+    await client.query('SELECT pg_advisory_lock(727274)');
     console.log('[migrate] applying schema...');
     await client.query(schema);
 
@@ -58,6 +60,7 @@ async function migrate() {
     await ensureBrowseDefaults(client);
     console.log('[migrate] done.');
   } finally {
+    await client.query('SELECT pg_advisory_unlock(727274)').catch(() => {});
     client.release();
   }
 }

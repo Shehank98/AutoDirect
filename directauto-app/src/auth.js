@@ -5,6 +5,7 @@
 // (keyed by Firebase UID) so relational data (inquiries, etc.) can reference the user.
 const { verifyIdToken, isConfigured } = require('./firebase');
 const db = require('../db/pool');
+const adminAuth = require('./adminAuth');
 
 // Emails listed here are granted admin on first login (comma-separated env var).
 const ADMIN_EMAILS = String(process.env.ADMIN_EMAILS || '')
@@ -14,7 +15,9 @@ const ADMIN_EMAILS = String(process.env.ADMIN_EMAILS || '')
 
 async function upsertProfile(decoded) {
   const email = (decoded.email || '').toLowerCase();
-  const seedAdmin = ADMIN_EMAILS.includes(email);
+  // Only a VERIFIED email can be promoted via ADMIN_EMAILS. Firebase lets anyone sign up with any
+  // address, so without this check someone could register the admin's email first and become admin.
+  const seedAdmin = ADMIN_EMAILS.includes(email) && decoded.email_verified === true;
   const { rows } = await db.query(
     `INSERT INTO profiles (uid, email, name, is_admin)
        VALUES ($1, $2, $3, $4)
@@ -32,7 +35,14 @@ async function upsertProfile(decoded) {
 async function attachUser(req, _res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-  if (!token || !isConfigured()) return next();
+  if (!token) return next();
+  // Admin session from ADMIN_USERNAME / ADMIN_PASSWORD (works without Firebase).
+  if (token.startsWith('adm.')) {
+    const a = adminAuth.verify(token);
+    if (a) req.admin = a; else req.authError = 'Admin session expired';
+    return next();
+  }
+  if (!isConfigured()) return next();
   try {
     const decoded = await verifyIdToken(token);
     req.firebaseUser = decoded;
@@ -51,6 +61,7 @@ function requireAuth(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
+  if (req.admin) return next();
   if (!req.user) return res.status(401).json({ error: 'Please sign in to continue.' });
   if (!req.user.is_admin) return res.status(403).json({ error: 'Admin access required.' });
   next();

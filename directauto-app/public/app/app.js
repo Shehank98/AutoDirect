@@ -10,24 +10,36 @@
   var authReady;            // promise resolving when Firebase has been initialised (or found missing)
   var me = null;            // profile row from /api/account/me for the signed-in user
 
+  var cfgInfo = { adminLogin: false };   // from /api/config
+
   function token() {
     try { return fb && fb.auth().currentUser ? fb.auth().currentUser.getIdToken() : Promise.resolve(""); }
     catch (e) { return Promise.resolve(""); }
   }
+  // Admin session (ADMIN_USERNAME / ADMIN_PASSWORD login). Kept per tab, so closing the tab signs out.
+  function adminToken() { try { return sessionStorage.getItem("ad-admin-token") || ""; } catch (e) { return ""; } }
+  function setAdminToken(t) { try { if (t) sessionStorage.setItem("ad-admin-token", t); else sessionStorage.removeItem("ad-admin-token"); } catch (e) { /* storage blocked */ } }
+  // Which credential a request carries: admin calls use the admin session when there is one.
+  function authFor(url) { return url.indexOf("/api/admin") === 0 && adminToken() ? Promise.resolve(adminToken()) : token(); }
+
   function request(method, url, body) {
-    return token().then(function (t) {
+    var usedAdmin = url.indexOf("/api/admin") === 0 && !!adminToken();
+    return authFor(url).then(function (t) {
       var headers = { "Content-Type": "application/json" };
       if (t) headers.Authorization = "Bearer " + t;
       return fetch(url, { method: method, headers: headers, body: body === undefined ? undefined : JSON.stringify(body) });
     }).then(function (res) {
       return res.json().catch(function () { return null; }).then(function (data) {
-        if (!res.ok) { var e = new Error((data && data.error) || "Something went wrong (" + res.status + ")"); e.status = res.status; throw e; }
+        if (!res.ok) {
+          if (res.status === 401 && usedAdmin) { setAdminToken(""); window.dispatchEvent(new Event("ad-admin-expired")); }
+          var e = new Error((data && data.error) || "Something went wrong (" + res.status + ")"); e.status = res.status; throw e;
+        }
         return data;
       });
     });
   }
   var api = { get: function (u) { return request("GET", u); }, post: function (u, b) { return request("POST", u, b); },
-    put: function (u, b) { return request("PUT", u, b); }, del: function (u) { return request("DELETE", u); }, token: token };
+    put: function (u, b) { return request("PUT", u, b); }, del: function (u) { return request("DELETE", u); }, token: token, authFor: authFor };
   A.api = api;
 
   /* ------------------------------------------------------------------ routes */
@@ -45,7 +57,7 @@
     var path = location.pathname.replace(/\/+$/, "") || "/";
     var q = new URLSearchParams(location.search);
     var m = /^\/our-stock\/([^/]+)$/.exec(path);
-    if (m) return { page: "vehicle", seo: decodeURIComponent(m[1]) };
+    if (m) { try { return { page: "vehicle", seo: decodeURIComponent(m[1]) }; } catch (e) { return { page: "notfound" }; } }
     if (/^\/my-account(\/|$)/.test(path)) return { page: "account", tab: ACCOUNT_TABS[path.split("/")[2]] || q.get("tab") || "overview" };
     if (/^\/admin(\/|$)/.test(path)) return { page: "admin" };
     for (var k in PATHS) if (PATHS[k] === path) {
@@ -83,7 +95,8 @@
   };
   function initFirebase() {
     return api.get("/api/config").then(function (cfg) {
-      if (!cfg.firebase || !cfg.firebase.apiKey || !window.firebase) return null;
+      cfgInfo.adminLogin = !!cfg.adminLogin;
+      if (!cfg.authEnabled || !cfg.firebase || !cfg.firebase.apiKey || !window.firebase) return null;
       if (!firebase.apps.length) firebase.initializeApp(cfg.firebase);
       fb = firebase;
       return fb;
@@ -101,6 +114,7 @@
           .then(function () { return au.signInWithEmailAndPassword(d.email, d.pw); }).then(function (c) { return c.user.displayName || d.email.split("@")[0]; });
       }
       return au.createUserWithEmailAndPassword(d.email, d.pw).then(function (c) {
+        try { c.user.sendEmailVerification(); } catch (e) { /* best effort */ }
         return c.user.updateProfile({ displayName: d.name }).then(function () { return c.user.getIdToken(true); })
           .then(function () { return api.put("/api/account/me", { name: d.name, phone: d.phone || "", address: "" }).catch(function () {}); })
           .then(function () { return d.name; });
@@ -108,6 +122,7 @@
     }).catch(function (e) { throw e.code ? fbError(e) : e; });
   };
   hooks.isAuthed = function () { return !!me; };
+  hooks.authOn = function () { return !!fb; };   // customer accounts exist only when Firebase is configured
   hooks.me = function () { return me ? { name: me.name, email: me.email, phone: me.phone } : null; };
 
   /* ------------------------------------------------------------------ server actions used by the forms */
@@ -122,7 +137,6 @@
     if (topic === "sell") message = ["Sell your car: " + [d.year, d.make, d.model].filter(Boolean).join(" "), d.km ? "Mileage: " + d.km + " km" : "", d.ask ? "Asking: LKR " + d.ask : "", message].filter(Boolean).join("\n");
     return api.post("/api/inquiries", { kind: topic === "sell" ? "Sell your car" : "Contact", name: d.name, phone: d.phone, message: message, location: topic === "visit" ? d.location : "" });
   };
-  hooks.placeBid = function (lot, max) { return api.post("/api/lots/" + lot.id + "/bid", { max: max }); };
 
   /* ------------------------------------------------------------------ small helpers */
   function byRef(id) { return D.vehicles.filter(function (v) { return v.id === id; })[0]; }
@@ -171,8 +185,12 @@
       feat.length ? h(Sec, { kicker: "Featured", title: "Ready to drive", lead: "Landed, cleared and waiting at our Malabe showroom.", action: h(A.Button, { variant: "secondary", iconRight: "arrow-right", onClick: function () { p.nav("stock"); } }, "All stock") },
         h("div", { className: "ad-stock__grid ad-stock__grid--4" }, feat.map(function (v) { return vehicleCard(p, v); })),
         h(A.CompareTray, { floating: true, items: p.cmp.map(byRef).filter(Boolean), onRemove: p.toggleCmp, onClear: p.clearCmp, onCompare: function () { p.nav("compare"); } })) : null,
-      D.lots.length ? h(Sec, { tint: true, kicker: "Live now", title: "This week’s auction floor", lead: "Set a proxy maximum. We bid only what’s needed to win.", action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a bid") },
-        h("div", { className: "ad-grid2" }, D.lots.slice(0, 2).map(function (l) { return h(A.AuctionLotCard, { key: l.id, lot: l }); }))) : null,
+      h(Sec, { tint: true, kicker: "Live auction", title: "Watch Japan auctions live", lead: "Browse live lots from Japanese auction houses without leaving AutoDirect.",
+        action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("auction"); } }, "Open live auction") },
+        h("div", { className: "ad-infostrip" },
+          [["gavel", "Live lots", "Search thousands of cars crossing the block this week."], ["doc", "Sheet first", "We translate the original auction sheet before any bid."], ["shield", "Refundable deposit", "Bidding starts after a 100% refundable deposit."]].map(function (x) {
+            return h("div", { key: x[1] }, h(A.Icon, { name: x[0], size: 22 }), h("b", null, x[1]), h("p", { className: "ad-small ad-muted" }, x[2]));
+          }))),
       h(Sec, { kicker: "How to buy", title: "Five steps, fully tracked", action: h(A.Button, { variant: "secondary", iconRight: "arrow-right", onClick: function () { p.nav("buy"); } }, "Full buying guide") },
         h(A.ProcessSteps, { onStart: function () { p.nav("request"); } })),
       h(Sec, { tint: true, kicker: "Know what you’re buying", title: "Read any auction sheet", lead: "Every lot comes with its inspection sheet. Tap a code on the car to decode it.", action: h(A.Button, { variant: "secondary", iconRight: "arrow-right", onClick: function () { p.nav("sheet"); } }, "Auction sheet guide") },
@@ -248,16 +266,13 @@
   }
 
   function Auction(p) {
+    var site = A.site;
     return h(Frag, null,
       h(PageHead, { bare: true, crumb: "Live auction", title: "Live auction", action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a specific car") }),
       h("div", { className: "ad-wrap ad-pagebody" },
-        D.lots.length ? h("div", { className: "ad-grid2" }, D.lots.map(function (l) { return h(A.AuctionLotCard, { key: l.id, lot: l }); }))
-          : h(A.Empty, { icon: "gavel", title: "No lots listed right now", text: "Thousands of cars cross the block each week. Tell us what you want and we’ll shortlist matching lots." }),
-        h("div", { className: "ad-infostrip" },
-          [["doc", "Sheet first", "Every lot’s original sheet, translated, before you bid."], ["shield", "Refundable deposit", "Bidding starts after a 100% refundable deposit."], ["gavel", "Proxy bidding", "Win below your maximum and keep the difference."]].map(function (x) {
-            return h("div", { key: x[1] }, h(A.Icon, { name: x[0], size: 22 }), h("b", null, x[1]), h("p", { className: "ad-small ad-muted" }, x[2]));
-          })),
-        h(CTA, { title: "Not on this list?", text: "Tell us the model, year and budget and we’ll shortlist the lots." },
+        site.liveAuctionUrl ? h(A.LiveAuctionFrame, { url: site.liveAuctionUrl, hint: site.liveAuctionHint })
+          : h(A.Empty, { icon: "gavel", title: "Live auction is not set up yet", text: "Tell us what you want and we’ll shortlist matching lots from this week’s auctions." }),
+        h(CTA, { title: "Not finding the right car?", text: "Tell us the model, year and budget and we’ll shortlist the lots." },
           h(A.Button, { variant: "accent", size: "l", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a bid"),
           h(A.Button, { variant: "secondary", size: "l", onClick: function () { p.nav("sheet"); } }, "How to read a sheet"))));
   }
@@ -352,6 +367,32 @@
         } }));
   }
 
+  function AccountsOff(p) {
+    return h("div", { className: "ad-wrap ad-pagebody" }, h(A.Empty, { icon: "user", title: "Customer accounts are not available yet", text: "You can still request quotes and auction bids without an account. We reply by phone or WhatsApp." },
+      h("div", { className: "ad-row" }, h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a bid"), h(A.Button, { variant: "secondary", onClick: function () { p.nav("stock"); } }, "Our stock"))));
+  }
+
+  /* Staff sign-in with the ADMIN_USERNAME / ADMIN_PASSWORD server variables. */
+  function AdminLogin(p) {
+    var f = useState({ u: "", p: "" }), d = f[0], setD = f[1];
+    var b = useState(false), busy = b[0], setBusy = b[1];
+    var e = useState(""), err = e[0], setErr = e[1];
+    function submit(ev) {
+      ev.preventDefault(); setErr(""); setBusy(true);
+      api.post("/api/admin-login", { username: d.u, password: d.p }).then(function (r) { setAdminToken(r.token); return p.onSignedIn(); })
+        .catch(function (x) { setErr(x.message); setBusy(false); });
+    }
+    return h("div", { className: "ad-wrap ad-authpage" },
+      h("form", { className: "ad-auth", onSubmit: submit },
+        h(A.Logo, { size: 20 }),
+        h("div", null, h("h2", { className: "ad-h2" }, "Admin sign in"), h("p", { className: "ad-muted ad-small" }, "Staff only.")),
+        !cfgInfo.adminLogin ? h("p", { className: "ad-field__error", role: "alert" }, h(A.Icon, { name: "info", size: 14 }), "Admin sign-in is not set up. Add ADMIN_USERNAME and ADMIN_PASSWORD (8+ characters) to the server variables and redeploy.") : null,
+        h(A.TextField, { label: "Username", autoComplete: "username", value: d.u, onChange: function (ev) { setD(Object.assign({}, d, { u: ev.target.value })); }, autoFocus: true }),
+        h(A.TextField, { label: "Password", type: "password", autoComplete: "current-password", value: d.p, onChange: function (ev) { setD(Object.assign({}, d, { p: ev.target.value })); } }),
+        err ? h("p", { className: "ad-field__error", role: "alert" }, h(A.Icon, { name: "info", size: 14 }), err) : null,
+        h(A.Button, { type: "submit", block: true, size: "l", loading: busy, disabled: !cfgInfo.adminLogin || !d.u || !d.p }, "Sign in")));
+  }
+
   /* Admin console is a separate file, loaded only when somebody opens /admin. */
   var adminLoading = false;
   function Admin(p) {
@@ -365,7 +406,7 @@
       document.body.appendChild(el);
     }, []);
     if (!window.AD_ADMIN) return h(Loading, { text: "Loading admin…" });
-    return h("div", { className: "ad-wrap ad-pagebody ad-pad-top" }, h(window.AD_ADMIN.Console, { user: me, onSignOut: p.signOut, onExit: function () { p.nav("home"); }, onDataChanged: p.reloadCatalog }));
+    return h("div", { className: "ad-wrap ad-pagebody ad-pad-top" }, h(window.AD_ADMIN.Console, { user: { email: p.adminName }, onSignOut: p.signOut, onExit: function () { p.nav("home"); }, onDataChanged: p.reloadCatalog }));
   }
 
   /* ------------------------------------------------------------------ app shell */
@@ -385,10 +426,17 @@
     var sv = useState(function () { return (store("ad-saved") || []).filter(byRef); }), saved = sv[0], setSaved = sv[1];
     var rq = useState(null), prefill = rq[0], setPrefill = rq[1];
     var rl = useState(0), setVer = rl[1];
+    var ad = useState(function () { return adminToken() ? undefined : null; }), admin = ad[0], setAdmin = ad[1];   // undefined = checking saved session
 
     useEffect(function () { function on() { setRoute(parse()); window.scrollTo(0, 0); } window.addEventListener("popstate", on); return function () { window.removeEventListener("popstate", on); }; }, []);
     useEffect(function () { store("ad-compare", cmp); }, [cmp]);
     useEffect(function () { store("ad-saved", saved); }, [saved]);
+    useEffect(function () {
+      function expired() { setAdmin(null); }
+      window.addEventListener("ad-admin-expired", expired);
+      if (adminToken()) api.get("/api/admin/me").then(function (r) { setAdmin({ username: r.username }); }, function () { setAdminToken(""); setAdmin(null); });
+      return function () { window.removeEventListener("ad-admin-expired", expired); };
+    }, []);
     useEffect(function () {
       authReady.then(function () {
         if (!fb) { setUser(null); return; }
@@ -409,7 +457,11 @@
     }
     hooks.go = nav;
     function toggle(list, set, id, max) { set(list.indexOf(id) >= 0 ? list.filter(function (x) { return x !== id; }) : (max && list.length >= max ? list : list.concat([id]))); }
-    function signOut() { (fb ? fb.auth().signOut() : Promise.resolve()).then(function () { me = null; setUser(null); nav("home"); }); }
+    function signOut() {
+      setAdminToken(""); setAdmin(null);
+      (fb ? fb.auth().signOut() : Promise.resolve()).then(function () { me = null; setUser(null); nav("home"); });
+    }
+    function adminSignedIn() { return api.get("/api/admin/me").then(function (r) { setAdmin({ username: r.username }); }); }
 
     var common = { nav: nav, cmp: cmp, saved: saved, clearCmp: function () { setCmp([]); },
       toggleCmp: function (id) { toggle(cmp, setCmp, id, 4); }, toggleSave: function (id) { toggle(saved, setSaved, id); }, signOut: signOut, reloadCatalog: reloadCatalog };
@@ -429,9 +481,16 @@
     else if (pg === "vocab") body = h(Vocab, common);
     else if (pg === "about") body = h(About, common);
     else if (pg === "contact") body = h(Contact, common);
+    else if ((pg === "login" || pg === "register") && !fb) body = h(AccountsOff, common);
     else if (pg === "login" || pg === "register") body = user ? h(Loading, null) : h(Login, { mode: pg, note: "Sign in to request auction data and track your import.", onLogin: function () { nav("account"); } });
+    else if (pg === "account" && !fb) body = h(AccountsOff, common);
     else if (pg === "account") body = user ? h(Account, Object.assign({ tab: route.tab }, common)) : needLogin("Sign in to see your inquiries and imports.");
-    else if (pg === "admin") body = !user ? needLogin("Staff sign-in") : !user.is_admin ? h("div", { className: "ad-wrap ad-pagebody" }, h(A.Empty, { icon: "lock", title: "Admin access required", text: "You’re signed in as " + user.email + ", which isn’t an admin account." }, h(A.Button, { variant: "secondary", onClick: signOut }, "Sign out"))) : h(Admin, common);
+    else if (pg === "admin") {
+      var adminOk = !!admin || !!(user && user.is_admin);
+      body = (admin === undefined || (user === undefined && !admin)) ? h(Loading, null)
+        : adminOk ? h(Admin, Object.assign({ adminName: admin ? admin.username : user.email }, common))
+        : h(AdminLogin, { onSignedIn: adminSignedIn });
+    }
     else if (pg === "notfound") body = h(NotFound, common);
     else body = h(Home, Object.assign({ onSearch: function (q) {
       if (q.mode === "stock") {
@@ -447,7 +506,7 @@
     var active = pg === "vehicle" ? "stock" : pg === "request" ? "auction" : (pg === "login" || pg === "register") ? "login" : pg;
     var userName = user ? (user.name || (user.email || "").split("@")[0]) : null;
     return h("div", { className: "ad-page" },
-      h(A.SiteHeader, { active: active, onNavigate: function (id, init) { if (id === "logout") signOut(); else nav(id, init); }, compareCount: cmp.length, user: userName, isAdmin: !!(user && user.is_admin) }),
+      h(A.SiteHeader, { active: active, onNavigate: function (id, init) { if (id === "logout") signOut(); else nav(id, init); }, compareCount: cmp.length, user: userName, isAdmin: !!(user && user.is_admin) || !!admin }),
       h("main", { key: pg + (route.seo || ""), className: "ad-main" }, body),
       h(A.SiteFooter, { onNavigate: function (id, init) { nav(id, init); } }),
       h(ThemeToggle, null));

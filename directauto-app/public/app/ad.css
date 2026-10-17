@@ -788,3 +788,24 @@ a.ad-browse__tile:focus-visible { outline: 2px solid var(--focus); outline-offse
 .ad-facts dd { margin: 2px 0 0; font-weight: 600; word-break: break-word; }
 .ad-quote-box { white-space: pre-wrap; margin: 0; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-100); }
 .ad-dt .ad-select--s .ad-input { min-width: 128px; }
+
+/* ============ Live auction (embedded JPCenter viewer) ============ */
+.ad-live { display: grid; gap: 12px; }
+.ad-live__bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ad-live__src { display: inline-flex; align-items: center; gap: 8px; font-weight: 650; }
+.ad-live__hint { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--brand-tint); color: var(--brand); font-weight: 600; }
+.ad-live__frame { position: relative; border-radius: var(--radius-l); overflow: hidden; border: 1px solid var(--line); background: #fff; height: clamp(640px, 82vh, 1100px); }
+.ad-live__frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+.ad-live__loading { position: absolute; inset: 0; z-index: 1; display: grid; place-content: center; gap: 10px; text-align: center; color: var(--ink-muted); background: var(--surface-200); pointer-events: none; }
+.ad-live__loading .ad-spinner { margin: 0 auto; width: 24px; height: 24px; color: var(--brand); }
+@media (max-width: 640px) { .ad-live__frame { height: 78vh; } }
+
+/* ============ Audit fixes ============ */
+/* Newsletter box overflowed phones narrower than ~370px. */
+.ad-footer__sub { grid-template-columns: minmax(0, 1fr); width: 100%; max-width: 360px; }
+.ad-footer__subrow { flex-wrap: wrap; }
+.ad-footer__subrow input { flex: 1 1 160px; }
+/* Accent kicker text on the tinted section background was 4.3:1; darken it to pass WCAG AA (4.5:1). */
+.ad-sec--tint .ad-kicker { color: color-mix(in srgb, var(--accent) 80%, var(--ink)); }
+/* Selected chip: the count badge was too faint on the brand colour in the dark theme. */
+.ad-chip.is-on .ad-chip__n { opacity: 1; }

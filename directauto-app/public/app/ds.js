@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"AD","components":[{"name":"Logo"},{"name":"Icon"},{"name":"Button"},{"name":"Badge"},{"name":"StatusBadge"},{"name":"GradeSeal"},{"name":"LotTag"},{"name":"TextField"},{"name":"SelectField"},{"name":"RangeSlider"},{"name":"ChipGroup"},{"name":"Switch"},{"name":"Tabs"},{"name":"SiteHeader"},{"name":"SiteFooter"},{"name":"HeroSearch"},{"name":"VehicleCard"},{"name":"StockBrowser"},{"name":"CompareTray"},{"name":"CompareTable"},{"name":"VehicleGallery"},{"name":"SpecSheet"},{"name":"LoanCalculator"},{"name":"InquiryForm"},{"name":"AuctionLotCard"},{"name":"AuctionSheetDecoder"},{"name":"AuctionRequestForm"},{"name":"ProcessSteps"},{"name":"Glossary"},{"name":"Testimonials"},{"name":"AuthCard"},{"name":"OrderTracker"},{"name":"AccountDashboard"},{"name":"AdminConsole"},{"name":"ContactPanel"},{"name":"HomePage"},{"name":"VehiclePage"}]} */
+/* AutoDirect design system components (React, no build step). Exposed as window.AD. */
 (function () {
   "use strict";
   var R = window.React;
@@ -17,8 +17,7 @@
   function emi(P, rate, yrs) { var r = rate / 1200, n = yrs * 12; return r ? P * r / (1 - Math.pow(1 + r, -n)) : P / n; }
   function lkrFull(n) { return (n == null || !isFinite(n) || n <= 0) ? "Price on request" : "LKR " + num(n); }
   function yen(n) { return "¥" + num(n); }
-  var JPY_LKR = 2.05; // overwritten from /api/catalog (site.jpyLkr)
-  var _uid = 0;
+    var _uid = 0;
   function useId(prefix, given) { var r = useRef(null); if (!r.current) r.current = (prefix || "ad") + "-" + (++_uid); return given || r.current; }
   function useOutside(ref, fn) {
     useEffect(function () {
@@ -36,7 +35,6 @@
   var ALL_MAKES = {};    // every active brand -> model names (auction request, sell-your-car)
   var FEATURES = [];
   var VEHICLES = [];
-  var LOTS = [];
   var LOCATIONS = [];    // [{ name, code, count }]
   var BODY_TYPES = [];   // body types that have vehicles in stock
   var ALL_TYPES = [];    // [{ id, name, image, count }]
@@ -45,13 +43,12 @@
   var HOOKS = {};        // server actions + navigation helpers, provided by app.js
   function replaceAll(arr, next) { arr.length = 0; Array.prototype.push.apply(arr, next); }
   function loadData(c) {
-    replaceAll(VEHICLES, c.vehicles || []); replaceAll(LOTS, c.lots || []); replaceAll(FEATURES, c.features || []);
+    replaceAll(VEHICLES, c.vehicles || []); replaceAll(FEATURES, c.features || []);
     replaceAll(LOCATIONS, c.locations || []); replaceAll(ALL_TYPES, c.types || []); replaceAll(BRANDS, c.brands || []);
     replaceAll(BODY_TYPES, (c.types || []).filter(function (t) { return t.count > 0; }).map(function (t) { return t.name; }));
     Object.keys(MAKES).forEach(function (k) { delete MAKES[k]; }); Object.keys(ALL_MAKES).forEach(function (k) { delete ALL_MAKES[k]; });
     (c.brands || []).forEach(function (b) { ALL_MAKES[b.name] = b.models || []; if (b.count > 0) MAKES[b.name] = b.models || []; });
     Object.assign(SITE, c.site || {});
-    if (c.site && c.site.jpyLkr) JPY_LKR = Number(c.site.jpyLkr) || JPY_LKR;
   }
   var GLOSSARY = [
     { term: "Highest bidder wins", cat: "Auction", def: "Japanese car auctions work like any other auction: the highest bidder wins the lot." },
@@ -303,7 +300,7 @@
         h("a", { href: "mailto:" + SITE.email, className: "ad-hide-sm" }, h(Icon, { name: "mail", size: 14 }), SITE.email),
         h("span", { className: "ad-hide-sm" }, h(Icon, { name: "pin", size: 14 }), SITE.address),
         h("span", { className: "ad-topbar__sp" }),
-        h("span", { className: "ad-topbar__live" }, h("span", { className: "ad-pulse", "aria-hidden": true }), LOTS.length ? LOTS.length + " auction lot" + (LOTS.length === 1 ? "" : "s") + " live this week" : "Japan auction imports for Sri Lanka"))),
+        h("span", { className: "ad-topbar__live" }, h("span", { className: "ad-pulse", "aria-hidden": true }), "Japan auction imports for Sri Lanka"))),
       h("div", { className: "ad-wrap ad-nav" },
         h("a", { href: HREF("home"), className: "ad-nav__brand", "aria-label": "AutoDirect home", onClick: go("home") }, h(Logo, { size: 22 })),
         h("nav", { className: cx("ad-nav__links", open && "is-open"), "aria-label": "Main" },
@@ -332,7 +329,7 @@
                 return h("a", { key: m[1], href: HREF("account"), className: "ad-menu__row", onClick: function (e) { e.preventDefault(); setMenu(null); setOpen(false); p.onNavigate && p.onNavigate("account", { tab: m[2] }); } }, h(Icon, { name: m[0], size: 16 }), m[1]);
               }).concat(p.isAdmin ? [h("a", { key: "adm", href: HREF("admin"), className: "ad-menu__row", onClick: go("admin") }, h(Icon, { name: "settings", size: 16 }), "Admin console")] : [],
                 [h("a", { key: "out", href: "#", className: "ad-menu__row", onClick: go("logout") }, h(Icon, { name: "logout", size: 16 }), "Sign out")])) : null)
-            : h(Button, { variant: "secondary", size: "s", icon: "user", onClick: function () { p.onNavigate && p.onNavigate("login"); } }, "Sign in"),
+            : (HOOKS.authOn && HOOKS.authOn() ? h(Button, { variant: "secondary", size: "s", icon: "user", onClick: function () { p.onNavigate && p.onNavigate("login"); } }, "Sign in") : null),
           h(Button, { variant: "accent", size: "s", icon: "gavel", className: "ad-hide-md", onClick: function () { p.onNavigate && p.onNavigate("request"); } }, "Request a bid"),
           h("button", { type: "button", className: "ad-nav__burger", "aria-expanded": open, "aria-label": open ? "Close menu" : "Open menu", onClick: function () { setOpen(!open); } },
             h(Icon, { name: open ? "x" : "menu" })))));
@@ -353,7 +350,7 @@
       ["Buy", ["Our stock", "Live auction", "Compare vehicles", "Request a bid"]],
       ["Learn", ["How to buy", "Reading an auction sheet", "Import vocabulary", "About us", "Contact us"]],
       ["Account", ["Sign in", "Create account", "My inquiries", "Auction requests"]]
-    ];
+    ].filter(function (c) { return c[0] !== "Account" || (HOOKS.authOn && HOOKS.authOn()); });
     return h("footer", { className: "ad-footer" },
       h("div", { className: "ad-wrap" },
         h("div", { className: "ad-footer__top" },
@@ -431,7 +428,7 @@
             mode === "stock" ? "Show " + count + " vehicle" + (count === 1 ? "" : "s") : "Search auctions"),
           h("p", { className: "ad-hs__note", role: sent ? "status" : undefined },
             mode === "stock" ? (sent ? count + " matches. Opening Our stock…" : "Live count updates as you choose")
-              : (sent ? "Sign in to see full auction data for your search." : "Weekly USS, TAA & JU auctions · sign in for full data")))));
+              : (sent ? "Opening the request form…" : "Weekly USS, TAA and JU auctions")))));
   }
 
   /* ---------- VehicleCard ---------- */
@@ -720,7 +717,7 @@
       h("h3", { className: "ad-h2" }, kind === "quote" ? "Quote requested" : "Viewing booked"),
       h("p", null, "We’ll reach you on ", h("b", null, pref), " within 2 working hours."),
       refNo ? h("p", { className: "ad-mono ad-muted" }, "Reference " + refNo) : null,
-      h("div", { className: "ad-row" }, h(Button, { variant: "secondary", icon: "doc", onClick: p.onTrack }, "Track in My inquiries"), h(Button, { variant: "ghost", onClick: function () { setState("idle"); } }, "Send another")));
+      h("div", { className: "ad-row" }, HOOKS.authOn && HOOKS.authOn() ? h(Button, { variant: "secondary", icon: "doc", onClick: p.onTrack }, "Track in My inquiries") : null, h(Button, { variant: "ghost", onClick: function () { setState("idle"); } }, "Send another")));
     return h("form", { className: "ad-form", onSubmit: submit, noValidate: true },
       h("div", { className: "ad-form__head" },
         h(Tabs, { block: true, label: "Inquiry type", tabs: [{ id: "quote", label: "Request a quote", icon: "doc" }, { id: "viewing", label: "Book a viewing", icon: "calendar" }], value: kind, onChange: setKind })),
@@ -738,48 +735,22 @@
         h(Button, { type: "submit", loading: state === "sending", iconRight: state === "sending" ? null : "send" }, state === "sending" ? "Sending…" : kind === "quote" ? "Send request" : "Book viewing")));
   }
 
-  /* ---------- AuctionLotCard ---------- */
-  function fmtT(s) { if (s <= 0) return "00:00:00"; var hh = Math.floor(s / 3600), mm = Math.floor(s % 3600 / 60), ss = s % 60; return [hh, mm, ss].map(function (x) { return (x < 10 ? "0" : "") + x; }).join(":"); }
-  function AuctionLotCard(p) {
-    var lot = p.lot;
-    function secsLeft() { return lot.endsAt ? Math.max(0, Math.floor((new Date(lot.endsAt) - Date.now()) / 1000)) : Infinity; }
-    var t = useState(secsLeft), left = t[0], setLeft = t[1];
-    var authed = HOOKS.isAuthed ? HOOKS.isAuthed() : false;
-    var step = 10000;
-    var b = useState(lot.current + 60000), max = b[0], setMax = b[1];
-    var s = useState("idle"), state = s[0], setState = s[1];
-    var e = useState(""), err = e[0], setErr = e[1];
-    useEffect(function () { if (!lot.endsAt) return; var id = setInterval(function () { setLeft(secsLeft()); }, 1000); return function () { clearInterval(id); }; }, [lot.endsAt]);
-    function place() {
-      if (max <= lot.current) { setErr("Your maximum must be above the current bid of " + yen(lot.current) + "."); return; }
-      if (!authed) { HOOKS.go && HOOKS.go("login"); return; }
-      setErr(""); setState("placing");
-      HOOKS.placeBid(lot, max).then(function () { setState("leading"); }, function (e) { setState("idle"); setErr(e.message); });
-    }
-    var urgent = left < 3600;
-    var jst = lot.endsAt ? new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(lot.endsAt)) : "";
-    return h("article", { className: cx("ad-lotcard", state === "leading" && "is-leading") },
-      h("div", { className: "ad-lotcard__media" }, lot.img ? h("img", { src: lot.img, alt: lot.year + " " + lot.make + " " + lot.model }) : h(PhotoPending, null),
-        h(LotTag, { lot: lot.lot, className: "ad-lotcard__lot" }), h(GradeSeal, { grade: lot.auctionGrade, interior: lot.interior, size: 50, className: "ad-lotcard__seal" })),
-      h("div", { className: "ad-lotcard__body" },
-        h("div", { className: "ad-lotcard__house" }, h("span", { className: "ad-pulse", "aria-hidden": true }), [lot.house, lot.date].filter(Boolean).join(" · ")),
-        h("h3", { className: "ad-h3" }, lot.year + " " + lot.make + " " + lot.model + " ", h("span", { className: "ad-muted" }, lot.grade)),
-        h("div", { className: "ad-mono ad-muted ad-small" }, lot.chassis + " · " + num(lot.mileage) + " km"),
-        h("div", { className: "ad-lotcard__stats" },
-          h("div", null, h("div", { className: "ad-label" }, "Current bid"), h("div", { className: "ad-lotcard__num" }, yen(lot.current)), h("div", { className: "ad-small ad-muted" }, "≈ " + lkr(lot.current * JPY_LKR) + " FOB")),
-          h("div", { className: cx(urgent && "is-urgent") }, h("div", { className: "ad-label" }, "Closes in"), h("div", { className: "ad-lotcard__num", role: "timer", "aria-live": "off" }, isFinite(left) ? fmtT(left) : "Open"), h("div", { className: "ad-small ad-muted" }, jst ? "Japan time " + jst : "Ask for closing time"))),
-        state === "leading"
-          ? h("div", { className: "ad-lotcard__lead", role: "status" }, h(Icon, { name: "check", size: 18, stroke: 2.2 }),
-            h("div", null, h("strong", null, "You’re leading"), h("span", null, "Proxy max " + yen(max) + ". We only bid what’s needed.")),
-            h(Button, { variant: "ghost", size: "s", onClick: function () { setState("idle"); } }, "Edit"))
-          : h("div", { className: "ad-lotcard__bid" },
-            h("label", { className: "ad-label", htmlFor: "ad-max-" + lot.lot }, "Your maximum (proxy)"),
-            h("div", { className: cx("ad-stepper", err && "has-error") },
-              h("button", { type: "button", "aria-label": "Lower by 10,000 yen", onClick: function () { setMax(Math.max(lot.current, max - step)); } }, h(Icon, { name: "minus", size: 16 })),
-              h("input", { id: "ad-max-" + lot.lot, className: "ad-mono", inputMode: "numeric", value: yen(max), onChange: function (ev) { var x = Number(ev.target.value.replace(/[^0-9]/g, "")); setMax(isNaN(x) ? 0 : x); setErr(""); }, "aria-invalid": err ? true : undefined }),
-              h("button", { type: "button", "aria-label": "Raise by 10,000 yen", onClick: function () { setMax(max + step); setErr(""); } }, h(Icon, { name: "plus", size: 16 }))),
-            err ? h("p", { className: "ad-field__error" }, h(Icon, { name: "info", size: 14 }), err) : h("p", { className: "ad-small ad-muted" }, "Our team places your bid after a refundable deposit · you pay just over the next bid"),
-            h(Button, { variant: "accent", block: true, icon: "gavel", loading: state === "placing", onClick: place, disabled: left <= 0 }, left <= 0 ? "Bidding closed" : state === "placing" ? "Placing bid…" : authed ? "Place proxy bid" : "Sign in to bid"))));
+  /* ---------- LiveAuctionFrame: the JPCenter auction viewer, shown inside our page ---------- */
+  function LiveAuctionFrame(p) {
+    var s = useState(true), loading = s[0], setLoading = s[1];
+    var url = p.url;
+    // Never leave the spinner up if the third-party page is slow to report that it finished loading.
+    useEffect(function () { var t = setTimeout(function () { setLoading(false); }, 8000); return function () { clearTimeout(t); }; }, []);
+    return h("div", { className: "ad-live" },
+      h("div", { className: "ad-live__bar" },
+        h("span", { className: "ad-live__src" }, h("span", { className: "ad-pulse", "aria-hidden": true }), "Live Japan auctions"),
+        h("a", { className: "ad-link ad-small", href: url, target: "_blank", rel: "noopener" }, "Open in a new tab")),
+      p.hint ? h("p", { className: "ad-live__hint" }, h(Icon, { name: "info", size: 16 }), p.hint) : null,
+      h("div", { className: "ad-live__frame" },
+        loading ? h("div", { className: "ad-live__loading", role: "status" }, h("span", { className: "ad-spinner", "aria-hidden": true }), "Loading the auction viewer…") : null,
+        h("iframe", { src: url, title: "Live Japan car auctions", loading: "eager", onLoad: function () { setLoading(false); }, referrerPolicy: "no-referrer-when-downgrade",
+          sandbox: "allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads", allow: "fullscreen" })),
+      h("p", { className: "ad-small ad-muted" }, "Nothing showing? Some browsers block sign-in inside embedded pages. ", h("a", { className: "ad-link", href: url, target: "_blank", rel: "noopener" }, "Open the auction in a new tab"), " instead."));
   }
 
   /* ---------- AuctionSheetDecoder ---------- */
@@ -921,7 +892,7 @@
     var cur = STEPS[i];
     return h("div", { className: "ad-process" },
       h("ol", { className: "ad-process__rail", role: "tablist", "aria-label": "Buying steps" }, STEPS.map(function (st, k) {
-        return h("li", { key: k }, h("button", { type: "button", role: "tab", "aria-selected": k === i, className: cx(k === i && "is-on", k < i && "is-past"), onClick: function () { setI(k); } },
+        return h("li", { key: k, role: "presentation" }, h("button", { type: "button", role: "tab", "aria-selected": k === i, className: cx(k === i && "is-on", k < i && "is-past"), onClick: function () { setI(k); } },
           h("span", { className: "ad-process__n" }, k + 1), h("span", { className: "ad-process__t" }, st.t), h("span", { className: "ad-process__d" }, st.d)));
       })),
       h("div", { className: "ad-process__panel", role: "tabpanel" },
@@ -1194,10 +1165,10 @@
     TextField: TextField, SelectField: SelectField, RangeSlider: RangeSlider, ChipGroup: ChipGroup, Switch: Switch, Checkbox: Checkbox, Tabs: Tabs,
     SiteHeader: SiteHeader, SiteFooter: SiteFooter, HeroSearch: HeroSearch, VehicleCard: VehicleCard, StockBrowser: StockBrowser,
     CompareTray: CompareTray, CompareTable: CompareTable, VehicleGallery: VehicleGallery, SpecSheet: SpecSheet, LoanCalculator: LoanCalculator,
-    InquiryForm: InquiryForm, AuctionLotCard: AuctionLotCard, AuctionSheetDecoder: AuctionSheetDecoder, AuctionRequestForm: AuctionRequestForm,
+    InquiryForm: InquiryForm, LiveAuctionFrame: LiveAuctionFrame, AuctionSheetDecoder: AuctionSheetDecoder, AuctionRequestForm: AuctionRequestForm,
     ProcessSteps: ProcessSteps, Glossary: Glossary, Testimonials: Testimonials, AuthCard: AuthCard, OrderTracker: OrderTracker,
     AccountDashboard: AccountDashboard, ContactPanel: ContactPanel, BrowseSection: BrowseSection, Empty: Empty, PhotoPending: PhotoPending, Spec: Spec,
-    data: { vehicles: VEHICLES, lots: LOTS, brands: BRANDS, types: ALL_TYPES, locations: LOCATIONS, features: FEATURES, makes: ALL_MAKES, stockMakes: MAKES, glossary: GLOSSARY, images: IMG, load: loadData },
+    data: { vehicles: VEHICLES, brands: BRANDS, types: ALL_TYPES, locations: LOCATIONS, features: FEATURES, makes: ALL_MAKES, stockMakes: MAKES, glossary: GLOSSARY, images: IMG, load: loadData },
     hooks: HOOKS, site: SITE,
     format: { lkr: lkr, lkrFull: lkrFull, yen: yen, num: num, title: title, emi: emi, cx: cx, priceBounds: priceBounds }
   };

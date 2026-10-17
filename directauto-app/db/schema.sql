@@ -162,27 +162,4 @@ ALTER TABLE live_inquiries ADD COLUMN IF NOT EXISTS stage   SMALLINT    NOT NULL
 ALTER TABLE live_inquiries ADD COLUMN IF NOT EXISTS note    TEXT        DEFAULT '';
 ALTER TABLE live_inquiries ADD COLUMN IF NOT EXISTS eta     DATE;
 ALTER TABLE live_inquiries ADD COLUMN IF NOT EXISTS phone   VARCHAR(50) DEFAULT '';
-ALTER TABLE live_inquiries ADD COLUMN IF NOT EXISTS details JSONB       NOT NULL DEFAULT '{}';  -- years, budget, max km, chassis, colours, lot bid...
-
--- Lots on "this week's auction floor". Managed in the admin; customers place proxy bids
--- (stored as live_inquiries with kind = 'Auction bid').
-CREATE TABLE IF NOT EXISTS auction_lots (
-    id            SERIAL PRIMARY KEY,
-    lot_no        VARCHAR(30)  NOT NULL,
-    house         VARCHAR(100) NOT NULL DEFAULT '',      -- USS Tokyo, JU Aichi...
-    auction_date  VARCHAR(50)  DEFAULT '',               -- display text, e.g. "Sat 26 Sep"
-    ends_at       TIMESTAMPTZ,                           -- countdown target
-    make          VARCHAR(100) NOT NULL,
-    model         VARCHAR(100) NOT NULL,
-    trim          VARCHAR(100) DEFAULT '',
-    year          INTEGER,
-    chassis       VARCHAR(100) DEFAULT '',
-    mileage       INTEGER,
-    auction_grade VARCHAR(10)  DEFAULT '',
-    interior      VARCHAR(10)  DEFAULT '',
-    start_price   INTEGER,                               -- JPY
-    current_price INTEGER,                               -- JPY
-    image         TEXT DEFAULT '',
-    status        SMALLINT NOT NULL DEFAULT 1,           -- 1 = visible
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+ALTER TABLE live_inquiries ADD COLUMN IF NOT EXISTS details JSONB       NOT NULL DEFAULT '{}';  -- years, budget, max km, chassis, colours
