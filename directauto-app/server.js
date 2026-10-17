@@ -47,6 +47,7 @@ api.get('/config', (_req, res) => res.json({
   },
   authEnabled: isConfigured(),               // customer accounts (Firebase)
   adminLogin: adminAuth.configured(),        // admin username / password from the server variables
+  adminLoginReason: adminAuth.status().reason, // why not (never the values), e.g. 'short-password'
 }));
 
 // Admin username/password sign-in (rate-limited inside).
@@ -110,9 +111,9 @@ app.use((err, req, res, _next) => {
 const PORT = process.env.PORT || 3000;
 
 async function start() {
-  if (!adminAuth.configured()) {
-    console.warn('[admin] ADMIN_USERNAME / ADMIN_PASSWORD (min 8 chars) are not set - the admin panel cannot be used until they are.');
-  }
+  const adm = adminAuth.status();
+  if (adm.ok) console.log('[admin] sign-in is enabled for user "' + (process.env.ADMIN_USERNAME || '').trim() + '"');
+  else console.warn('[admin] sign-in is DISABLED: ' + adminAuth.explain(adm.reason) + ' Set it in the service Variables and redeploy.');
   try {
     if (process.env.DATABASE_URL) await migrate();
     else console.warn('[start] DATABASE_URL not set - skipping migrate. The API will error until Postgres is connected.');

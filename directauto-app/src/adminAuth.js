@@ -11,11 +11,27 @@ const TTL_MS = 12 * 60 * 60 * 1000;
 const MAX_FAILS = 8;
 const WINDOW_MS = 15 * 60 * 1000;
 
-const username = () => process.env.ADMIN_USERNAME || '';
-const password = () => process.env.ADMIN_PASSWORD || '';
+// Pasted values often carry a trailing space or newline, so both are trimmed.
+const username = () => (process.env.ADMIN_USERNAME || '').trim();
+const password = () => (process.env.ADMIN_PASSWORD || '').trim();
 // A blank or obviously placeholder password never counts as configured.
-const PLACEHOLDERS = ['change-me', 'changeme', 'password', '12345678', 'admin123', 'change-me-to-a-long-random-password'];
-const configured = () => username().length > 0 && password().length >= 8 && !PLACEHOLDERS.includes(password().toLowerCase());
+const PLACEHOLDERS = ['change-me', 'changeme', 'password', '12345678', '123456789', 'admin123', 'admin1234', 'change-me-to-a-long-random-password'];
+
+// Why admin sign-in is (not) available. Never includes the values themselves.
+function status() {
+  if (!username()) return { ok: false, reason: 'no-username' };
+  if (!password()) return { ok: false, reason: 'no-password' };
+  if (password().length < 8) return { ok: false, reason: 'short-password' };
+  if (PLACEHOLDERS.includes(password().toLowerCase())) return { ok: false, reason: 'placeholder-password' };
+  return { ok: true, reason: '' };
+}
+const configured = () => status().ok;
+const EXPLAIN = {
+  'no-username': 'ADMIN_USERNAME is not set on the server.',
+  'no-password': 'ADMIN_PASSWORD is not set on the server.',
+  'short-password': 'ADMIN_PASSWORD is too short (it needs at least 8 characters).',
+  'placeholder-password': 'ADMIN_PASSWORD is too common to be accepted. Use a long random one.',
+};
 
 const secret = () => process.env.ADMIN_SESSION_SECRET ||
   crypto.createHash('sha256').update(`ad-admin-session|${username()}|${password()}`).digest('hex');
@@ -64,9 +80,8 @@ function recordFail(ip) {
 setInterval(() => { const now = Date.now(); for (const [ip, f] of fails) if (now - f.first > WINDOW_MS) fails.delete(ip); }, WINDOW_MS).unref();
 
 function login(req, res) {
-  if (!configured()) {
-    return res.status(503).json({ error: 'Admin sign-in is not set up. Set ADMIN_USERNAME and an ADMIN_PASSWORD of at least 8 characters in the server variables.' });
-  }
+  const st = status();
+  if (!st.ok) return res.status(503).json({ error: `Admin sign-in is not set up. ${EXPLAIN[st.reason]}` });
   const ip = req.ip || 'unknown';
   if (throttled(ip)) return res.status(429).json({ error: 'Too many failed attempts. Try again in 15 minutes.' });
   const { username: u, password: p } = req.body || {};
@@ -81,4 +96,4 @@ function login(req, res) {
   res.json({ token: issue(), username: username(), expiresInHours: TTL_MS / 3600000 });
 }
 
-module.exports = { configured, verify, login };
+module.exports = { configured, status, explain: (r) => EXPLAIN[r] || '', verify, login };

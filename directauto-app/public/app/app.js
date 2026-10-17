@@ -10,7 +10,7 @@
   var authReady;            // promise resolving when Firebase has been initialised (or found missing)
   var me = null;            // profile row from /api/account/me for the signed-in user
 
-  var cfgInfo = { adminLogin: false };   // from /api/config
+  var cfgInfo = { adminLogin: false, adminReason: "" };   // from /api/config
 
   function token() {
     try { return fb && fb.auth().currentUser ? fb.auth().currentUser.getIdToken() : Promise.resolve(""); }
@@ -95,7 +95,7 @@
   };
   function initFirebase() {
     return api.get("/api/config").then(function (cfg) {
-      cfgInfo.adminLogin = !!cfg.adminLogin;
+      cfgInfo.adminLogin = !!cfg.adminLogin; cfgInfo.adminReason = cfg.adminLoginReason || "";
       if (!cfg.authEnabled || !cfg.firebase || !cfg.firebase.apiKey || !window.firebase) return null;
       if (!firebase.apps.length) firebase.initializeApp(cfg.firebase);
       fb = firebase;
@@ -386,7 +386,10 @@
       h("form", { className: "ad-auth", onSubmit: submit },
         h(A.Logo, { size: 20 }),
         h("div", null, h("h2", { className: "ad-h2" }, "Admin sign in"), h("p", { className: "ad-muted ad-small" }, "Staff only.")),
-        !cfgInfo.adminLogin ? h("p", { className: "ad-field__error", role: "alert" }, h(A.Icon, { name: "info", size: 14 }), "Admin sign-in is not set up. Add ADMIN_USERNAME and ADMIN_PASSWORD (8+ characters) to the server variables and redeploy.") : null,
+        !cfgInfo.adminLogin ? h("p", { className: "ad-field__error", role: "alert" }, h(A.Icon, { name: "info", size: 14 }),
+          ({ "no-username": "ADMIN_USERNAME is not set on the server.", "no-password": "ADMIN_PASSWORD is not set on the server.",
+             "short-password": "ADMIN_PASSWORD is too short. It needs at least 8 characters.", "placeholder-password": "ADMIN_PASSWORD is too common to be accepted. Use a long random one." }[cfgInfo.adminReason] || "Admin sign-in is not set up on the server.") +
+          " Set it in your host's Variables for this service, then redeploy.") : null,
         h(A.TextField, { label: "Username", autoComplete: "username", value: d.u, onChange: function (ev) { setD(Object.assign({}, d, { u: ev.target.value })); }, autoFocus: true }),
         h(A.TextField, { label: "Password", type: "password", autoComplete: "current-password", value: d.p, onChange: function (ev) { setD(Object.assign({}, d, { p: ev.target.value })); } }),
         err ? h("p", { className: "ad-field__error", role: "alert" }, h(A.Icon, { name: "info", size: 14 }), err) : null,
