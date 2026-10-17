@@ -38,12 +38,14 @@
   var LOCATIONS = [];    // [{ name, code, count }]
   var BODY_TYPES = [];   // body types that have vehicles in stock
   var ALL_TYPES = [];    // [{ id, name, image, count }]
+  var TESTIMONIALS = [];   // [{ q, n, w, r, lang }]
   var BRANDS = [];       // [{ id, name, image, count }] for the Browse section
   var SITE = { phone: "", email: "", whatsapp: "", address: "", hours: "", instagram: "" };
   var HOOKS = {};        // server actions + navigation helpers, provided by app.js
   function replaceAll(arr, next) { arr.length = 0; Array.prototype.push.apply(arr, next); }
   function loadData(c) {
     replaceAll(VEHICLES, c.vehicles || []); replaceAll(FEATURES, c.features || []);
+    replaceAll(TESTIMONIALS, (c.testimonials || []).map(function (t) { return { q: t.quote, n: t.name, w: t.role, r: 5, lang: t.lang }; }));
     replaceAll(LOCATIONS, c.locations || []); replaceAll(ALL_TYPES, c.types || []); replaceAll(BRANDS, c.brands || []);
     replaceAll(BODY_TYPES, (c.types || []).filter(function (t) { return t.count > 0; }).map(function (t) { return t.name; }));
     Object.keys(MAKES).forEach(function (k) { delete MAKES[k]; }); Object.keys(ALL_MAKES).forEach(function (k) { delete ALL_MAKES[k]; });
@@ -933,13 +935,13 @@
 
   /* ---------- Testimonials ---------- */
   function Testimonials(p) {
-    var items = p.items || [];
+    var items = p.items || TESTIMONIALS;
     var s = useState(0), i = s[0], setI = s[1];
     if (!items.length) return null;
     var q = items[i];
     return h("figure", { className: "ad-quote" },
       h("div", { className: "ad-quote__stars", role: "img", "aria-label": q.r + " out of 5" }, [1, 2, 3, 4, 5].map(function (k) { return h(Icon, { key: k, name: "star", size: 16, className: k <= q.r ? "is-on" : "" }); })),
-      h("blockquote", { className: "ad-quote__q", "aria-live": "polite" }, "“" + q.q + "”"),
+      h("blockquote", { className: "ad-quote__q", "aria-live": "polite", lang: q.lang || undefined }, "“" + q.q + "”"),
       h("figcaption", null, h("span", { className: "ad-avatar" }, q.n.split(" ").map(function (w) { return w[0]; }).join("").slice(0, 2)), h("span", null, h("b", null, q.n), h("span", { className: "ad-muted" }, q.w))),
       h("div", { className: "ad-quote__nav" },
         h("button", { type: "button", "aria-label": "Previous review", onClick: function () { setI((i - 1 + items.length) % items.length); } }, h(Icon, { name: "arrow-left", size: 16 })),
@@ -1168,7 +1170,7 @@
     InquiryForm: InquiryForm, LiveAuctionFrame: LiveAuctionFrame, AuctionSheetDecoder: AuctionSheetDecoder, AuctionRequestForm: AuctionRequestForm,
     ProcessSteps: ProcessSteps, Glossary: Glossary, Testimonials: Testimonials, AuthCard: AuthCard, OrderTracker: OrderTracker,
     AccountDashboard: AccountDashboard, ContactPanel: ContactPanel, BrowseSection: BrowseSection, Empty: Empty, PhotoPending: PhotoPending, Spec: Spec,
-    data: { vehicles: VEHICLES, brands: BRANDS, types: ALL_TYPES, locations: LOCATIONS, features: FEATURES, makes: ALL_MAKES, stockMakes: MAKES, glossary: GLOSSARY, images: IMG, load: loadData },
+    data: { vehicles: VEHICLES, testimonials: TESTIMONIALS, brands: BRANDS, types: ALL_TYPES, locations: LOCATIONS, features: FEATURES, makes: ALL_MAKES, stockMakes: MAKES, glossary: GLOSSARY, images: IMG, load: loadData },
     hooks: HOOKS, site: SITE,
     format: { lkr: lkr, lkrFull: lkrFull, yen: yen, num: num, title: title, emi: emi, cx: cx, priceBounds: priceBounds }
   };

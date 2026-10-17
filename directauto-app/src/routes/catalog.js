@@ -4,6 +4,7 @@
 const express = require('express');
 const db = require('../../db/pool');
 const locations = require('../locations');
+const testimonials = require('../content/testimonials.json');
 const { VEHICLE_SELECT, toVehicle } = require('../vehicleQuery');
 const router = express.Router();
 
@@ -17,6 +18,10 @@ const site = () => ({
   instagram: process.env.SITE_INSTAGRAM || 'https://www.instagram.com/directautoimport.lk/',
   liveAuctionUrl: process.env.LIVE_AUCTION_URL || 'https://jpcenter.ru/on?classic',
   liveAuctionHint: process.env.LIVE_AUCTION_HINT || '',
+  // Optional third-party widgets (off unless set). Values are validated again in the browser before loading.
+  gaId: process.env.GA_MEASUREMENT_ID || '',                       // Google Analytics 4, e.g. G-XXXXXXXXXX
+  tawkId: process.env.TAWK_PROPERTY_ID || '',                      // Tawk.to live chat property id
+  tawkWidget: process.env.TAWK_WIDGET_ID || 'default',
 });
 
 let cache = null;
@@ -42,15 +47,20 @@ async function build() {
     types: types.rows.map((t) => ({ ...t, count: count('type', t.name) })),
     features: feats.rows.map((f) => f.name),
     locations: locations.map((l) => ({ ...l, count: count('location', l.name) })),
+    testimonials,
   };
 }
 
+// The cached catalogue (also used by the sitemap and the per-page SEO tags).
+async function getCatalog() {
+  if (!cache || Date.now() - cache.at > TTL_MS) cache = { at: Date.now(), body: await build() };
+  return cache.body;
+}
+
 router.get('/catalog', async (_req, res, next) => {
-  try {
-    if (!cache || Date.now() - cache.at > TTL_MS) cache = { at: Date.now(), body: await build() };
-    res.json({ ...cache.body, site: site() });
-  } catch (e) { next(e); }
+  try { res.json({ ...(await getCatalog()), site: site() }); } catch (e) { next(e); }
 });
 
 module.exports = router;
 module.exports.invalidate = invalidate;
+module.exports.getCatalog = getCatalog;

@@ -73,6 +73,17 @@ Turns on customer sign-in (My account, order tracking) and photo upload. Create 
 web config variables in `.env.example`. Emails in `ADMIN_EMAILS` become admins only when the email is **verified**.
 Sign-up sends a verification email. Then set `USE_SAMPLE_IMAGES=false` to use uploaded photos.
 
+## Email alerts, SEO, chat and analytics
+- **Email alerts** (as on the old site): set `SMTP_*` and `NOTIFY_TO` and the team gets an email for every new quote, viewing,
+  contact message, sell-your-car request, auction request and newsletter signup, with the customer's email as Reply-To.
+  The admin **Inquiries** page shows whether alerts are on and has a **Send test email** button. If the mail server is down,
+  customers are not affected (the error is logged).
+- **SEO**: `/robots.txt`, a live `/sitemap.xml` (every published car) and, for each page, a server-filled title, description,
+  link-preview image (WhatsApp / Facebook) and structured data for cars. Set `SITE_URL` to your public address.
+- **Live chat / analytics**: `TAWK_PROPERTY_ID` and `GA_MEASUREMENT_ID` turn on Tawk.to and Google Analytics 4. Both are off by
+  default and never load on `/admin`. They set cookies, so consider a consent notice.
+- **Reviews**: the seven customer testimonials from the old site live in `src/content/testimonials.json`.
+
 ## Security notes
 - Admin API requires a signed, expiring token; the credentials are compared in constant time.
 - Public forms are rate-limited (15 submissions per 10 minutes per IP). CORS is off (same origin) unless `CORS_ORIGIN` is set.
@@ -87,6 +98,6 @@ Sign-up sends a verification email. Then set `USE_SAMPLE_IMAGES=false` to use up
   browser. Fine for hundreds of cars; move filtering server-side (`GET /api/vehicles` is already paginated) if stock reaches thousands.
 - Saved cars and the compare list live in the browser (localStorage); everything else is in Postgres.
 - Pages are rendered in the browser (page titles update per route, but there is no server-side rendering).
-- Not built: outgoing email notifications for inquiries, online payments.
+- Not built: staff accounts with roles, customer records editable by staff, online payments.
 - `public/assets/` holds the previous theme's CSS/JS/fonts (unused) plus a few images older sample data and brand logos still
   reference. The unused CSS/JS/fonts can be deleted.

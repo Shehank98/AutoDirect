@@ -9,7 +9,7 @@
   var FUELS = ["Petrol", "Diesel", "Hybrid", "Electric", "LPG"];
   var GEARS = ["Automatic", "Manual", "CVT"];
   var DRIVES = ["2WD", "4WD", "AWD"];
-  var CAPS = { uploads: false, sampleImages: true };   // filled from /api/admin/me when the console opens
+  var CAPS = { uploads: false, sampleImages: true, email: { enabled: false, recipients: 0 } };   // filled from /api/admin/me when the console opens
 
   /* ------------------------------------------------------------ helpers */
   function day(d) { return d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "-"; }
@@ -261,6 +261,16 @@
   }
 
   /* ------------------------------------------------------------ inquiries + auction requests (shared) */
+  // Shows whether staff get an email for every new message, and lets you test the SMTP settings.
+  function EmailStatus(p) {
+    var b = useState(false), busy = b[0], setBusy = b[1];
+    function test() { setBusy(true); api.post("/api/admin/email-test", {}).then(function (r) { setBusy(false); p.say("Test email sent to " + r.to.join(", ")); }, function (e) { setBusy(false); p.say(e.message, "danger"); }); }
+    return CAPS.email.enabled
+      ? h("div", { className: "ad-note" }, h(A.Icon, { name: "mail", size: 16 }), "Email alerts are on (" + CAPS.email.recipients + " recipient" + (CAPS.email.recipients === 1 ? "" : "s") + ").",
+        h(A.Button, { variant: "secondary", size: "s", loading: busy, onClick: test, className: "ad-note__btn" }, "Send test email"))
+      : h("div", { className: "ad-note is-muted" }, h(A.Icon, { name: "mail", size: 16 }), "Email alerts are off. Set SMTP_HOST and NOTIFY_TO on the server to get an email for every new message.");
+  }
+
   function Tracking(p) {
     var live = p.mod === "requests", url = live ? "/api/admin/live-inquiries" : "/api/admin/inquiries", base = url;
     var d = useLoad(url);
@@ -274,6 +284,7 @@
     });
     function exportCsv() { csv([["Ref", "Date", "Kind", "Name", "Email", "Phone", "Request", "Stage", "Message"]].concat(d.data.map(function (r) { return [ref(r), day(r.created_at), r.kind, r.name, r.email, r.phone, what(r), STAGES[r.stage], r.message]; })), (live ? "auction-requests" : "inquiries") + ".csv"); }
     return h(Frag, null,
+      h(EmailStatus, { say: p.say }),
       h("div", { className: "ad-dt__bar" },
         h(A.Tabs, { variant: "line", label: "Filter", tabs: [{ id: "All", label: "All", count: d.data.length }, { id: "New", label: "New", count: d.data.filter(function (r) { return r.status === 0; }).length }, { id: "Handled", label: "Handled", count: d.data.filter(function (r) { return r.status === 1; }).length }], value: tab, onChange: setTab }),
         h("div", { className: "ad-row" }, h(A.TextField, { icon: "search", placeholder: "Search name, phone, vehicle", value: q, onChange: function (e) { setQ(e.target.value); }, "aria-label": "Search" }),
@@ -364,7 +375,7 @@
     var lk = useState(null), L = lk[0], setL = lk[1], ver = useState(0), lv = ver[0], setLv = ver[1];
     useEffect(function () {
       Promise.all(["types", "manufacturers", "models", "colors", "features"].map(function (k) { return api.get("/api/admin/taxonomy/" + k); }).concat([api.get("/api/locations"), api.get("/api/admin/me")]))
-        .then(function (r) { CAPS.uploads = !!r[6].uploads; CAPS.sampleImages = !!r[6].sampleImages; setL({ types: r[0], manufacturers: r[1], models: r[2], colors: r[3], features: r[4], locations: r[5] }); }, function (e) { setNote({ text: e.message, tone: "danger" }); });
+        .then(function (r) { CAPS.uploads = !!r[6].uploads; CAPS.sampleImages = !!r[6].sampleImages; CAPS.email = r[6].email || CAPS.email; setL({ types: r[0], manufacturers: r[1], models: r[2], colors: r[3], features: r[4], locations: r[5] }); }, function (e) { setNote({ text: e.message, tone: "danger" }); });
     }, [lv]);
     useEffect(function () { if (!note) return; var t = setTimeout(function () { setNote(null); }, note.tone === "danger" ? 7000 : 2600); return function () { clearTimeout(t); }; }, [note]);
     function say(text, tone) { setNote({ text: text, tone: tone || "ok" }); }
@@ -377,7 +388,7 @@
       mod === "customers" ? h(Customers, common) : h(Newsletters, common);
     var newInq = l.data ? l.data.new_inquiries : 0;
     return h("div", { className: "ad-admin" },
-      h("aside", { className: "ad-admin__nav" },
+      h("aside", { className: "ad-admin__nav" }, h("div", { className: "ad-admin__navin" },
         h("div", { className: "ad-admin__brand" }, h(A.Logo, { size: 18, inverse: true }), h("span", { className: "ad-admin__tag" }, "Admin")),
         NAV.map(function (g) {
           return h("div", { key: g[0], className: "ad-admin__group" }, h("div", { className: "ad-label" }, g[0]), g[1].map(function (x) {
@@ -387,7 +398,7 @@
         }),
         h("div", { className: "ad-admin__group" }, h("div", { className: "ad-label" }, "Site"),
           h("button", { type: "button", className: "ad-admin__link", onClick: p.onExit }, h(A.Icon, { name: "home", size: 16 }), "View website"),
-          h("button", { type: "button", className: "ad-admin__link", onClick: p.onSignOut }, h(A.Icon, { name: "logout", size: 16 }), "Sign out"))),
+          h("button", { type: "button", className: "ad-admin__link", onClick: p.onSignOut }, h(A.Icon, { name: "logout", size: 16 }), "Sign out")))),
       h("div", { className: "ad-admin__main" },
         h("div", { className: "ad-admin__top" }, h("div", null, h("div", { className: "ad-label" }, "Admin · " + group), h("h2", { className: "ad-h1" }, label[2])),
           h("div", { className: "ad-row" }, h("span", { className: "ad-small ad-muted ad-hide-sm" }, p.user && p.user.email), h("span", { className: "ad-avatar" }, ((p.user && (p.user.name || p.user.email)) || "?").slice(0, 2)))),

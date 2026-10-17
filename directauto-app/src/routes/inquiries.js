@@ -1,6 +1,7 @@
 // Customer submissions: vehicle quote / viewing / contact forms, newsletter, and auction requests.
 const express = require('express');
 const db = require('../../db/pool');
+const mailer = require('../mailer');
 const router = express.Router();
 
 const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || ''));
@@ -32,7 +33,18 @@ router.post('/inquiries', async (req, res, next) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
       [Number.isInteger(vehicleId) ? vehicleId : null, req.user ? req.user.uid : null, name, email, phone, message, kind]
     );
-    res.status(201).json({ ok: true, ref: 'INQ-' + (24000 + rows[0].id), message: 'Thank you! Your inquiry has been sent.' });
+    const ref = 'INQ-' + (24000 + rows[0].id);
+    res.status(201).json({ ok: true, ref, message: 'Thank you! Your inquiry has been sent.' });
+
+    // Alert the sales team (after the response, so a slow mail server never delays the customer).
+    let car = '';
+    if (Number.isInteger(vehicleId)) {
+      const v = await db.query(`SELECT v.year, v.trim, m.name AS make, mo.name AS model FROM vehicle v
+        LEFT JOIN vehicle_manufacturer m ON m.id = v.vehicle_manufacturer LEFT JOIN vehicle_model mo ON mo.id = v.vehicle_model WHERE v.id = $1`, [vehicleId]).catch(() => ({ rows: [] }));
+      if (v.rows[0]) car = [v.rows[0].year, v.rows[0].make, v.rows[0].model, v.rows[0].trim].filter(Boolean).join(' ') + ` (AD-${String(vehicleId).padStart(4, '0')})`;
+    }
+    const subject = { 'Stock quote': 'New quote request', Viewing: 'New viewing booking', Contact: 'New contact message', 'Sell your car': 'New sell-your-car request' }[kind] || 'New inquiry';
+    mailer.notify(subject, [['Reference', ref], ['Type', kind], ['Name', name], ['Phone', phone], ['Email', email], ['Vehicle', car], ['Message', message]], { replyTo: email });
   } catch (e) { next(e); }
 });
 
@@ -42,7 +54,10 @@ router.post('/newsletter', async (req, res, next) => {
     const { name, email } = req.body || {};
     if (!isEmail(email)) return res.status(400).json({ error: 'A valid email address is required.' });
     const exists = await db.query('SELECT 1 FROM newsletters WHERE lower(email) = lower($1)', [email]);
-    if (!exists.rowCount) await db.query('INSERT INTO newsletters (name, email) VALUES ($1, $2)', [clip(name, 200), clip(email, 200)]);
+    if (!exists.rowCount) {
+      await db.query('INSERT INTO newsletters (name, email) VALUES ($1, $2)', [clip(name, 200), clip(email, 200)]);
+      mailer.notify('New newsletter subscriber', [['Email', email], ['Name', name]], { replyTo: email });
+    }
     res.status(201).json({ ok: true, message: 'Subscribed successfully!' });
   } catch (e) { next(e); }
 });
@@ -69,7 +84,12 @@ router.post('/live-inquiries', async (req, res, next) => {
        make, clip(b.model, 100).trim() || 'Any model', details.yearFrom && details.yearTo ? `${details.yearFrom}-${details.yearTo}` : '',
        details.colours.join(', '), clip(b.grade, 50), clip(b.message, 2000), JSON.stringify(details)]
     );
-    res.status(201).json({ ok: true, ref: 'AR-' + (3000 + rows[0].id), message: 'Your auction request has been submitted.' });
+    const ref = 'AR-' + (3000 + rows[0].id);
+    res.status(201).json({ ok: true, ref, message: 'Your auction request has been submitted.' });
+    mailer.notify('New auction request', [['Reference', ref], ['Name', name], ['Phone', phone], ['Email', clip(b.email || (req.user && req.user.email), 200)],
+      ['Car', `${make} ${clip(b.model, 100).trim() || 'any model'}`], ['Years', details.yearFrom && details.yearTo ? `${details.yearFrom} to ${details.yearTo}` : ''],
+      ['Chassis code', details.chassis], ['Budget (LKR)', details.budget ? details.budget.toLocaleString('en-US') : ''], ['Max mileage', details.maxKm ? `${details.maxKm.toLocaleString('en-US')} km` : ''],
+      ['Min grade', clip(b.grade, 50)], ['Colours', details.colours.join(', ')], ['Notes', clip(b.message, 2000)]], { replyTo: b.email });
   } catch (e) { next(e); }
 });
 

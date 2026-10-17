@@ -138,6 +138,28 @@
     return api.post("/api/inquiries", { kind: topic === "sell" ? "Sell your car" : "Contact", name: d.name, phone: d.phone, message: message, location: topic === "visit" ? d.location : "" });
   };
 
+  /* ------------------------------------------------------------------ optional chat + analytics (set on the server) */
+  function loadScript(src, attrs) { var el = document.createElement("script"); el.src = src; el.async = true; Object.keys(attrs || {}).forEach(function (k) { el.setAttribute(k, attrs[k]); }); document.head.appendChild(el); return el; }
+  function initThirdParty(site) {
+    // Never on the admin screens, and only well-formed ids are accepted.
+    if (/^\/admin/.test(location.pathname)) return;
+    if (/^G-[A-Z0-9]{4,20}$/.test(site.gaId || "")) {
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { window.dataLayer.push(arguments); };
+      loadScript("https://www.googletagmanager.com/gtag/js?id=" + site.gaId);
+      window.gtag("js", new Date()); window.gtag("config", site.gaId, { send_page_view: false });
+    }
+    if (/^[a-f0-9]{24}$/i.test(site.tawkId || "") && /^[a-z0-9]{1,40}$/i.test(site.tawkWidget || "default")) {
+      window.Tawk_API = window.Tawk_API || {}; window.Tawk_LoadStart = new Date();
+      loadScript("https://embed.tawk.to/" + site.tawkId + "/" + (site.tawkWidget || "default"), { crossorigin: "*" });
+    }
+  }
+  function trackPage() {
+    if (/^\/admin/.test(location.pathname)) { if (window.Tawk_API && window.Tawk_API.hideWidget) window.Tawk_API.hideWidget(); return; }
+    if (window.Tawk_API && window.Tawk_API.showWidget) window.Tawk_API.showWidget();
+    if (window.gtag) window.gtag("event", "page_view", { page_path: location.pathname + location.search, page_title: document.title });
+  }
+
   /* ------------------------------------------------------------------ small helpers */
   function byRef(id) { return D.vehicles.filter(function (v) { return v.id === id; })[0]; }
   function bySeo(seo) { return D.vehicles.filter(function (v) { return v.seo === seo; })[0]; }
@@ -195,6 +217,7 @@
         h(A.ProcessSteps, { onStart: function () { p.nav("request"); } })),
       h(Sec, { tint: true, kicker: "Know what you’re buying", title: "Read any auction sheet", lead: "Every lot comes with its inspection sheet. Tap a code on the car to decode it.", action: h(A.Button, { variant: "secondary", iconRight: "arrow-right", onClick: function () { p.nav("sheet"); } }, "Auction sheet guide") },
         h(A.AuctionSheetDecoder, null)),
+      D.testimonials.length ? h(Sec, { kicker: "Reviews", title: "What our customers say" }, h(A.Testimonials, null)) : null,
       h(Sec, { tight: true }, h(CTA, { title: "Looking for one exact car?", text: "Tell us the model, year and budget. We shortlist lots and send every sheet before bidding." },
         h(A.Button, { variant: "accent", size: "l", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a bid"),
         h(A.Button, { variant: "secondary", size: "l", icon: "phone", onClick: function () { p.nav("contact"); } }, "Talk to us"))),
@@ -504,11 +527,12 @@
     } }, common));
 
     useEffect(function () { setMeta(pg === "vehicle" ? "" : TITLES[pg] || ""); }, [pg]);
+    useEffect(function () { var t = setTimeout(trackPage, 50); return function () { clearTimeout(t); }; }, [pg, route.seo]);
     // Signed in while on the login / register page -> go to the account.
     useEffect(function () { if (user && (pg === "login" || pg === "register")) { history.replaceState(null, "", PATHS.account); setRoute(parse()); window.scrollTo(0, 0); } }, [user, pg]);
     var active = pg === "vehicle" ? "stock" : pg === "request" ? "auction" : (pg === "login" || pg === "register") ? "login" : pg;
     var userName = user ? (user.name || (user.email || "").split("@")[0]) : null;
-    return h("div", { className: "ad-page" },
+    return h("div", { className: "ad-page" + (pg === "admin" ? " is-admin" : "") },
       h(A.SiteHeader, { active: active, onNavigate: function (id, init) { if (id === "logout") signOut(); else nav(id, init); }, compareCount: cmp.length, user: userName, isAdmin: !!(user && user.is_admin) || !!admin }),
       h("main", { key: pg + (route.seo || ""), className: "ad-main" }, body),
       h(A.SiteFooter, { onNavigate: function (id, init) { nav(id, init); } }),
@@ -520,6 +544,7 @@
   var root = document.getElementById("app");
   api.get("/api/catalog").then(function (c) {
     D.load(c);
+    initThirdParty(c.site || {});
     ReactDOM.createRoot(root).render(h(App));
   }).catch(function (e) {
     root.innerHTML = '<div class="ad-boot"><p><b>We couldn’t load the site just now.</b><br>' + String(e.message || e).replace(/</g, "&lt;") +

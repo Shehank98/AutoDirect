@@ -615,8 +615,8 @@ textarea.ad-input { height: auto; padding: 10px 12px; resize: vertical; min-heig
 @media (max-width: 860px) { .ad-dash { grid-template-columns: 1fr; } .ad-kpis { grid-template-columns: 1fr 1fr; } .ad-inq__row { grid-template-columns: 1fr auto 20px; } .ad-inq__row > .ad-mono { display: none; } }
 
 /* ============ Admin ============ */
-.ad-admin { display: grid; grid-template-columns: 240px 1fr; min-height: 640px; border-radius: var(--radius-l); overflow: hidden; border: 1px solid var(--line); background: var(--surface-100); position: relative; }
-.ad-admin__nav { background: var(--surface-inverse); color: var(--ink-inverse); padding: 20px 12px; display: grid; gap: 18px; align-content: start; }
+.ad-admin { display: grid; grid-template-columns: 240px 1fr; min-height: 640px; border-radius: var(--radius-l); overflow: visible; overflow: clip; border: 1px solid var(--line); background: var(--surface-100); position: relative; }
+.ad-admin__nav { background: var(--surface-inverse); color: var(--ink-inverse); }
 .ad-admin__brand { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 6px; }
 .ad-admin__tag { font: 600 10.5px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; padding: 4px 6px; border-radius: 5px; background: var(--highlight); color: var(--ink-on-highlight); }
 .ad-admin__group { display: grid; gap: 2px; }
@@ -651,7 +651,7 @@ textarea.ad-input { height: auto; padding: 10px 12px; resize: vertical; min-heig
 .ad-modal { position: absolute; inset: 0; z-index: 60; background: var(--scrim); display: grid; place-items: center; padding: 16px; }
 .ad-modal__box { width: 100%; max-width: 420px; background: var(--surface-200); border-radius: var(--radius-l); padding: 24px; display: grid; gap: 12px; box-shadow: var(--shadow-2); }
 .ad-modal__box p { margin: 0; }
-@media (max-width: 860px) { .ad-admin { grid-template-columns: 1fr; } .ad-admin__nav { grid-auto-flow: column; overflow-x: auto; grid-auto-columns: max-content; } .ad-admin__group { grid-auto-flow: column; } .ad-admin__group > .ad-label { display: none; } }
+@media (max-width: 860px) { .ad-admin { grid-template-columns: 1fr; } .ad-admin__navin { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; overflow-y: hidden; } .ad-admin__group { grid-auto-flow: column; } .ad-admin__group > .ad-label { display: none; } }
 
 /* ============ Contact ============ */
 .ad-contact { display: grid; grid-template-columns: 1fr 1.2fr; gap: 28px; align-items: start; }
@@ -809,3 +809,18 @@ a.ad-browse__tile:focus-visible { outline: 2px solid var(--focus); outline-offse
 .ad-sec--tint .ad-kicker { color: color-mix(in srgb, var(--accent) 80%, var(--ink)); }
 /* Selected chip: the count badge was too faint on the brand colour in the dark theme. */
 .ad-chip.is-on .ad-chip__n { opacity: 1; }
+
+/* ============ Admin sidebar stays in view while the page scrolls ============ */
+:root { --ad-header-h: 109px; }   /* height of the sticky site header (topbar + nav) */
+.ad-admin__navin { position: sticky; top: var(--ad-header-h); display: grid; gap: 18px; align-content: start; padding: 20px 12px;
+  max-height: calc(100vh - var(--ad-header-h)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+@media (max-width: 860px) {
+  /* On phones the menu becomes a horizontal bar that sticks under the header. */
+  .ad-admin__nav { position: sticky; top: var(--ad-header-h); z-index: 20; }
+  .ad-admin__navin { position: static; max-height: none; padding: 10px 12px; gap: 6px; }
+  .ad-admin__navin .ad-admin__brand { display: none; }
+}
+/* The floating theme button covered the admin sidebar; park it bottom-right there. */
+.is-admin .ad-themebtn { left: auto; right: 16px; }
+.ad-note.is-muted { background: var(--surface-300); color: var(--ink-muted); font-weight: 500; }
+.ad-note__btn { margin-left: auto; }

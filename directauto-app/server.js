@@ -72,10 +72,19 @@ app.use('/api', api);
 // Real files (assets, JS, images) are served as-is; every other GET path is a client-side route
 // (/our-stock/<seo-url>, /my-account, /admin ...) and gets the app shell.
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const seo = require('./src/seo');
+const { getCatalog } = require('./src/routes/catalog');
+app.get('/robots.txt', (req, res) => res.type('text/plain').send(seo.robots(req)));
+app.get('/sitemap.xml', async (req, res, next) => {
+  try { res.type('application/xml').send(seo.sitemap(req, await getCatalog().catch(() => null))); } catch (e) { next(e); }
+});
 app.use(express.static(PUBLIC_DIR, { index: false }));
-app.get('*', (req, res, next) => {
+app.get('*', async (req, res, next) => {
   if (path.extname(req.path)) return next(); // a missing file is a real 404
-  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+  // The app shell, with this page's title / description / link-preview tags filled in for crawlers.
+  const catalog = process.env.DATABASE_URL ? await getCatalog().catch(() => null) : null;
+  const { html, status } = seo.render(req, catalog);
+  res.status(status).type('html').send(html);
 });
 
 const PG_CLIENT_ERRORS = {

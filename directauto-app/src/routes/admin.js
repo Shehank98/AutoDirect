@@ -8,6 +8,7 @@ const { requireAdmin } = require('../auth');
 const { bucket, isConfigured } = require('../firebase');
 const samples = require('../samples');
 const { invalidate } = require('./catalog');
+const mailer = require('../mailer');
 
 const router = express.Router();
 router.use(requireAdmin);
@@ -19,7 +20,14 @@ router.get('/me', (req, res) => res.json({
   username: req.admin ? req.admin.username : req.user.email,
   uploads: isConfigured(),               // Firebase Storage available for photo upload
   sampleImages: samples.enabled(),       // listings show the bundled sample photos
+  email: { enabled: mailer.enabled(), recipients: mailer.recipients().length },   // new-message alerts to staff
 }));
+
+// Sends a test alert so the SMTP settings can be checked from the admin.
+router.post('/email-test', async (req, res) => {
+  const r = await mailer.notify('Test email', [['Result', 'If you can read this, email alerts are working.'], ['Sent by', req.admin ? req.admin.username : (req.user && req.user.email)]]);
+  res.status(r.ok ? 200 : 502).json(r.ok ? { ok: true, to: mailer.recipients() } : { error: r.error });
+});
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
 
