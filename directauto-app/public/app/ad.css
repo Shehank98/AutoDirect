@@ -824,3 +824,42 @@ a.ad-browse__tile:focus-visible { outline: 2px solid var(--focus); outline-offse
 .is-admin .ad-themebtn { left: auto; right: 16px; }
 .ad-note.is-muted { background: var(--surface-300); color: var(--ink-muted); font-weight: 500; }
 .ad-note__btn { margin-left: auto; }
+
+/* Ex Stock: hide the third-party logo banner at the top of the embedded viewer by shifting it out of view. */
+.ad-live__frame { --live-crop: 72px; }
+.ad-live__frame iframe { top: calc(var(--live-crop) * -1); height: calc(100% + var(--live-crop)); }
+
+/* Floating WhatsApp button, always visible. */
+.ad-wafab { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 45; display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 18px 0 14px; border-radius: 99px; background: #25d366; color: #fff; font: 700 14px/1 var(--font-sans); text-decoration: none; box-shadow: 0 6px 18px rgba(0,0,0,.28); }
+.ad-wafab:hover { background: #1ebe5a; }
+.ad-wafab:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+@media (max-width: 640px) { .ad-wafab { width: 54px; height: 54px; padding: 0; justify-content: center; } .ad-wafab__t { display: none; } }
+
+/* Home hero is now just the search panel. */
+.ad-hero--search .ad-hero__in { grid-template-columns: minmax(0, 760px); justify-content: center; }
+
+/* Reviews: featured card pinned, the others float left to right. Tap a card to read it in full. */
+.ad-tstrip { display: grid; gap: 20px; align-items: stretch; min-width: 0; }
+.ad-tstrip.has-feat { grid-template-columns: minmax(280px, 400px) minmax(0, 1fr); }
+.ad-tcard { display: grid; align-content: start; gap: 12px; text-align: left; font: inherit; color: var(--ink); cursor: pointer; padding: 22px; border-radius: var(--radius-l); background: var(--surface-200); border: 1px solid var(--line); width: 340px; flex: none; position: relative; }
+.ad-tcard:hover { border-color: var(--ink); }
+.ad-tcard:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.ad-tcard__q { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; }
+.ad-tcard__who { display: flex; align-items: center; gap: 12px; }
+.ad-tcard__who > span:last-child { display: grid; font-size: 14px; }
+.ad-tcard__who--lg { font-size: 16px; }
+.ad-tcard__more { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 650; color: var(--brand); }
+.ad-avatar--img { object-fit: cover; width: 48px; height: 48px; }
+.ad-tcard--feat { width: auto; border: 2px solid var(--brand); background: var(--brand-tint); box-shadow: var(--shadow-2); }
+.ad-tcard--feat .ad-tcard__q { -webkit-line-clamp: 7; font-weight: 550; }
+.ad-tcard--feat .ad-avatar--img { width: 64px; height: 64px; }
+.ad-tcard__badge { justify-self: start; padding: 4px 10px; border-radius: 99px; background: var(--brand); color: var(--on-brand); font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+.ad-marquee { overflow: hidden; min-width: 0; -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); }
+.ad-marquee__track { display: flex; gap: 20px; width: max-content; height: 100%; animation: ad-mq var(--mq-dur, 60s) linear infinite; }
+.ad-marquee:hover .ad-marquee__track, .ad-marquee:focus-within .ad-marquee__track { animation-play-state: paused; }
+@keyframes ad-mq { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .ad-marquee { overflow-x: auto; } .ad-marquee__track { animation: none; } }
+@media (max-width: 860px) { .ad-tstrip.has-feat { grid-template-columns: minmax(0, 1fr); } .ad-tcard { width: 290px; } }
+.ad-modal__q { font-size: 17px; line-height: 1.6; white-space: pre-wrap; }
+.ad-modal__box { position: relative; max-width: 560px; }
+.ad-modal__x { position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--line-strong); background: var(--surface-200); color: var(--ink); display: grid; place-items: center; cursor: pointer; }

@@ -45,7 +45,7 @@
   function replaceAll(arr, next) { arr.length = 0; Array.prototype.push.apply(arr, next); }
   function loadData(c) {
     replaceAll(VEHICLES, c.vehicles || []); replaceAll(FEATURES, c.features || []);
-    replaceAll(TESTIMONIALS, (c.testimonials || []).map(function (t) { return { q: t.quote, n: t.name, w: t.role, r: 5, lang: t.lang }; }));
+    replaceAll(TESTIMONIALS, (c.testimonials || []).map(function (t) { return { q: t.quote, n: t.name, w: t.role, r: 5, lang: t.lang, img: t.image, featured: !!t.featured }; }));
     replaceAll(LOCATIONS, c.locations || []); replaceAll(ALL_TYPES, c.types || []); replaceAll(BRANDS, c.brands || []);
     replaceAll(BODY_TYPES, (c.types || []).filter(function (t) { return t.count > 0; }).map(function (t) { return t.name; }));
     Object.keys(MAKES).forEach(function (k) { delete MAKES[k]; }); Object.keys(ALL_MAKES).forEach(function (k) { delete ALL_MAKES[k]; });
@@ -279,7 +279,7 @@
   var NAV = [
     { id: "home", label: "Home" },
     { id: "stock", label: "Our stock" },
-    { id: "auction", label: "Live auction", live: true },
+    { id: "auction", label: "Ex Stock", live: true },
     { id: "buy", label: "How to buy", children: [
       { id: "buy", label: "Buying process", text: "Five steps, 30–45 days" },
       { id: "sheet", label: "Reading an auction sheet", text: "Grades & damage codes decoded" },
@@ -338,7 +338,7 @@
   }
 
   /* ---------- SiteFooter ---------- */
-  var FOOT_ROUTES = { "Our stock": "stock", "Live auction": "auction", "Compare vehicles": "compare", "Request a bid": "request", "How to buy": "buy", "Reading an auction sheet": "sheet", "Import vocabulary": "vocab", "About us": "about", "Contact us": "contact", "Sign in": "login", "Create account": "register", "My inquiries": "account", "Auction requests": "account", "Staff admin": "admin" };
+  var FOOT_ROUTES = { "Our stock": "stock", "Ex Stock": "auction", "Compare vehicles": "compare", "Request a bid": "request", "How to buy": "buy", "Reading an auction sheet": "sheet", "Import vocabulary": "vocab", "About us": "about", "Contact us": "contact", "Sign in": "login", "Create account": "register", "My inquiries": "account", "Auction requests": "account", "Staff admin": "admin" };
   function SiteFooter(p) {
     var s = useState(""), email = s[0], setEmail = s[1];
     var d = useState("idle"), state = d[0], setState = d[1];
@@ -349,7 +349,7 @@
       (HOOKS.subscribe ? HOOKS.subscribe(email) : Promise.reject(new Error("offline"))).then(function () { setState("done"); }, function () { setState("error"); });
     }
     var cols = [
-      ["Buy", ["Our stock", "Live auction", "Compare vehicles", "Request a bid"]],
+      ["Buy", ["Our stock", "Ex Stock", "Compare vehicles", "Request a bid"]],
       ["Learn", ["How to buy", "Reading an auction sheet", "Import vocabulary", "About us", "Contact us"]],
       ["Account", ["Sign in", "Create account", "My inquiries", "Auction requests"]]
     ].filter(function (c) { return c[0] !== "Account" || (HOOKS.authOn && HOOKS.authOn()); });
@@ -745,12 +745,12 @@
     useEffect(function () { var t = setTimeout(function () { setLoading(false); }, 8000); return function () { clearTimeout(t); }; }, []);
     return h("div", { className: "ad-live" },
       h("div", { className: "ad-live__bar" },
-        h("span", { className: "ad-live__src" }, h("span", { className: "ad-pulse", "aria-hidden": true }), "Live Japan auctions"),
+        h("span", { className: "ad-live__src" }, h("span", { className: "ad-pulse", "aria-hidden": true }), "Ex Stock"),
         h("a", { className: "ad-link ad-small", href: url, target: "_blank", rel: "noopener" }, "Open in a new tab")),
       p.hint ? h("p", { className: "ad-live__hint" }, h(Icon, { name: "info", size: 16 }), p.hint) : null,
       h("div", { className: "ad-live__frame" },
         loading ? h("div", { className: "ad-live__loading", role: "status" }, h("span", { className: "ad-spinner", "aria-hidden": true }), "Loading the auction viewer…") : null,
-        h("iframe", { src: url, title: "Live Japan car auctions", loading: "eager", onLoad: function () { setLoading(false); }, referrerPolicy: "no-referrer-when-downgrade",
+        h("iframe", { src: url, title: "Ex Stock", loading: "eager", onLoad: function () { setLoading(false); }, referrerPolicy: "no-referrer-when-downgrade",
           sandbox: "allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads", allow: "fullscreen" })),
       h("p", { className: "ad-small ad-muted" }, "Nothing showing? Some browsers block sign-in inside embedded pages. ", h("a", { className: "ad-link", href: url, target: "_blank", rel: "noopener" }, "Open the auction in a new tab"), " instead."));
   }
@@ -933,20 +933,41 @@
       })) : h(Empty, { title: "No term matches “" + q + "”", text: "Ask us on WhatsApp and we’ll explain and add it here." }));
   }
 
-  /* ---------- Testimonials ---------- */
+  /* ---------- Testimonials: featured review pinned, the rest drift left to right; tap any card to read it all ---------- */
   function Testimonials(p) {
     var items = p.items || TESTIMONIALS;
-    var s = useState(0), i = s[0], setI = s[1];
+    var o = useState(null), open = o[0], setOpen = o[1];
+    useEffect(function () {
+      if (!open) return;
+      function onKey(e) { if (e.key === "Escape") setOpen(null); }
+      document.addEventListener("keydown", onKey);
+      return function () { document.removeEventListener("keydown", onKey); };
+    }, [open]);
     if (!items.length) return null;
-    var q = items[i];
-    return h("figure", { className: "ad-quote" },
-      h("div", { className: "ad-quote__stars", role: "img", "aria-label": q.r + " out of 5" }, [1, 2, 3, 4, 5].map(function (k) { return h(Icon, { key: k, name: "star", size: 16, className: k <= q.r ? "is-on" : "" }); })),
-      h("blockquote", { className: "ad-quote__q", "aria-live": "polite", lang: q.lang || undefined }, "“" + q.q + "”"),
-      h("figcaption", null, h("span", { className: "ad-avatar" }, q.n.split(" ").map(function (w) { return w[0]; }).join("").slice(0, 2)), h("span", null, h("b", null, q.n), h("span", { className: "ad-muted" }, q.w))),
-      h("div", { className: "ad-quote__nav" },
-        h("button", { type: "button", "aria-label": "Previous review", onClick: function () { setI((i - 1 + items.length) % items.length); } }, h(Icon, { name: "arrow-left", size: 16 })),
-        h("span", { className: "ad-mono ad-small" }, (i + 1) + " / " + items.length),
-        h("button", { type: "button", "aria-label": "Next review", onClick: function () { setI((i + 1) % items.length); } }, h(Icon, { name: "arrow-right", size: 16 }))));
+    var feat = items.filter(function (t) { return t.featured; })[0];
+    var rest = items.filter(function (t) { return t !== feat; });
+    function initials(t) { return t.n.split(" ").map(function (w) { return w[0]; }).join("").slice(0, 2); }
+    function avatar(t) { return t.img ? h("img", { className: "ad-avatar ad-avatar--img", src: t.img, alt: "", loading: "lazy" }) : h("span", { className: "ad-avatar" }, initials(t)); }
+    function card(t, k, hidden, isFeat) {
+      return h("button", { key: k, type: "button", className: "ad-tcard" + (isFeat ? " ad-tcard--feat" : ""), tabIndex: hidden ? -1 : 0, "aria-hidden": hidden || undefined, onClick: function () { setOpen(t); }, lang: t.lang || undefined },
+        isFeat ? h("span", { className: "ad-tcard__badge" }, "Featured review") : null,
+        h("span", { className: "ad-quote__stars", role: "img", "aria-label": t.r + " out of 5" }, [1, 2, 3, 4, 5].map(function (n) { return h(Icon, { key: n, name: "star", size: 15, className: n <= t.r ? "is-on" : "" }); })),
+        h("span", { className: "ad-tcard__q" }, "“" + t.q + "”"),
+        h("span", { className: "ad-tcard__who" }, avatar(t), h("span", null, h("b", null, t.n), h("span", { className: "ad-muted" }, t.w))),
+        h("span", { className: "ad-tcard__more" }, "Read full review", h(Icon, { name: "arrow-right", size: 14 })));
+    }
+    return h("div", { className: "ad-tstrip" + (feat ? " has-feat" : "") },
+      feat ? card(feat, "feat", false, true) : null,
+      h("div", { className: "ad-marquee", style: { "--mq-dur": Math.max(30, rest.length * 9) + "s" } },
+        h("div", { className: "ad-marquee__track" },
+          rest.map(function (t, i) { return card(t, "a" + i, false, false); }),
+          rest.map(function (t, i) { return card(t, "b" + i, true, false); }))),
+      open ? h("div", { className: "ad-modal", role: "dialog", "aria-modal": true, "aria-label": "Review by " + open.n, onClick: function () { setOpen(null); } },
+        h("div", { className: "ad-modal__box", onClick: function (e) { e.stopPropagation(); } },
+          h("button", { type: "button", className: "ad-modal__x", "aria-label": "Close review", onClick: function () { setOpen(null); } }, h(Icon, { name: "x", size: 18 })),
+          h("div", { className: "ad-tcard__who ad-tcard__who--lg" }, avatar(open), h("span", null, h("b", null, open.n), h("span", { className: "ad-muted" }, open.w))),
+          h("span", { className: "ad-quote__stars", role: "img", "aria-label": open.r + " out of 5" }, [1, 2, 3, 4, 5].map(function (n) { return h(Icon, { key: n, name: "star", size: 16, className: n <= open.r ? "is-on" : "" }); })),
+          h("p", { className: "ad-modal__q", lang: open.lang || undefined }, "“" + open.q + "”"))) : null);
   }
 
   /* ---------- AuthCard ---------- */

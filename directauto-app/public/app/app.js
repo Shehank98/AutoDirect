@@ -46,7 +46,7 @@
   var PATHS = { home: "/", stock: "/our-stock", compare: "/compare", auction: "/live-auction", request: "/request-a-bid", buy: "/how-to-buy",
     sheet: "/how-to-read-auction-sheet", vocab: "/vocabulary", about: "/about-us", contact: "/contact-us", login: "/login", register: "/register",
     account: "/my-account", admin: "/admin" };
-  var TITLES = { home: "Japanese auction car imports for Sri Lanka", stock: "Our stock", compare: "Compare vehicles", auction: "Live auction", request: "Request a bid",
+  var TITLES = { home: "Japanese auction car imports for Sri Lanka", stock: "Our stock", compare: "Compare vehicles", auction: "Ex Stock", request: "Request a bid",
     buy: "How to buy", sheet: "How to read an auction sheet", vocab: "Import vocabulary", about: "About us", contact: "Contact us", login: "Sign in", register: "Create account",
     account: "My account", admin: "Admin" };
   var ACCOUNT_TABS = { "live-auction-request": "auction", "profile-settings": "profile", "my-inquiries": "inquiries" };
@@ -194,29 +194,17 @@
     if (!feat.length) feat = D.vehicles.filter(function (v) { return v.status !== "Sold"; }).slice(0, 4);
     feat = feat.slice(0, 4);
     return h(Frag, null,
-      h("section", { className: "ad-hero" }, h("div", { className: "ad-wrap ad-hero__in" },
-        h("div", { className: "ad-hero__copy" },
-          h("div", { className: "ad-kicker" }, h("span", { className: "ad-pulse", "aria-hidden": true }), "Japan → Sri Lanka imports"),
-          h("h1", { className: "ad-display" }, "Bid in Tokyo.", h("br"), h("span", null, "Drive in Colombo.")),
-          h("p", { className: "ad-bodyl" }, "Browse our imported stock or let us bid for your exact car at this week’s Japanese auctions, with the original auction sheet translated before every bid."),
-          h("ul", { className: "ad-hero__proof" },
-            h("li", null, h(A.Icon, { name: "doc", size: 18 }), "Original auction sheet, in English"),
-            h("li", null, h(A.Icon, { name: "shield", size: 18 }), "100% refundable deposit"),
-            h("li", null, h(A.Icon, { name: "ship", size: 18 }), "30–45 days, LC to your driveway"))),
+      h("section", { className: "ad-hero ad-hero--search" }, h("div", { className: "ad-wrap ad-hero__in" },
         h("div", { className: "ad-hero__search" }, h(A.HeroSearch, { onSearch: p.onSearch })))),
       feat.length ? h(Sec, { kicker: "Featured", title: "Ready to drive", lead: "Landed, cleared and waiting at our Malabe showroom.", action: h(A.Button, { variant: "secondary", iconRight: "arrow-right", onClick: function () { p.nav("stock"); } }, "All stock") },
         h("div", { className: "ad-stock__grid ad-stock__grid--4" }, feat.map(function (v) { return vehicleCard(p, v); })),
         h(A.CompareTray, { floating: true, items: p.cmp.map(byRef).filter(Boolean), onRemove: p.toggleCmp, onClear: p.clearCmp, onCompare: function () { p.nav("compare"); } })) : null,
-      h(Sec, { tint: true, kicker: "Live auction", title: "Watch Japan auctions live", lead: "Browse live lots from Japanese auction houses without leaving AutoDirect.",
-        action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("auction"); } }, "Open live auction") },
+      h(Sec, { tint: true, kicker: "Ex Stock", title: "Browse Ex Stock", lead: "Browse live lots from Japanese auction houses without leaving AutoDirect.",
+        action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("auction"); } }, "Open Ex Stock") },
         h("div", { className: "ad-infostrip" },
           [["gavel", "Live lots", "Search thousands of cars crossing the block this week."], ["doc", "Sheet first", "We translate the original auction sheet before any bid."], ["shield", "Refundable deposit", "Bidding starts after a 100% refundable deposit."]].map(function (x) {
             return h("div", { key: x[1] }, h(A.Icon, { name: x[0], size: 22 }), h("b", null, x[1]), h("p", { className: "ad-small ad-muted" }, x[2]));
           }))),
-      h(Sec, { kicker: "How to buy", title: "Five steps, fully tracked", action: h(A.Button, { variant: "secondary", iconRight: "arrow-right", onClick: function () { p.nav("buy"); } }, "Full buying guide") },
-        h(A.ProcessSteps, { onStart: function () { p.nav("request"); } })),
-      h(Sec, { tint: true, kicker: "Know what you’re buying", title: "Read any auction sheet", lead: "Every lot comes with its inspection sheet. Tap a code on the car to decode it.", action: h(A.Button, { variant: "secondary", iconRight: "arrow-right", onClick: function () { p.nav("sheet"); } }, "Auction sheet guide") },
-        h(A.AuctionSheetDecoder, null)),
       D.testimonials.length ? h(Sec, { kicker: "Reviews", title: "What our customers say" }, h(A.Testimonials, null)) : null,
       h(Sec, { tight: true }, h(CTA, { title: "Looking for one exact car?", text: "Tell us the model, year and budget. We shortlist lots and send every sheet before bidding." },
         h(A.Button, { variant: "accent", size: "l", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a bid"),
@@ -291,10 +279,10 @@
   function Auction(p) {
     var site = A.site;
     return h(Frag, null,
-      h(PageHead, { bare: true, crumb: "Live auction", title: "Live auction", action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a specific car") }),
+      h(PageHead, { bare: true, crumb: "Ex Stock", title: "Ex Stock", action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a specific car") }),
       h("div", { className: "ad-wrap ad-pagebody" },
         site.liveAuctionUrl ? h(A.LiveAuctionFrame, { url: site.liveAuctionUrl, hint: site.liveAuctionHint })
-          : h(A.Empty, { icon: "gavel", title: "Live auction is not set up yet", text: "Tell us what you want and we’ll shortlist matching lots from this week’s auctions." }),
+          : h(A.Empty, { icon: "gavel", title: "Ex Stock is not set up yet", text: "Tell us what you want and we’ll shortlist matching lots from this week’s auctions." }),
         h(CTA, { title: "Not finding the right car?", text: "Tell us the model, year and budget and we’ll shortlist the lots." },
           h(A.Button, { variant: "accent", size: "l", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a bid"),
           h(A.Button, { variant: "secondary", size: "l", onClick: function () { p.nav("sheet"); } }, "How to read a sheet"))));
@@ -436,6 +424,13 @@
   }
 
   /* ------------------------------------------------------------------ app shell */
+  function WhatsAppFab() {
+    var num = String(A.site.whatsapp || A.site.phone || "").replace(/[^0-9]/g, "");
+    if (!num || /^\/admin/.test(location.pathname)) return null;
+    return h("a", { className: "ad-wafab", href: "https://wa.me/" + num + "?text=" + encodeURIComponent("Hi AutoDirect, I have a question about importing a car."), target: "_blank", rel: "noopener", "aria-label": "Chat with us on WhatsApp" },
+      h(A.Icon, { name: "whatsapp", size: 26, stroke: 1.6 }), h("span", { className: "ad-wafab__t" }, "WhatsApp"));
+  }
+
   function ThemeToggle() {
     var saved = store("ad-theme");
     var s = useState(document.documentElement.getAttribute("data-theme") || saved || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")), t = s[0], setT = s[1];
@@ -536,6 +531,7 @@
       h(A.SiteHeader, { active: active, onNavigate: function (id, init) { if (id === "logout") signOut(); else nav(id, init); }, compareCount: cmp.length, user: userName, isAdmin: !!(user && user.is_admin) || !!admin }),
       h("main", { key: pg + (route.seo || ""), className: "ad-main" }, body),
       h(A.SiteFooter, { onNavigate: function (id, init) { nav(id, init); } }),
+      h(WhatsAppFab, null),
       h(ThemeToggle, null));
   }
 
