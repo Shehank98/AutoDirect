@@ -197,17 +197,17 @@
       h("section", { className: "ad-hero" }, h("div", { className: "ad-wrap ad-hero__in" },
         h(A.BrowseSide, { onBrowse: function (f) { p.nav("stock", f); } }),
         h("div", { className: "ad-hero__search" }, h(A.HeroSearch, { onSearch: p.onSearch })))),
-      feat.length ? h(Sec, { kicker: "Featured", title: "Ready to drive", lead: "Landed, cleared and waiting at our Malabe showroom.", action: h(A.Button, { variant: "secondary", iconRight: "arrow-right", onClick: function () { p.nav("stock"); } }, "All stock") },
+      feat.length && A.on("showFeatured") ? h(Sec, { kicker: "Featured", title: A.T("featuredTitle", "Ready to drive"), lead: A.T("featuredLead", "Landed, cleared and waiting at our Malabe showroom."), action: h(A.Button, { variant: "secondary", iconRight: "arrow-right", onClick: function () { p.nav("stock"); } }, "All stock") },
         h("div", { className: "ad-stock__grid ad-stock__grid--4" }, feat.map(function (v) { return vehicleCard(p, v); })),
         h(A.CompareTray, { floating: true, items: p.cmp.map(byRef).filter(Boolean), onRemove: p.toggleCmp, onClear: p.clearCmp, onCompare: function () { p.nav("compare"); } })) : null,
-      h(Sec, { tint: true, kicker: "Live auction", title: "Watch Japan auctions live", lead: "Browse live lots from Japanese auction houses without leaving AutoDirect.",
+      !A.on("showAuction") ? null : h(Sec, { tint: true, kicker: "Live auction", title: A.T("auctionTitle", "Watch Japan auctions live"), lead: A.T("auctionLead", "Browse live lots from Japanese auction houses without leaving AutoDirect."),
         action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("auction"); } }, "Open live auction") },
         h("div", { className: "ad-infostrip" },
           [["gavel", "Live lots", "Search thousands of cars crossing the block this week."], ["doc", "Sheet first", "We translate the original auction sheet before any bid."], ["shield", "Refundable deposit", "Bidding starts after a 100% refundable deposit."]].map(function (x) {
             return h("div", { key: x[1] }, h(A.Icon, { name: x[0], size: 22 }), h("b", null, x[1]), h("p", { className: "ad-small ad-muted" }, x[2]));
           }))),
-      D.testimonials.length ? h(Sec, { kicker: "Reviews", title: "What our customers say" }, h(A.Testimonials, null)) : null,
-      h(Sec, { tight: true }, h(CTA, { title: "Looking for one exact car?", text: "Tell us the model, year and budget. We shortlist lots and send every sheet before bidding." },
+      D.testimonials.length && A.on("showReviews") ? h(Sec, { kicker: "Reviews", title: A.T("reviewsTitle", "What our customers say") }, h(A.Testimonials, null)) : null,
+      !A.on("showCta") ? null : h(Sec, { tight: true }, h(CTA, { title: A.T("ctaTitle", "Looking for one exact car?"), text: A.T("ctaText", "Tell us the model, year and budget. We shortlist lots and send every sheet before bidding.") },
         h(A.Button, { variant: "accent", size: "l", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a bid"),
         h(A.Button, { variant: "secondary", size: "l", icon: "phone", onClick: function () { p.nav("contact"); } }, "Talk to us")))
     );
@@ -421,14 +421,14 @@
       document.body.appendChild(el);
     }, []);
     if (!window.AD_ADMIN) return h(Loading, { text: "Loading admin…" });
-    return h("div", { className: "ad-wrap ad-pagebody ad-pad-top" }, h(window.AD_ADMIN.Console, { user: { email: p.adminName }, onSignOut: p.signOut, onExit: function () { p.nav("home"); }, onDataChanged: p.reloadCatalog }));
+    return h("div", { className: "ad-adminroot" }, h(window.AD_ADMIN.Console, { user: { email: p.adminName }, onSignOut: p.signOut, onExit: function () { p.nav("home"); }, onDataChanged: p.reloadCatalog }));
   }
 
   /* ------------------------------------------------------------------ app shell */
   function WhatsAppFab() {
     var num = String(A.site.whatsapp || A.site.phone || "").replace(/[^0-9]/g, "");
-    if (!num || /^\/admin/.test(location.pathname)) return null;
-    return h("a", { className: "ad-wafab", href: "https://wa.me/" + num + "?text=" + encodeURIComponent("Hi AutoDirect, I have a question about importing a car."), target: "_blank", rel: "noopener", "aria-label": "Chat with us on WhatsApp" },
+    if (!num || !A.on("showWhatsapp") || /^\/admin/.test(location.pathname)) return null;
+    return h("a", { className: "ad-wafab", href: "https://wa.me/" + num + "?text=" + encodeURIComponent(A.T("whatsappMessage", "Hi AutoDirect, I have a question about importing a car.")), target: "_blank", rel: "noopener", "aria-label": "Chat with us on WhatsApp" },
       h(A.Icon, { name: "whatsapp", size: 26, stroke: 1.6 }), h("span", { className: "ad-wafab__t" }, "WhatsApp"));
   }
 
@@ -469,7 +469,7 @@
       });
     }, []);
 
-    function reloadCatalog() { return api.get("/api/catalog").then(function (c) { D.load(c); setVer(function (x) { return x + 1; }); }); }
+    function reloadCatalog() { return api.get("/api/catalog").then(function (c) { D.load(c); A.applyTheme(c.site && c.site.theme, c.site && c.site.brandColor, c.site && c.site.accentColor); setVer(function (x) { return x + 1; }); }); }
     function nav(page, arg, opts) {
       if (page === "request") setPrefill(arg && typeof arg === "object" ? arg : null);
       var url = urlFor(page, page === "request" ? null : arg);
@@ -528,7 +528,9 @@
     useEffect(function () { if (user && (pg === "login" || pg === "register")) { history.replaceState(null, "", PATHS.account); setRoute(parse()); window.scrollTo(0, 0); } }, [user, pg]);
     var active = pg === "vehicle" ? "stock" : pg === "request" ? "auction" : (pg === "login" || pg === "register") ? "login" : pg;
     var userName = user ? (user.name || (user.email || "").split("@")[0]) : null;
-    return h("div", { className: "ad-page" + (pg === "admin" ? " is-admin" : "") },
+    // The admin is its own full-screen app: no public header, footer or floating buttons.
+    if (pg === "admin") return h("div", { className: "ad-page is-admin" }, h("main", { key: "admin", className: "ad-main ad-main--admin" }, body));
+    return h("div", { className: "ad-page" },
       h(A.SiteHeader, { active: active, onNavigate: function (id, init) { if (id === "logout") signOut(); else nav(id, init); }, compareCount: cmp.length, user: userName, isAdmin: !!(user && user.is_admin) || !!admin }),
       h("main", { key: pg + (route.seo || ""), className: "ad-main" }, body),
       h(A.SiteFooter, { onNavigate: function (id, init) { nav(id, init); } }),
@@ -541,6 +543,7 @@
   var root = document.getElementById("app");
   api.get("/api/catalog").then(function (c) {
     D.load(c);
+    A.applyTheme(c.site && c.site.theme, c.site && c.site.brandColor, c.site && c.site.accentColor);
     initThirdParty(c.site || {});
     ReactDOM.createRoot(root).render(h(App));
   }).catch(function (e) {

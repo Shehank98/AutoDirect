@@ -7,7 +7,8 @@ const db = require('../../db/pool');
 const { requireAdmin } = require('../auth');
 const { bucket, isConfigured } = require('../firebase');
 const samples = require('../samples');
-const { invalidate } = require('./catalog');
+const { invalidate, siteDefaults } = require('./catalog');
+const settings = require('../settings');
 const mailer = require('../mailer');
 
 const router = express.Router();
@@ -348,6 +349,26 @@ router.delete('/taxonomy/:kind/:id', async (req, res, next) => {
     const def = taxDef(req, res); if (!def) return;
     await db.query(`DELETE FROM ${def.table} WHERE id = $1`, [parseInt(req.params.id, 10)]);
     res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// ---------- Site settings (contact details, theme, home page texts) ----------
+// Returns the values in force, the defaults, and which keys have been changed by staff.
+router.get('/settings', async (_req, res, next) => {
+  try {
+    const defaults = siteDefaults();
+    const changed = await settings.overrides();
+    res.json({ values: { ...defaults, ...changed }, defaults, changed: Object.keys(changed) });
+  } catch (e) { next(e); }
+});
+
+router.put('/settings', async (req, res, next) => {
+  try {
+    const bad = await settings.save(req.body);
+    if (bad.length) return res.status(400).json({ error: 'Please check: ' + bad.join(', ') + '. Phone numbers need 7-20 digits, links must start with http(s)://, colours must look like #1a7f5a.' });
+    const defaults = siteDefaults();
+    const changed = await settings.overrides();
+    res.json({ values: { ...defaults, ...changed }, defaults, changed: Object.keys(changed) });
   } catch (e) { next(e); }
 });
 

@@ -177,3 +177,11 @@ CREATE TABLE IF NOT EXISTS testimonials (
     status      SMALLINT NOT NULL DEFAULT 1,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Site settings edited from Admin (contact details, colour theme, home page texts, section switches).
+-- A missing key means "use the default"; the server's environment variables still provide the defaults.
+CREATE TABLE IF NOT EXISTS settings (
+    key         VARCHAR(60) PRIMARY KEY,
+    value       JSONB NOT NULL,
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);

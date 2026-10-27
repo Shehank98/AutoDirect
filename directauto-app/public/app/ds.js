@@ -41,7 +41,36 @@
   var TESTIMONIALS = [];   // [{ q, n, w, r, lang }]
   var BRANDS = [];       // [{ id, name, image, count }] for the Browse section
   var SITE = { phone: "", email: "", whatsapp: "", address: "", hours: "", instagram: "" };
-  var HOOKS = {};        // server actions + navigation helpers, provided by app.js
+  var HOOKS = {};
+  /* Colour themes. "forest" is the built-in look; the others only override the brand and accent colours.
+     Staff pick one in Admin > Appearance; applyTheme() writes the override as a <style> tag. */
+  var THEMES = {
+    forest: { name: "Forest", brand: "#0e4f45", tint: "#e3efea", accent: "#c93a17", dBrand: "#5fc4ae", dOn: "#0b1f1b", dTint: "#1d2b28", dAccent: "#ff6a42" },
+    ocean: { name: "Ocean", brand: "#0b4f8a", tint: "#e1edf8", accent: "#e8590c", dBrand: "#6db3f2", dOn: "#06182a", dTint: "#14232f", dAccent: "#ff9a52" },
+    crimson: { name: "Crimson", brand: "#8f1d2c", tint: "#f8e6e8", accent: "#b8741a", dBrand: "#ff8a96", dOn: "#2a0a0e", dTint: "#2b1a1c", dAccent: "#f2b729" },
+    royal: { name: "Royal", brand: "#4b2e83", tint: "#ece6f7", accent: "#d6336c", dBrand: "#b79cf0", dOn: "#1a1030", dTint: "#231c33", dAccent: "#ff7aa8" },
+    sunset: { name: "Sunset", brand: "#b4440e", tint: "#fbe9de", accent: "#0f766e", dBrand: "#ff9a62", dOn: "#2a1204", dTint: "#2d2018", dAccent: "#4fd1c5" },
+    slate: { name: "Slate", brand: "#1f2933", tint: "#e6e9ec", accent: "#c93a17", dBrand: "#cbd5df", dOn: "#11161b", dTint: "#1f262c", dAccent: "#ff6a42" }
+  };
+  var HEX = /^#[0-9a-f]{6}$/i;
+  function themeColours(id, brand, accent) {
+    if (id === "custom" && HEX.test(brand || "") && HEX.test(accent || "")) {
+      return { brand: brand, tint: "color-mix(in srgb, " + brand + " 12%, white)", accent: accent,
+        dBrand: "color-mix(in srgb, " + brand + " 45%, white)", dOn: "#0b0f12", dTint: "color-mix(in srgb, " + brand + " 22%, #14171a)", dAccent: "color-mix(in srgb, " + accent + " 65%, white)" };
+    }
+    return THEMES[id] && id !== "forest" ? THEMES[id] : null;
+  }
+  function applyTheme(id, brand, accent) {
+    var c = themeColours(id, brand, accent), el = document.getElementById("ad-theme");
+    if (!c) { if (el) el.remove(); return; }
+    if (!el) { el = document.createElement("style"); el.id = "ad-theme"; document.head.appendChild(el); }
+    var dark = "--brand:" + c.dBrand + ";--on-brand:" + c.dOn + ";--brand-tint:" + c.dTint + ";--accent:" + c.dAccent + ";";
+    el.textContent = ":root{--brand:" + c.brand + ";--brand-tint:" + c.tint + ";--accent:" + c.accent + ";}" +
+      "@media (prefers-color-scheme: dark){:root:not([data-theme=\"light\"]){" + dark + "}}:root[data-theme=\"dark\"]{" + dark + "}";
+  }
+  // Editable site text: the admin's version when set, otherwise the built-in wording.
+  function T(key, fallback) { var v = SITE[key]; return typeof v === "string" && v.trim() ? v : fallback; }
+  function on(key) { return SITE[key] !== false; }        // server actions + navigation helpers, provided by app.js
   function replaceAll(arr, next) { arr.length = 0; Array.prototype.push.apply(arr, next); }
   function loadData(c) {
     replaceAll(VEHICLES, c.vehicles || []); replaceAll(FEATURES, c.features || []);
@@ -302,7 +331,7 @@
         h("a", { href: "mailto:" + SITE.email, className: "ad-hide-sm" }, h(Icon, { name: "mail", size: 14 }), SITE.email),
         h("span", { className: "ad-hide-sm" }, h(Icon, { name: "pin", size: 14 }), SITE.address),
         h("span", { className: "ad-topbar__sp" }),
-        h("span", { className: "ad-topbar__live" }, h("span", { className: "ad-pulse", "aria-hidden": true }), "Japan auction imports for Sri Lanka"))),
+        h("span", { className: "ad-topbar__live" }, h("span", { className: "ad-pulse", "aria-hidden": true }), T("topbarText", "Japan auction imports for Sri Lanka")))),
       h("div", { className: "ad-wrap ad-nav" },
         h("a", { href: HREF("home"), className: "ad-nav__brand", "aria-label": "AutoDirect home", onClick: go("home") }, h(Logo, { size: 22 })),
         h("nav", { className: cx("ad-nav__links", open && "is-open"), "aria-label": "Main" },
@@ -357,7 +386,7 @@
       h("div", { className: "ad-wrap" },
         h("div", { className: "ad-footer__top" },
           h("div", { className: "ad-footer__brand" }, h(Logo, { size: 26, inverse: true }),
-            h("p", null, "Japanese auction imports for Sri Lanka, with original auction sheets, refundable deposits and door-to-door tracking."),
+            h("p", null, T("footerText", "Japanese auction imports for Sri Lanka, with original auction sheets, refundable deposits and door-to-door tracking.")),
             h("form", { className: "ad-footer__sub", onSubmit: sub, noValidate: true },
               h("label", { htmlFor: "ad-ft-email", className: "ad-label" }, "New arrivals, weekly"),
               state === "done" ? h("p", { className: "ad-footer__ok", role: "status" }, h(Icon, { name: "check", size: 16 }), "Subscribed. Thank you!")
@@ -594,7 +623,7 @@
       h("div", { className: "ad-ctable__bar" }, h("p", { className: "ad-muted ad-small" }, "Best value in each row is marked."),
         h(Switch, { label: "Only show differences", checked: diff, onChange: setDiff })),
       h("div", { className: "ad-ctable__scroll" },
-        h("table", null,
+        h("table", { style: { "--n": list.length } },
           h("thead", null, h("tr", null, h("th", { scope: "col", className: "ad-ctable__corner" }, h("span", { className: "ad-label" }, list.length + " vehicles")),
             list.map(function (v) {
               return h("th", { key: v.id, scope: "col" }, h("div", { className: "ad-ctable__car" },
@@ -1230,7 +1259,7 @@
     ProcessSteps: ProcessSteps, Glossary: Glossary, Testimonials: Testimonials, AuthCard: AuthCard, OrderTracker: OrderTracker,
     AccountDashboard: AccountDashboard, ContactPanel: ContactPanel, BrowseSection: BrowseSection, BrowseSide: BrowseSide, Empty: Empty, PhotoPending: PhotoPending, Spec: Spec,
     data: { vehicles: VEHICLES, testimonials: TESTIMONIALS, brands: BRANDS, types: ALL_TYPES, locations: LOCATIONS, features: FEATURES, makes: ALL_MAKES, stockMakes: MAKES, glossary: GLOSSARY, images: IMG, load: loadData },
-    hooks: HOOKS, site: SITE,
+    hooks: HOOKS, site: SITE, themes: THEMES, applyTheme: applyTheme, T: T, on: on,
     format: { lkr: lkr, lkrFull: lkrFull, yen: yen, num: num, title: title, emi: emi, cx: cx, priceBounds: priceBounds }
   };
   window.AD = Object.assign(window.AD || {}, AD);
