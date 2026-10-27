@@ -4,7 +4,7 @@
 const express = require('express');
 const db = require('../../db/pool');
 const locations = require('../locations');
-const testimonials = require('../content/testimonials.json');
+const fallbackTestimonials = require('../content/testimonials.json');
 const { VEHICLE_SELECT, toVehicle } = require('../vehicleQuery');
 const router = express.Router();
 
@@ -29,12 +29,14 @@ const TTL_MS = 60 * 1000;
 const invalidate = () => { cache = null; };
 
 async function build() {
-  const [veh, brands, models, types, feats] = await Promise.all([
+  const [veh, brands, models, types, feats, reviews] = await Promise.all([
     db.query(`${VEHICLE_SELECT} WHERE v.status = 1 ORDER BY v.created_at DESC`),
     db.query('SELECT id, name, image FROM vehicle_manufacturer WHERE status = 1 ORDER BY name'),
     db.query('SELECT name, manufacturer_id FROM vehicle_model WHERE status = 1 ORDER BY name'),
     db.query('SELECT id, name, image FROM vehicle_type WHERE status = 1 ORDER BY name'),
     db.query('SELECT name FROM vehicle_feature WHERE status = 1 ORDER BY name'),
+    // If the table is not there yet (migration not run) fall back to the bundled reviews.
+    db.query(`SELECT name, role, quote, lang, image, featured FROM testimonials WHERE status = 1 ORDER BY featured DESC, id`).then((r) => r.rows).catch(() => null),
   ]);
   const vehicles = veh.rows.map(toVehicle);
   const count = (key, val) => vehicles.filter((v) => v[key] === val).length;
@@ -47,7 +49,7 @@ async function build() {
     types: types.rows.map((t) => ({ ...t, count: count('type', t.name) })),
     features: feats.rows.map((f) => f.name),
     locations: locations.map((l) => ({ ...l, count: count('location', l.name) })),
-    testimonials,
+    testimonials: reviews || fallbackTestimonials,
   };
 }
 

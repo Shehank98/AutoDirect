@@ -363,10 +363,62 @@
         }) }));
   }
 
+  /* ------------------------------------------------------------ testimonials (home page reviews) */
+  function Testimonials(p) {
+    var d = useLoad("/api/admin/testimonials");
+    var s1 = useState(null), edit = s1[0], setEdit = s1[1], s2 = useState(null), del = s2[0], setDel = s2[1];
+    if (d.error) return h(Err, { text: d.error });
+    if (!d.data) return h("p", { className: "ad-muted" }, "Loading…");
+    function patch(r, body) { api.put("/api/admin/testimonials/" + r.id, body).then(function () { d.reload(); p.changed(); }, function (e) { p.say(e.message, "danger"); }); }
+    return h(Frag, null,
+      h("div", { className: "ad-dt__bar" }, h("p", { className: "ad-muted" }, d.data.length + " review" + (d.data.length === 1 ? "" : "s") + ". The featured one is pinned and highlighted on the home page; the rest scroll past."),
+        h("div", { className: "ad-row" }, h(A.Button, { icon: "plus", onClick: function () { setEdit({ status: 1, lang: "en" }); } }, "Add testimonial"))),
+      h(Table, { cols: [{ label: "" }, { label: "Customer" }, { label: "Review" }, { label: "Featured" }, { label: "Active" }, { label: "" }],
+        empty: d.data.length ? null : h(A.Empty, { icon: "star", title: "No testimonials yet", text: "Add the first customer review." }),
+        rows: d.data.map(function (r) {
+          return h("tr", { key: r.id },
+            h("td", { className: "ad-dt__cb" }, h(Thumb, { src: r.image, logo: true, icon: "user" })),
+            h("td", null, h("b", null, r.name), h("div", { className: "ad-small ad-muted" }, r.role)),
+            h("td", { className: "ad-dt__wrap", lang: r.lang }, r.quote.length > 120 ? r.quote.slice(0, 120) + "…" : r.quote),
+            h("td", null, h(A.Switch, { label: "Feature " + r.name, hideLabel: true, checked: !!r.featured, onChange: function (x) { patch(r, { featured: x }); } })),
+            h("td", null, h(A.Switch, { label: "Show " + r.name, hideLabel: true, checked: r.status === 1, onChange: function (x) { patch(r, { status: x ? 1 : 0 }); } })),
+            h("td", { className: "ad-dt__act" }, h(A.Button, { variant: "ghost", size: "s", icon: "edit", "aria-label": "Edit " + r.name, onClick: function () { setEdit(r); } }),
+              h(A.Button, { variant: "ghost", size: "s", icon: "trash", "aria-label": "Delete " + r.name, onClick: function () { setDel(r); } })));
+        }) }),
+      edit ? h(TestimonialModal, { row: edit, onClose: function () { setEdit(null); }, onSaved: function () { setEdit(null); d.reload(); p.say("Saved"); p.changed(); } }) : null,
+      del ? h(Confirm, { title: "Delete the review from " + del.name + "?", text: "It disappears from the home page. This cannot be undone.", onCancel: function () { setDel(null); },
+        onOk: function () { api.del("/api/admin/testimonials/" + del.id).then(function () { setDel(null); d.reload(); p.say("Deleted"); p.changed(); }, function (e) { setDel(null); p.say(e.message, "danger"); }); } }) : null);
+  }
+  function TestimonialModal(p) {
+    var r = p.row, isNew = !r.id;
+    var s = useState({ name: r.name || "", role: r.role || "", quote: r.quote || "", lang: r.lang || "en", image: r.image || "", featured: !!r.featured, status: r.status == null ? 1 : r.status }), f = s[0], setF = s[1];
+    var bs = useState(false), busy = bs[0], setBusy = bs[1], er = useState(""), err = er[0], setErr = er[1];
+    function set(k) { return function (e) { var o = Object.assign({}, f); o[k] = e && e.target ? e.target.value : e; setF(o); }; }
+    function save(e) {
+      e.preventDefault(); setErr("");
+      if (!f.name.trim() || !f.quote.trim()) { setErr("Name and review text are required."); return; }
+      var body = { name: f.name.trim(), role: f.role.trim(), quote: f.quote.trim(), lang: f.lang, image: f.image, featured: f.featured, status: f.status };
+      setBusy(true);
+      (isNew ? api.post("/api/admin/testimonials", body) : api.put("/api/admin/testimonials/" + r.id, body)).then(p.onSaved, function (x) { setErr(x.message); setBusy(false); });
+    }
+    return h(Modal, { title: (isNew ? "Add" : "Edit") + " testimonial", onClose: p.onClose },
+      h("form", { className: "ad-modal__form", onSubmit: save },
+        h(A.TextField, { label: "Customer name", value: f.name, onChange: set("name"), autoFocus: true }),
+        h(A.TextField, { label: "Job / place", optional: true, placeholder: "e.g. Bank of Ceylon (BOC), Kegalle Branch", value: f.role, onChange: set("role") }),
+        h(A.TextField, { label: "Review", multiline: true, rows: 6, value: f.quote, onChange: set("quote") }),
+        h(A.SelectField, { label: "Language", options: [{ value: "en", label: "English" }, { value: "si", label: "Sinhala" }], value: f.lang, onChange: set("lang") }),
+        h("div", null, h("div", { className: "ad-field__label" }, "Customer photo (optional)"), h(ImageField, { folder: "testimonials", images: f.image ? [f.image] : [], onChange: function (a) { setF(Object.assign({}, f, { image: a[0] || "" })); } })),
+        h(A.Switch, { label: "Featured (pinned and highlighted on the home page; replaces the current one)", checked: f.featured, onChange: function (x) { setF(Object.assign({}, f, { featured: x })); } }),
+        h(A.Switch, { label: "Active (visible on the website)", checked: f.status === 1, onChange: function (x) { setF(Object.assign({}, f, { status: x ? 1 : 0 })); } }),
+        h(Err, { text: err }),
+        h("div", { className: "ad-row ad-row--end" }, h(A.Button, { variant: "ghost", onClick: p.onClose }, "Cancel"), h(A.Button, { type: "submit", loading: busy }, "Save"))));
+  }
+
   /* ------------------------------------------------------------ console shell */
   var NAV = [
     ["Inventory", [["vehicles", "car", "Vehicles"], ["manufacturers", "tag", "Brands"], ["models", "layers", "Models"], ["types", "grid", "Body types"], ["colours", "palette", "Colours"], ["features", "check", "Features"]]],
-    ["People", [["inquiries", "doc", "Inquiries"], ["requests", "send", "Auction requests"], ["customers", "users", "Customers"], ["newsletters", "mail", "Newsletter"]]]
+    ["People", [["inquiries", "doc", "Inquiries"], ["requests", "send", "Auction requests"], ["customers", "users", "Customers"], ["newsletters", "mail", "Newsletter"]]],
+    ["Website", [["testimonials", "star", "Testimonials"]]]
   ];
   function Console(p) {
     var s = useState("vehicles"), mod = s[0], setMod = s[1];
@@ -385,7 +437,7 @@
     var body = !L ? h("p", { className: "ad-muted" }, "Loading…") :
       mod === "vehicles" ? h(Vehicles, common) : TAX[mod] ? h(Taxonomy, Object.assign({ mod: mod, key: mod }, common)) :
       mod === "inquiries" || mod === "requests" ? h(Tracking, Object.assign({ mod: mod, key: mod }, common)) :
-      mod === "customers" ? h(Customers, common) : h(Newsletters, common);
+      mod === "customers" ? h(Customers, common) : mod === "testimonials" ? h(Testimonials, common) : h(Newsletters, common);
     var newInq = l.data ? l.data.new_inquiries : 0;
     return h("div", { className: "ad-admin" },
       h("aside", { className: "ad-admin__nav" }, h("div", { className: "ad-admin__navin" },

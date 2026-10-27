@@ -835,8 +835,6 @@ a.ad-browse__tile:focus-visible { outline: 2px solid var(--focus); outline-offse
 .ad-wafab:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 @media (max-width: 640px) { .ad-wafab { width: 54px; height: 54px; padding: 0; justify-content: center; } .ad-wafab__t { display: none; } }
 
-/* Home hero is now just the search panel. */
-.ad-hero--search .ad-hero__in { grid-template-columns: minmax(0, 760px); justify-content: center; }
 
 /* Reviews: featured card pinned, the others float left to right. Tap a card to read it in full. */
 .ad-tstrip { display: grid; gap: 20px; align-items: stretch; min-width: 0; }
@@ -863,3 +861,103 @@ a.ad-browse__tile:focus-visible { outline: 2px solid var(--focus); outline-offse
 .ad-modal__q { font-size: 17px; line-height: 1.6; white-space: pre-wrap; }
 .ad-modal__box { position: relative; max-width: 560px; }
 .ad-modal__x { position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--line-strong); background: var(--surface-200); color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+
+.ad-dt__wrap { white-space: normal; min-width: 220px; max-width: 420px; }
+
+/* ============ Home hero: Browse sidebar + full-width search ============ */
+.ad-hero { padding: 40px 0 56px; }
+.ad-hero__in { grid-template-columns: 280px minmax(0, 1fr); gap: 24px; align-items: start; }
+.ad-hero__search { min-width: 0; }
+.ad-hs { gap: 14px; padding: 20px; }
+.ad-hs__bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: var(--brand-tint); color: var(--brand); font-weight: 600; }
+.ad-hs__bar b { font-size: 18px; }
+.ad-hs__bar-r { margin-left: auto; font-size: 12.5px; font-weight: 600; opacity: .85; text-align: right; }
+.ad-hs__row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto; gap: 14px; align-items: end; }
+.ad-hs__more { display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 6px; border: 0; background: none; color: var(--brand); font: 700 15px/1 var(--font-sans); cursor: pointer; white-space: nowrap; }
+.ad-hs__more:hover { text-decoration: underline; }
+.ad-hs__more:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 8px; }
+.ad-hs__cnt { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; background: var(--brand); color: var(--on-brand); font-size: 12px; display: inline-grid; place-items: center; }
+.ad-hs__chev { transition: transform .15s; }
+.ad-hs__more[aria-expanded="true"] .ad-hs__chev { transform: rotate(180deg); }
+.ad-hs__go { grid-column: auto; margin: 0; white-space: nowrap; }
+.ad-hs__extra { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); align-items: end; }
+.ad-hs__extra .ad-hs__budget { grid-column: auto; }
+@media (max-width: 1080px) { .ad-hero__in { grid-template-columns: 230px minmax(0, 1fr); gap: 16px; } .ad-hs__row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .ad-hs__more { justify-content: flex-start; } .ad-hs__go { grid-column: auto; } }
+
+.ad-bside { background: var(--surface-200); border: 1px solid var(--line); border-radius: 18px; padding: 14px; min-width: 0; }
+.ad-bside__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 2px 4px 8px; border: 0; background: none; color: var(--ink); text-align: left; cursor: default; font: inherit; }
+.ad-bside__head > span { display: grid; gap: 2px; }
+.ad-bside__head b { font: 700 18px/1.2 var(--font-display); }
+.ad-bside__head .ad-kicker { margin: 0; }
+.ad-bside__chev { display: none; transition: transform .15s; }
+.ad-bside__seg { display: flex; gap: 3px; padding: 3px; border-radius: 10px; background: var(--surface-300); margin: 4px 0 8px; }
+.ad-bside__seg button { flex: 1; min-height: 40px; border: 0; border-radius: 8px; background: none; color: var(--ink-muted); font: 700 14px/1 var(--font-sans); cursor: pointer; }
+.ad-bside__seg button.is-on { background: var(--surface-200); color: var(--ink); box-shadow: var(--shadow-1); }
+.ad-bside__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 430px; overflow-y: auto; overscroll-behavior: contain; }
+.ad-bside__it { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 10px; border-radius: 10px; color: var(--ink); text-decoration: none; font-weight: 600; }
+a.ad-bside__it:hover { background: var(--brand-tint); color: var(--brand); }
+a.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.ad-bside__it.is-empty { opacity: .45; }
+.ad-bside__ic { flex: none; width: 30px; height: 26px; display: grid; place-items: center; color: var(--ink-muted); }
+.ad-bside__ic img { max-width: 30px; max-height: 24px; object-fit: contain; }
+.ad-bside__ic .ad-browse__ini { width: 26px; height: 26px; font-size: 12px; }
+.ad-bside__nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ad-bside__n { font-size: 12.5px; color: var(--ink-muted); }
+.ad-bside__more { margin: 8px 0 0 10px; min-height: 36px; }
+.ad-bside__all { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 10px; border-top: 1px solid var(--line); color: var(--brand); font-weight: 700; text-decoration: none; }
+
+/* Phones: Browse becomes a collapsible bar above the search; the search fields stack. */
+@media (max-width: 860px) {
+  .ad-hero { padding: 16px 0 36px; }
+  .ad-hero__in { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .ad-bside { padding: 6px 12px; }
+  .ad-bside__head { cursor: pointer; padding: 8px 2px; min-height: 52px; }
+  .ad-bside__head .ad-kicker { display: none; }
+  .ad-bside__chev { display: block; }
+  .ad-bside.is-open .ad-bside__chev { transform: rotate(180deg); }
+  .ad-bside__body { display: none; padding-bottom: 8px; }
+  .ad-bside.is-open .ad-bside__body { display: block; }
+  .ad-bside__list { max-height: 50vh; grid-template-columns: 1fr 1fr; gap: 4px 8px; }
+  .ad-hs { padding: 14px; border-radius: 18px; }
+  .ad-hs__bar { flex-wrap: wrap; row-gap: 2px; }
+  .ad-hs__bar-r { margin-left: 0; flex-basis: 100%; text-align: left; font-size: 12px; }
+  .ad-hs__row { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .ad-hs__more { height: 44px; }
+  .ad-hs__go { width: 100%; }
+  .ad-hs__extra { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 380px) { .ad-bside__list { grid-template-columns: 1fr; } }
+
+/* Search row placement: Make | Model | More filters | Show button, with the extra filters on their own row. */
+.ad-hs__go { display: inline-flex; grid-row: 1; grid-column: 4; }
+.ad-hs__extra { grid-row: 2; grid-column: 1 / -1; }
+@media (max-width: 1080px) { .ad-hs__more { grid-row: 2; grid-column: 1; } .ad-hs__go { grid-row: 2; grid-column: 2; } .ad-hs__extra { grid-row: 3; } }
+@media (max-width: 860px) {
+  .ad-hs__more, .ad-hs__go, .ad-hs__extra { grid-row: auto; grid-column: 1; }
+  .ad-hs__extra { margin-top: 0; }
+  .ad-hs__bar .ad-pulse { background: var(--success); animation: none; box-shadow: 0 0 0 4px color-mix(in srgb, var(--success) 25%, transparent); }
+}
+.ad-hs__bar .ad-pulse { background: var(--success); }
+.ad-tcard--feat { width: 100%; }
+
+/* ============ Phone polish (audit): bigger tap targets, floating buttons that stay out of the way ============ */
+@media (max-width: 860px) {
+  .ad-page { padding-bottom: 84px; }
+  .ad-themebtn { width: 44px; height: 44px; padding: 0; justify-content: center; font-size: 0; gap: 0; opacity: .92; left: 12px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+  .ad-wafab { right: 12px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+  .ad-topbar a { display: inline-flex; align-items: center; min-height: 36px; }
+  .ad-footer li a, .ad-footer__makes a { display: inline-block; padding: 7px 0; }
+  .ad-footer__col ul { gap: 2px; }
+  .ad-vcard__title a { display: inline-block; padding: 6px 0; }
+  .ad-crumbs a { display: inline-block; padding: 10px 2px; }
+  .ad-cmp { height: 40px; }
+  .ad-chip, .ad-fgroup .ad-chip, .ad-loan__in .ad-chip { height: 40px; }
+  .ad-tab { min-height: 40px; }
+  a.ad-link, button.ad-link { display: inline-block; padding: 9px 0; }
+}
+@media (max-width: 860px) {
+  .ad-seg button { min-width: 44px; min-height: 44px; }
+  .ad-nav__brand { padding: 9px 0; }
+  .ad-footer__bottom a { display: inline-block; padding: 10px 2px; }
+}
+@media (max-width: 860px) { .ad-topbar__live { display: none !important; } }

@@ -57,7 +57,7 @@ router.get('/stats', async (_req, res, next) => {
 });
 
 // ---------- Image upload -> Firebase Storage ----------
-const FOLDERS = ['vehicles', 'brands', 'types'];
+const FOLDERS = ['vehicles', 'brands', 'types', 'testimonials'];
 
 router.post('/upload', upload.array('images', 12), async (req, res, next) => {
   try {
@@ -347,6 +347,57 @@ router.delete('/taxonomy/:kind/:id', async (req, res, next) => {
   try {
     const def = taxDef(req, res); if (!def) return;
     await db.query(`DELETE FROM ${def.table} WHERE id = $1`, [parseInt(req.params.id, 10)]);
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// ---------- Testimonials (home page reviews) ----------
+const reviewFields = (b) => ({
+  name: String(b.name || '').trim().slice(0, 200),
+  role: String(b.role || '').trim().slice(0, 250),
+  quote: String(b.quote || '').trim().slice(0, 4000),
+  lang: b.lang === 'si' ? 'si' : 'en',
+  image: String(b.image || '').trim().slice(0, 2000),
+  featured: !!b.featured,
+  status: b.status === 0 || b.status === false ? 0 : 1,
+});
+
+router.get('/testimonials', async (_req, res, next) => {
+  try { res.json((await db.query('SELECT * FROM testimonials ORDER BY featured DESC, id')).rows); } catch (e) { next(e); }
+});
+
+router.post('/testimonials', async (req, res, next) => {
+  try {
+    const t = reviewFields(req.body);
+    if (!t.name || !t.quote) return res.status(400).json({ error: 'Name and review text are required.' });
+    if (t.featured) await db.query('UPDATE testimonials SET featured = false');
+    const { rows } = await db.query(
+      'INSERT INTO testimonials (name, role, quote, lang, image, featured, status) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
+      [t.name, t.role, t.quote, t.lang, t.image, t.featured, t.status]);
+    res.status(201).json(rows[0]);
+  } catch (e) { next(e); }
+});
+
+router.put('/testimonials/:id', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const cur = (await db.query('SELECT * FROM testimonials WHERE id = $1', [id])).rows[0];
+    if (!cur) return res.status(404).json({ error: 'Not found.' });
+    const t = reviewFields({ ...cur, ...req.body });
+    if (!t.name || !t.quote) return res.status(400).json({ error: 'Name and review text are required.' });
+    if (t.featured) await db.query('UPDATE testimonials SET featured = false WHERE id <> $1', [id]);
+    const { rows } = await db.query(
+      'UPDATE testimonials SET name=$1, role=$2, quote=$3, lang=$4, image=$5, featured=$6, status=$7 WHERE id=$8 RETURNING *',
+      [t.name, t.role, t.quote, t.lang, t.image, t.featured, t.status, id]);
+    if (cur.image && cur.image !== t.image) deleteStoredImages([cur.image]);
+    res.json(rows[0]);
+  } catch (e) { next(e); }
+});
+
+router.delete('/testimonials/:id', async (req, res, next) => {
+  try {
+    const { rows } = await db.query('DELETE FROM testimonials WHERE id = $1 RETURNING image', [parseInt(req.params.id, 10)]);
+    if (rows[0]) deleteStoredImages([rows[0].image]);
     res.json({ ok: true });
   } catch (e) { next(e); }
 });

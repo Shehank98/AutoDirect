@@ -37,6 +37,22 @@ async function ensureBrowseDefaults(client) {
   console.log('[migrate] browse defaults (brands / body types) ensured.');
 }
 
+// One-off: copy the reviews that used to live in src/content/testimonials.json into the table,
+// so they can be edited from the admin. Tracked in app_meta so deleted reviews are not brought back.
+async function ensureTestimonials(client) {
+  const KEY = 'testimonials_seed_v1';
+  if ((await client.query('SELECT 1 FROM app_meta WHERE key = $1', [KEY])).rowCount) return;
+  if (!(await client.query('SELECT 1 FROM testimonials LIMIT 1')).rowCount) {
+    for (const t of require('../src/content/testimonials.json')) {
+      await client.query(
+        'INSERT INTO testimonials (name, role, quote, lang, image, featured) VALUES ($1, $2, $3, $4, $5, $6)',
+        [t.name, t.role || '', t.quote, t.lang || 'en', t.image || '', !!t.featured]);
+    }
+  }
+  await client.query('INSERT INTO app_meta (key) VALUES ($1)', [KEY]);
+  console.log('[migrate] testimonials imported.');
+}
+
 async function migrate() {
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   const seed = fs.readFileSync(path.join(__dirname, 'seed.sql'), 'utf8');
@@ -58,6 +74,7 @@ async function migrate() {
       console.log(rows[0].n ? `[migrate] database already has ${rows[0].n} vehicles - skipping seed.` : '[migrate] SEED_DEMO_DATA=false - skipping sample data.');
     }
     await ensureBrowseDefaults(client);
+    await ensureTestimonials(client);
     console.log('[migrate] done.');
   } finally {
     await client.query('SELECT pg_advisory_unlock(727274)').catch(() => {});

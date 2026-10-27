@@ -413,24 +413,30 @@
     }).length;
     function submit(ev) { ev.preventDefault(); setSent(true); p.onSearch && p.onSearch({ mode: mode, make: make, model: model, type: type, budget: budget, bounds: pb, yearFrom: yFrom, chassis: chassis }); }
     var models = make ? (mode === "stock" ? MAKES : ALL_MAKES)[make] || [] : [];
+    var mo = useState(false), more = mo[0], setMore = mo[1];
+    var extra = mode === "stock" ? (type ? 1 : 0) + (yFrom ? 1 : 0) + (budget[0] !== pb[0] || budget[1] !== pb[1] ? 1 : 0) : (chassis ? 1 : 0) + (yFrom ? 1 : 0);
     return h("div", { className: "ad-hs" },
-      h(Tabs, { tabs: [{ id: "stock", label: "In our stock", icon: "car" }, { id: "auction", label: "Japan auctions", icon: "gavel" }], value: mode, onChange: function (x) { setMode(x); setSent(false); }, label: "Search in" }),
-      h("form", { className: "ad-hs__grid", onSubmit: submit },
-        h(SelectField, { label: "Make", placeholder: "Any make", options: mode === "stock" ? Object.keys(MAKES) : Object.keys(ALL_MAKES), value: make, onChange: function (ev) { setMake(ev.target.value); setModel(""); } }),
-        h(SelectField, { label: "Model", placeholder: make ? "Any " + make : "Choose a make first", options: models, value: model, disabled: !make, onChange: function (ev) { setModel(ev.target.value); } }),
-        mode === "stock"
-          ? h(SelectField, { label: "Body type", placeholder: "Any body", options: BODY_TYPES, value: type, onChange: function (ev) { setType(ev.target.value); } })
-          : h(TextField, { label: "Chassis code", placeholder: "e.g. NKE165", mono: true, value: chassis, onChange: function (ev) { setChassis(ev.target.value.toUpperCase()); } }),
-        h(SelectField, { label: mode === "stock" ? "Year from" : "Model year", placeholder: "Any year", options: YEARS, value: yFrom, onChange: function (ev) { setYFrom(ev.target.value); } }),
-        mode === "stock"
-          ? h(RangeSlider, { className: "ad-hs__budget", label: "Budget", min: pb[0], max: pb[1], step: 250000, value: budget, onChange: setBudget, format: lkr })
-          : h("p", { className: "ad-hs__budget ad-small ad-muted" }, "We search this week’s USS, TAA and JU lots for you."),
-        h("div", { className: "ad-hs__go" },
-          h(Button, { type: "submit", variant: mode === "stock" ? "primary" : "accent", size: "l", icon: "search", block: true },
-            mode === "stock" ? "Show " + count + " vehicle" + (count === 1 ? "" : "s") : "Search auctions"),
-          h("p", { className: "ad-hs__note", role: sent ? "status" : undefined },
-            mode === "stock" ? (sent ? count + " matches. Opening Ex Stock…" : "Live count updates as you choose")
-              : (sent ? "Opening the request form…" : "Weekly USS, TAA and JU auctions")))));
+      h("div", { className: "ad-hs__bar", role: "status", "aria-live": "polite" }, h("span", { className: "ad-pulse", "aria-hidden": true }),
+        mode === "stock" ? (sent ? "Opening Ex Stock…" : h("span", null, h("b", null, count + " vehicle" + (count === 1 ? "" : "s")), " match"))
+          : (sent ? "Opening the request form…" : "Weekly USS, TAA and JU auctions"),
+        h("span", { className: "ad-hs__bar-r" }, "Updates live as you choose")),
+      h(Tabs, { tabs: [{ id: "stock", label: "In Ex Stock", icon: "car" }, { id: "auction", label: "Japan auctions", icon: "gavel" }], value: mode, onChange: function (x) { setMode(x); setSent(false); }, label: "Search in" }),
+      h("form", { className: "ad-hs__form", onSubmit: submit },
+        h("div", { className: "ad-hs__row" },
+          h(SelectField, { label: "Make", placeholder: "Any make", options: mode === "stock" ? Object.keys(MAKES) : Object.keys(ALL_MAKES), value: make, onChange: function (ev) { setMake(ev.target.value); setModel(""); } }),
+          h(SelectField, { label: "Model", placeholder: make ? "Any " + make : "Choose a make first", options: models, value: model, disabled: !make, onChange: function (ev) { setModel(ev.target.value); } }),
+          h("button", { type: "button", className: "ad-hs__more", "aria-expanded": more, "aria-controls": "ad-hs-more", onClick: function () { setMore(!more); } },
+            h(Icon, { name: more ? "minus" : "plus", size: 16 }), mode === "stock" ? "More filters" : "More options", extra ? h("span", { className: "ad-hs__cnt" }, extra) : null, h(Icon, { name: "chevron-down", size: 16, className: "ad-hs__chev" })),
+          more ? h("div", { id: "ad-hs-more", className: "ad-hs__extra" },
+            mode === "stock"
+            ? h(SelectField, { label: "Body type", placeholder: "Any body", options: BODY_TYPES, value: type, onChange: function (ev) { setType(ev.target.value); } })
+            : h(TextField, { label: "Chassis code", placeholder: "e.g. NKE165", mono: true, value: chassis, onChange: function (ev) { setChassis(ev.target.value.toUpperCase()); } }),
+          h(SelectField, { label: mode === "stock" ? "Year from" : "Model year", placeholder: "Any year", options: YEARS, value: yFrom, onChange: function (ev) { setYFrom(ev.target.value); } }),
+          mode === "stock"
+            ? h(RangeSlider, { className: "ad-hs__budget", label: "Budget", min: pb[0], max: pb[1], step: 250000, value: budget, onChange: setBudget, format: lkr })
+            : h("p", { className: "ad-hs__budget ad-small ad-muted" }, "We search this week’s USS, TAA and JU lots for you.")) : null,
+          h(Button, { type: "submit", variant: mode === "stock" ? "primary" : "accent", size: "l", icon: "search", className: "ad-hs__go" },
+            mode === "stock" ? "Show " + count + " vehicle" + (count === 1 ? "" : "s") : "Search auctions"))));
   }
 
   /* ---------- VehicleCard ---------- */
@@ -1183,6 +1189,38 @@
       } }) : null);
   }
 
+  /* ---------- BrowseSide: "Browse our stock" bar (brands / body types) beside the search. A collapsible bar on phones. ---------- */
+  function BrowseSide(p) {
+    var t = useState("brands"), tab = t[0], setTab = t[1];
+    var o = useState(false), open = o[0], setOpen = o[1];
+    var m = useState(false), all = m[0], setAll = m[1];
+    var isBrand = tab === "brands";
+    var src = (isBrand ? BRANDS : ALL_TYPES).slice().sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name); });
+    var none = src.filter(function (i) { return !(i.count > 0); });
+    var shown = all ? src : src.filter(function (i) { return i.count > 0; });
+    if (!BRANDS.length && !ALL_TYPES.length) return null;
+    return h("aside", { className: cx("ad-bside", open && "is-open"), "aria-label": "Browse our stock" },
+      h("button", { type: "button", className: "ad-bside__head", "aria-expanded": open, "aria-controls": "ad-bside-body", onClick: function () { setOpen(!open); } },
+        h("span", null, h("span", { className: "ad-kicker" }, "Browse"), h("b", null, "Browse our stock")), h(Icon, { name: "chevron-down", size: 18, className: "ad-bside__chev" })),
+      h("div", { id: "ad-bside-body", className: "ad-bside__body" },
+        h("div", { className: "ad-bside__seg", role: "tablist", "aria-label": "Browse by" },
+          [["brands", "Brand"], ["types", "Body type"]].map(function (x) {
+            return h("button", { key: x[0], type: "button", role: "tab", "aria-selected": tab === x[0], className: tab === x[0] ? "is-on" : "", onClick: function () { setTab(x[0]); setAll(false); } }, x[1]);
+          })),
+        h("ul", { className: "ad-bside__list" }, shown.map(function (i) {
+          var on = i.count > 0, q = isBrand ? { make: i.name } : { type: i.name };
+          var icon = isBrand
+            ? (i.image ? h("img", { src: i.image, alt: "", loading: "lazy", onError: function (e) { e.target.style.display = "none"; } }) : h("span", { className: "ad-browse__ini", "aria-hidden": true }, i.name.charAt(0)))
+            : (i.image ? h("img", { src: i.image, alt: "", loading: "lazy" }) : h(Icon, { name: typeIcon(i.name), size: 20, stroke: 1.5 }));
+          var inner = [h("span", { key: "i", className: "ad-bside__ic" }, icon), h("span", { key: "n", className: "ad-bside__nm" }, i.name), h("span", { key: "c", className: "ad-bside__n ad-mono" }, num(i.count))];
+          return h("li", { key: i.id || i.name }, on
+            ? h("a", { href: HREF("stock") + "?" + (isBrand ? "make=" : "type=") + encodeURIComponent(i.name), className: "ad-bside__it", onClick: function (e) { e.preventDefault(); setOpen(false); p.onBrowse(q); } }, inner)
+            : h("span", { className: "ad-bside__it is-empty", "aria-disabled": true }, inner));
+        })),
+        none.length ? h("button", { type: "button", className: "ad-link ad-small ad-bside__more", "aria-expanded": all, onClick: function () { setAll(!all); } }, all ? "Show fewer" : "Show " + none.length + " more with no stock right now") : null,
+        h("a", { href: HREF("stock"), className: "ad-bside__all", onClick: function (e) { e.preventDefault(); setOpen(false); p.onBrowse({}); } }, "All Ex Stock", h(Icon, { name: "arrow-right", size: 14 }))));
+  }
+
   var AD = {
     Logo: Logo, Icon: Icon, Button: Button, Badge: Badge, StatusBadge: StatusBadge, GradeSeal: GradeSeal, LotTag: LotTag,
     TextField: TextField, SelectField: SelectField, RangeSlider: RangeSlider, ChipGroup: ChipGroup, Switch: Switch, Checkbox: Checkbox, Tabs: Tabs,
@@ -1190,7 +1228,7 @@
     CompareTray: CompareTray, CompareTable: CompareTable, VehicleGallery: VehicleGallery, SpecSheet: SpecSheet, LoanCalculator: LoanCalculator,
     InquiryForm: InquiryForm, LiveAuctionFrame: LiveAuctionFrame, AuctionSheetDecoder: AuctionSheetDecoder, AuctionRequestForm: AuctionRequestForm,
     ProcessSteps: ProcessSteps, Glossary: Glossary, Testimonials: Testimonials, AuthCard: AuthCard, OrderTracker: OrderTracker,
-    AccountDashboard: AccountDashboard, ContactPanel: ContactPanel, BrowseSection: BrowseSection, Empty: Empty, PhotoPending: PhotoPending, Spec: Spec,
+    AccountDashboard: AccountDashboard, ContactPanel: ContactPanel, BrowseSection: BrowseSection, BrowseSide: BrowseSide, Empty: Empty, PhotoPending: PhotoPending, Spec: Spec,
     data: { vehicles: VEHICLES, testimonials: TESTIMONIALS, brands: BRANDS, types: ALL_TYPES, locations: LOCATIONS, features: FEATURES, makes: ALL_MAKES, stockMakes: MAKES, glossary: GLOSSARY, images: IMG, load: loadData },
     hooks: HOOKS, site: SITE,
     format: { lkr: lkr, lkrFull: lkrFull, yen: yen, num: num, title: title, emi: emi, cx: cx, priceBounds: priceBounds }

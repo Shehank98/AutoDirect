@@ -163,3 +163,17 @@ ALTER TABLE live_inquiries ADD COLUMN IF NOT EXISTS note    TEXT        DEFAULT 
 ALTER TABLE live_inquiries ADD COLUMN IF NOT EXISTS eta     DATE;
 ALTER TABLE live_inquiries ADD COLUMN IF NOT EXISTS phone   VARCHAR(50) DEFAULT '';
 ALTER TABLE live_inquiries ADD COLUMN IF NOT EXISTS details JSONB       NOT NULL DEFAULT '{}';  -- years, budget, max km, chassis, colours
+
+-- Customer reviews shown on the home page; managed from Admin > Testimonials.
+-- Only one review is "featured" (pinned and highlighted); the rest scroll past.
+CREATE TABLE IF NOT EXISTS testimonials (
+    id          SERIAL PRIMARY KEY,
+    name        VARCHAR(200) NOT NULL,
+    role        VARCHAR(250) DEFAULT '',
+    quote       TEXT NOT NULL,
+    lang        VARCHAR(10)  NOT NULL DEFAULT 'en',
+    image       TEXT DEFAULT '',
+    featured    BOOLEAN NOT NULL DEFAULT false,
+    status      SMALLINT NOT NULL DEFAULT 1,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);

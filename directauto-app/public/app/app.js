@@ -194,7 +194,8 @@
     if (!feat.length) feat = D.vehicles.filter(function (v) { return v.status !== "Sold"; }).slice(0, 4);
     feat = feat.slice(0, 4);
     return h(Frag, null,
-      h("section", { className: "ad-hero ad-hero--search" }, h("div", { className: "ad-wrap ad-hero__in" },
+      h("section", { className: "ad-hero" }, h("div", { className: "ad-wrap ad-hero__in" },
+        h(A.BrowseSide, { onBrowse: function (f) { p.nav("stock", f); } }),
         h("div", { className: "ad-hero__search" }, h(A.HeroSearch, { onSearch: p.onSearch })))),
       feat.length ? h(Sec, { kicker: "Featured", title: "Ready to drive", lead: "Landed, cleared and waiting at our Malabe showroom.", action: h(A.Button, { variant: "secondary", iconRight: "arrow-right", onClick: function () { p.nav("stock"); } }, "All stock") },
         h("div", { className: "ad-stock__grid ad-stock__grid--4" }, feat.map(function (v) { return vehicleCard(p, v); })),
@@ -208,8 +209,8 @@
       D.testimonials.length ? h(Sec, { kicker: "Reviews", title: "What our customers say" }, h(A.Testimonials, null)) : null,
       h(Sec, { tight: true }, h(CTA, { title: "Looking for one exact car?", text: "Tell us the model, year and budget. We shortlist lots and send every sheet before bidding." },
         h(A.Button, { variant: "accent", size: "l", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a bid"),
-        h(A.Button, { variant: "secondary", size: "l", icon: "phone", onClick: function () { p.nav("contact"); } }, "Talk to us"))),
-      h(Sec, { tint: true, kicker: "Find it your way", title: "Browse our stock" }, h(A.BrowseSection, { onBrowse: function (f) { p.nav("stock", f); } })));
+        h(A.Button, { variant: "secondary", size: "l", icon: "phone", onClick: function () { p.nav("contact"); } }, "Talk to us")))
+    );
   }
 
   function vehicleCard(p, v) {
