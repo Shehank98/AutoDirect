@@ -46,7 +46,7 @@
   var PATHS = { home: "/", stock: "/our-stock", compare: "/compare", auction: "/live-auction", request: "/request-a-bid", buy: "/how-to-buy",
     sheet: "/how-to-read-auction-sheet", vocab: "/vocabulary", about: "/about-us", contact: "/contact-us", login: "/login", register: "/register",
     account: "/my-account", admin: "/admin" };
-  var TITLES = { home: "Japanese auction car imports for Sri Lanka", stock: "Our stock", compare: "Compare vehicles", auction: "Ex Stock", request: "Request a bid",
+  var TITLES = { home: "Japanese auction car imports for Sri Lanka", stock: "Ex Stock", compare: "Compare vehicles", auction: "Live auction", request: "Request a bid",
     buy: "How to buy", sheet: "How to read an auction sheet", vocab: "Import vocabulary", about: "About us", contact: "Contact us", login: "Sign in", register: "Create account",
     account: "My account", admin: "Admin" };
   var ACCOUNT_TABS = { "live-auction-request": "auction", "profile-settings": "profile", "my-inquiries": "inquiries" };
@@ -199,8 +199,8 @@
       feat.length ? h(Sec, { kicker: "Featured", title: "Ready to drive", lead: "Landed, cleared and waiting at our Malabe showroom.", action: h(A.Button, { variant: "secondary", iconRight: "arrow-right", onClick: function () { p.nav("stock"); } }, "All stock") },
         h("div", { className: "ad-stock__grid ad-stock__grid--4" }, feat.map(function (v) { return vehicleCard(p, v); })),
         h(A.CompareTray, { floating: true, items: p.cmp.map(byRef).filter(Boolean), onRemove: p.toggleCmp, onClear: p.clearCmp, onCompare: function () { p.nav("compare"); } })) : null,
-      h(Sec, { tint: true, kicker: "Ex Stock", title: "Browse Ex Stock", lead: "Browse live lots from Japanese auction houses without leaving AutoDirect.",
-        action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("auction"); } }, "Open Ex Stock") },
+      h(Sec, { tint: true, kicker: "Live auction", title: "Watch Japan auctions live", lead: "Browse live lots from Japanese auction houses without leaving AutoDirect.",
+        action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("auction"); } }, "Open live auction") },
         h("div", { className: "ad-infostrip" },
           [["gavel", "Live lots", "Search thousands of cars crossing the block this week."], ["doc", "Sheet first", "We translate the original auction sheet before any bid."], ["shield", "Refundable deposit", "Bidding starts after a 100% refundable deposit."]].map(function (x) {
             return h("div", { key: x[1] }, h(A.Icon, { name: x[0], size: 22 }), h("b", null, x[1]), h("p", { className: "ad-small ad-muted" }, x[2]));
@@ -219,7 +219,7 @@
 
   function Stock(p) {
     return h(Frag, null,
-      h(PageHead, { bare: true, crumb: "Our stock", title: "Our stock" }),
+      h(PageHead, { bare: true, crumb: "Ex Stock", title: "Ex Stock" }),
       h("div", { className: "ad-wrap ad-pagebody" }, h(A.StockBrowser, {
         key: JSON.stringify(p.filters), initial: p.filters, vehicles: D.vehicles,
         cmp: p.cmp, onToggleCmp: p.toggleCmp, onClearCmp: p.clearCmp, saved: p.saved, onToggleSave: p.toggleSave,
@@ -234,7 +234,7 @@
     useEffect(function () { if (v) setMeta(fmt.title(v) + " " + v.grade); }, [p.seo]);
     if (!v) return h("div", { className: "ad-wrap ad-pagebody" },
       h(A.Empty, { icon: "car", title: "We couldn’t find that vehicle", text: "It may have been sold or taken down. Browse what’s in stock or ask us to find a similar car." },
-        h("div", { className: "ad-row" }, h(A.Button, { onClick: function () { p.nav("stock"); } }, "Our stock"), h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a bid"))));
+        h("div", { className: "ad-row" }, h(A.Button, { onClick: function () { p.nav("stock"); } }, "Ex Stock"), h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a bid"))));
     var inCmp = p.cmp.indexOf(v.id) >= 0, saved = p.saved.indexOf(v.id) >= 0, sold = v.status === "Sold";
     var monthly = v.price > 0 ? (function () { var P = v.price * 0.7, r = 14.5 / 1200, n = 60; return P * r / (1 - Math.pow(1 + r, -n)); })() : 0;
     function goTab(x) { setTab(x); setTimeout(function () { var el = document.getElementById("vp-tabs"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 30); }
@@ -242,7 +242,7 @@
       .sort(function (a, b) { return ((b.make === v.make) * 2 + (b.type === v.type)) - ((a.make === v.make) * 2 + (a.type === v.type)); }).slice(0, 3);
     var items = v.images.map(function (src, i) { return { src: src, label: "Photo " + (i + 1) }; });
     return h("div", { className: "ad-wrap ad-vp" },
-      h("nav", { className: "ad-crumbs", "aria-label": "Breadcrumb" }, h("a", { href: "/our-stock", onClick: function (e) { e.preventDefault(); p.nav("stock"); } }, "Our stock"), h(A.Icon, { name: "chevron-right", size: 14 }),
+      h("nav", { className: "ad-crumbs", "aria-label": "Breadcrumb" }, h("a", { href: "/our-stock", onClick: function (e) { e.preventDefault(); p.nav("stock"); } }, "Ex Stock"), h(A.Icon, { name: "chevron-right", size: 14 }),
         h("a", { href: urlFor("stock", { make: v.make }), onClick: function (e) { e.preventDefault(); p.nav("stock", { make: v.make }); } }, v.make), h(A.Icon, { name: "chevron-right", size: 14 }), h("span", { "aria-current": "page" }, (v.model + " " + v.grade).trim())),
       h("div", { className: "ad-vp__top" },
         h(A.VehicleGallery, { key: v.id, alt: fmt.title(v), items: items }),
@@ -279,10 +279,10 @@
   function Auction(p) {
     var site = A.site;
     return h(Frag, null,
-      h(PageHead, { bare: true, crumb: "Ex Stock", title: "Ex Stock", action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a specific car") }),
+      h(PageHead, { bare: true, crumb: "Live auction", title: "Live auction", action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a specific car") }),
       h("div", { className: "ad-wrap ad-pagebody" },
         site.liveAuctionUrl ? h(A.LiveAuctionFrame, { url: site.liveAuctionUrl, hint: site.liveAuctionHint })
-          : h(A.Empty, { icon: "gavel", title: "Ex Stock is not set up yet", text: "Tell us what you want and we’ll shortlist matching lots from this week’s auctions." }),
+          : h(A.Empty, { icon: "gavel", title: "Live auction is not set up yet", text: "Tell us what you want and we’ll shortlist matching lots from this week’s auctions." }),
         h(CTA, { title: "Not finding the right car?", text: "Tell us the model, year and budget and we’ll shortlist the lots." },
           h(A.Button, { variant: "accent", size: "l", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a bid"),
           h(A.Button, { variant: "secondary", size: "l", onClick: function () { p.nav("sheet"); } }, "How to read a sheet"))));
@@ -353,7 +353,7 @@
 
   function NotFound(p) {
     return h("div", { className: "ad-wrap ad-pagebody" }, h(A.Empty, { icon: "search", title: "Page not found", text: "That page doesn’t exist any more." },
-      h("div", { className: "ad-row" }, h(A.Button, { onClick: function () { p.nav("home"); } }, "Go home"), h(A.Button, { variant: "secondary", onClick: function () { p.nav("stock"); } }, "Our stock"))));
+      h("div", { className: "ad-row" }, h(A.Button, { onClick: function () { p.nav("home"); } }, "Go home"), h(A.Button, { variant: "secondary", onClick: function () { p.nav("stock"); } }, "Ex Stock"))));
   }
 
   function Login(p) {
@@ -380,7 +380,7 @@
 
   function AccountsOff(p) {
     return h("div", { className: "ad-wrap ad-pagebody" }, h(A.Empty, { icon: "user", title: "Customer accounts are not available yet", text: "You can still request quotes and auction bids without an account. We reply by phone or WhatsApp." },
-      h("div", { className: "ad-row" }, h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a bid"), h(A.Button, { variant: "secondary", onClick: function () { p.nav("stock"); } }, "Our stock"))));
+      h("div", { className: "ad-row" }, h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("request"); } }, "Request a bid"), h(A.Button, { variant: "secondary", onClick: function () { p.nav("stock"); } }, "Ex Stock"))));
   }
 
   /* Staff sign-in with the ADMIN_USERNAME / ADMIN_PASSWORD server variables. */

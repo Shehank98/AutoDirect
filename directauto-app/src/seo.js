@@ -12,8 +12,8 @@ const NAME = 'AutoDirect';
 const DEFAULT_DESC = 'Browse imported cars in stock or let AutoDirect bid for your exact car at Japanese auctions, with the original auction sheet translated before every bid.';
 const PAGES = {
   '/': ['Japanese auction car imports for Sri Lanka', DEFAULT_DESC],
-  '/our-stock': ['Our stock', 'Imported cars in stock in Sri Lanka. Filter by brand, body type, price, year and inventory location.'],
-  '/live-auction': ['Ex Stock', 'Browse Ex Stock cars from Japanese auctions and let us bid for you, with the auction sheet translated before every bid.'],
+  '/our-stock': ['Ex Stock', 'Imported cars in stock in Sri Lanka. Filter by brand, body type, price, year and inventory location.'],
+  '/live-auction': ['Live auction', 'Watch live Japanese car auctions and let us bid for you, with the auction sheet translated before every bid.'],
   '/request-a-bid': ['Request a bid', 'Tell us the car, year and budget and we shortlist matching lots at this week\'s Japanese auctions.'],
   '/how-to-buy': ['How to buy', 'From auction floor to your driveway: the steps, timelines and documents for importing a car from Japan.'],
   '/how-to-read-auction-sheet': ['How to read an auction sheet', 'Decode Japanese auction sheet grades and damage codes in a minute.'],

@@ -278,8 +278,8 @@
   /* ---------- SiteHeader ---------- */
   var NAV = [
     { id: "home", label: "Home" },
-    { id: "stock", label: "Our stock" },
-    { id: "auction", label: "Ex Stock", live: true },
+    { id: "stock", label: "Ex Stock" },
+    { id: "auction", label: "Live auction", live: true },
     { id: "buy", label: "How to buy", children: [
       { id: "buy", label: "Buying process", text: "Five steps, 30–45 days" },
       { id: "sheet", label: "Reading an auction sheet", text: "Grades & damage codes decoded" },
@@ -338,7 +338,7 @@
   }
 
   /* ---------- SiteFooter ---------- */
-  var FOOT_ROUTES = { "Our stock": "stock", "Ex Stock": "auction", "Compare vehicles": "compare", "Request a bid": "request", "How to buy": "buy", "Reading an auction sheet": "sheet", "Import vocabulary": "vocab", "About us": "about", "Contact us": "contact", "Sign in": "login", "Create account": "register", "My inquiries": "account", "Auction requests": "account", "Staff admin": "admin" };
+  var FOOT_ROUTES = { "Ex Stock": "stock", "Live auction": "auction", "Compare vehicles": "compare", "Request a bid": "request", "How to buy": "buy", "Reading an auction sheet": "sheet", "Import vocabulary": "vocab", "About us": "about", "Contact us": "contact", "Sign in": "login", "Create account": "register", "My inquiries": "account", "Auction requests": "account", "Staff admin": "admin" };
   function SiteFooter(p) {
     var s = useState(""), email = s[0], setEmail = s[1];
     var d = useState("idle"), state = d[0], setState = d[1];
@@ -349,7 +349,7 @@
       (HOOKS.subscribe ? HOOKS.subscribe(email) : Promise.reject(new Error("offline"))).then(function () { setState("done"); }, function () { setState("error"); });
     }
     var cols = [
-      ["Buy", ["Our stock", "Ex Stock", "Compare vehicles", "Request a bid"]],
+      ["Buy", ["Ex Stock", "Live auction", "Compare vehicles", "Request a bid"]],
       ["Learn", ["How to buy", "Reading an auction sheet", "Import vocabulary", "About us", "Contact us"]],
       ["Account", ["Sign in", "Create account", "My inquiries", "Auction requests"]]
     ].filter(function (c) { return c[0] !== "Account" || (HOOKS.authOn && HOOKS.authOn()); });
@@ -429,7 +429,7 @@
           h(Button, { type: "submit", variant: mode === "stock" ? "primary" : "accent", size: "l", icon: "search", block: true },
             mode === "stock" ? "Show " + count + " vehicle" + (count === 1 ? "" : "s") : "Search auctions"),
           h("p", { className: "ad-hs__note", role: sent ? "status" : undefined },
-            mode === "stock" ? (sent ? count + " matches. Opening Our stock…" : "Live count updates as you choose")
+            mode === "stock" ? (sent ? count + " matches. Opening Ex Stock…" : "Live count updates as you choose")
               : (sent ? "Opening the request form…" : "Weekly USS, TAA and JU auctions")))));
   }
 
@@ -583,7 +583,7 @@
     function same(fn, key) { var vals = list.map(function (v) { return key ? String(v[key]) : String(fn(v)); }); return vals.every(function (x) { return x === vals[0]; }); }
     var rows = CMP_ROWS.filter(function (r) { return !diff || !same(r[1], r[2]); });
     var feats = FEATURES.filter(function (f) { if (!diff) return true; var hv = list.map(function (v) { return v.features.indexOf(f) >= 0; }); return hv.some(function (x) { return x !== hv[0]; }); });
-    if (!list.length) return h(Empty, { icon: "compare", title: "Your compare list is empty", text: "Tick Compare on up to four vehicles in Our stock." });
+    if (!list.length) return h(Empty, { icon: "compare", title: "Your compare list is empty", text: "Tick Compare on up to four vehicles in Ex Stock." });
     return h("div", { className: "ad-ctable" },
       h("div", { className: "ad-ctable__bar" }, h("p", { className: "ad-muted ad-small" }, "Best value in each row is marked."),
         h(Switch, { label: "Only show differences", checked: diff, onChange: setDiff })),
@@ -745,12 +745,12 @@
     useEffect(function () { var t = setTimeout(function () { setLoading(false); }, 8000); return function () { clearTimeout(t); }; }, []);
     return h("div", { className: "ad-live" },
       h("div", { className: "ad-live__bar" },
-        h("span", { className: "ad-live__src" }, h("span", { className: "ad-pulse", "aria-hidden": true }), "Ex Stock"),
+        h("span", { className: "ad-live__src" }, h("span", { className: "ad-pulse", "aria-hidden": true }), "Live Japan auctions"),
         h("a", { className: "ad-link ad-small", href: url, target: "_blank", rel: "noopener" }, "Open in a new tab")),
       p.hint ? h("p", { className: "ad-live__hint" }, h(Icon, { name: "info", size: 16 }), p.hint) : null,
       h("div", { className: "ad-live__frame" },
         loading ? h("div", { className: "ad-live__loading", role: "status" }, h("span", { className: "ad-spinner", "aria-hidden": true }), "Loading the auction viewer…") : null,
-        h("iframe", { src: url, title: "Ex Stock", loading: "eager", onLoad: function () { setLoading(false); }, referrerPolicy: "no-referrer-when-downgrade",
+        h("iframe", { src: url, title: "Live Japan car auctions", loading: "eager", onLoad: function () { setLoading(false); }, referrerPolicy: "no-referrer-when-downgrade",
           sandbox: "allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads", allow: "fullscreen" })),
       h("p", { className: "ad-small ad-muted" }, "Nothing showing? Some browsers block sign-in inside embedded pages. ", h("a", { className: "ad-link", href: url, target: "_blank", rel: "noopener" }, "Open the auction in a new tab"), " instead."));
   }
