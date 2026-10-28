@@ -471,15 +471,11 @@
     } }, p));
   }
 
-  var HOME_KEYS = ["showFeatured", "featuredTitle", "featuredLead", "showAuction", "auctionTitle", "auctionLead", "showReviews", "reviewsTitle", "showCta", "ctaTitle", "ctaText"];
+  var HOME_KEYS = ["showAuction", "auctionTitle", "auctionLead", "showReviews", "reviewsTitle", "showCta", "ctaTitle", "ctaText"];
   function HomeContent(p) {
     return h(SettingsForm, Object.assign({ keys: HOME_KEYS, render: function (f, set, tog) {
       return h(Frag, null,
         h("p", { className: "ad-note" }, h(A.Icon, { name: "info", size: 16 }), "Switch sections on or off and change their wording. A box left empty keeps the standard wording shown inside it."),
-        h(Card, { title: "Ready to drive (featured cars)", text: "The row of featured cars. Mark cars as featured in Vehicles." },
-          h(A.Switch, { label: "Show this section", checked: on(f, "showFeatured"), onChange: tog("showFeatured") }),
-          h("div", { className: "ad-fgrid" }, h(A.TextField, { label: "Heading", value: f.featuredTitle, onChange: set("featuredTitle"), placeholder: "Ready to drive" }),
-            h(A.TextField, { label: "Sub-heading", value: f.featuredLead, onChange: set("featuredLead"), placeholder: "Landed, cleared and waiting at our Malabe showroom." }))),
         h(Card, { title: "Live auction", text: "The Japan auctions promo strip." },
           h(A.Switch, { label: "Show this section", checked: on(f, "showAuction"), onChange: tog("showAuction") }),
           h("div", { className: "ad-fgrid" }, h(A.TextField, { label: "Heading", value: f.auctionTitle, onChange: set("auctionTitle"), placeholder: "Watch Japan auctions live" }),

@@ -190,16 +190,10 @@
 
   /* ------------------------------------------------------------------ pages */
   function Home(p) {
-    var feat = D.vehicles.filter(function (v) { return v.featured && v.status !== "Sold"; });
-    if (!feat.length) feat = D.vehicles.filter(function (v) { return v.status !== "Sold"; }).slice(0, 4);
-    feat = feat.slice(0, 4);
     return h(Frag, null,
-      h("section", { className: "ad-hero" }, h("div", { className: "ad-wrap ad-hero__in" },
-        h(A.BrowseSide, { onBrowse: function (f) { p.nav("stock", f); } }),
-        h("div", { className: "ad-hero__search" }, h(A.HeroSearch, { onSearch: p.onSearch })))),
-      feat.length && A.on("showFeatured") ? h(Sec, { kicker: "Featured", title: A.T("featuredTitle", "Ready to drive"), lead: A.T("featuredLead", "Landed, cleared and waiting at our Malabe showroom."), action: h(A.Button, { variant: "secondary", iconRight: "arrow-right", onClick: function () { p.nav("stock"); } }, "All stock") },
-        h("div", { className: "ad-stock__grid ad-stock__grid--4" }, feat.map(function (v) { return vehicleCard(p, v); })),
-        h(A.CompareTray, { floating: true, items: p.cmp.map(byRef).filter(Boolean), onRemove: p.toggleCmp, onClear: p.clearCmp, onCompare: function () { p.nav("compare"); } })) : null,
+      h("section", { className: "ad-sec ad-hb-sec" }, h("div", { className: "ad-wrap" },
+        h(A.HomeStock, { onSearch: p.onSearch, onRequest: function () { p.nav("request"); }, renderCard: function (v) { return vehicleCard(p, v); },
+          tray: h(A.CompareTray, { floating: true, items: p.cmp.map(byRef).filter(Boolean), onRemove: p.toggleCmp, onClear: p.clearCmp, onCompare: function () { p.nav("compare"); } }) }))),
       !A.on("showAuction") ? null : h(Sec, { tint: true, kicker: "Live auction", title: A.T("auctionTitle", "Watch Japan auctions live"), lead: A.T("auctionLead", "Browse live lots from Japanese auction houses without leaving AutoDirect."),
         action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("auction"); } }, "Open live auction") },
         h("div", { className: "ad-infostrip" },

@@ -443,7 +443,7 @@
           h("span", null, h("a", { href: SITE.instagram, target: "_blank", rel: "noopener" }, "Instagram"), " · ", h("a", { href: HREF("admin"), onClick: function (e) { e.preventDefault(); p.onNavigate && p.onNavigate("admin"); } }, "Staff admin")))));
   }
 
-  /* ---------- HeroSearch ---------- */
+  /* ---------- Filters shared by the home page ---------- */
   var YEARS = []; for (var yy = new Date().getFullYear(); yy >= 2010; yy--) YEARS.push(String(yy));
   // Slider limits follow the actual stock (priced cars only), so filters never hide the whole catalogue.
   function priceBounds() {
@@ -457,47 +457,115 @@
     return [Math.min.apply(null, ys), Math.max.apply(null, ys)];
   }
   function inPrice(v, r) { return v.price == null || v.price <= 0 || (v.price >= r[0] && v.price <= r[1]); }
-  function HeroSearch(p) {
-    var vehicles = p.vehicles || VEHICLES;
-    var m = useState(p.mode || "stock"), mode = m[0], setMode = m[1];
-    var a = useState(""), make = a[0], setMake = a[1];
-    var b = useState(""), model = b[0], setModel = b[1];
-    var c = useState(""), type = c[0], setType = c[1];
-    var pb = priceBounds();
-    var d = useState(pb), budget = d[0], setBudget = d[1];
-    var e = useState(""), yFrom = e[0], setYFrom = e[1];
-    var f = useState(""), chassis = f[0], setChassis = f[1];
-    var g = useState(false), sent = g[0], setSent = g[1];
-    var count = vehicles.filter(function (v) {
-      return v.status !== "Sold" && (!make || v.make === make) && (!model || v.model === model) && (!type || v.type === type) &&
-        inPrice(v, budget) && (!yFrom || v.year >= Number(yFrom));
-    }).length;
-    function submit(ev) { ev.preventDefault(); setSent(true); p.onSearch && p.onSearch({ mode: mode, make: make, model: model, type: type, budget: budget, bounds: pb, yearFrom: yFrom, chassis: chassis }); }
-    var models = make ? (mode === "stock" ? MAKES : ALL_MAKES)[make] || [] : [];
-    var mo = useState(false), more = mo[0], setMore = mo[1];
-    var extra = mode === "stock" ? (type ? 1 : 0) + (yFrom ? 1 : 0) + (budget[0] !== pb[0] || budget[1] !== pb[1] ? 1 : 0) : (chassis ? 1 : 0) + (yFrom ? 1 : 0);
-    return h("div", { className: "ad-hs" },
-      h("div", { className: "ad-hs__bar", role: "status", "aria-live": "polite" }, h("span", { className: "ad-pulse", "aria-hidden": true }),
-        mode === "stock" ? (sent ? "Opening Ex Stock…" : h("span", null, h("b", null, count + " vehicle" + (count === 1 ? "" : "s")), " match"))
-          : (sent ? "Opening the request form…" : "Weekly USS, TAA and JU auctions"),
-        h("span", { className: "ad-hs__bar-r" }, "Updates live as you choose")),
-      h(Tabs, { tabs: [{ id: "stock", label: "In Ex Stock", icon: "car" }, { id: "auction", label: "Japan auctions", icon: "gavel" }], value: mode, onChange: function (x) { setMode(x); setSent(false); }, label: "Search in" }),
-      h("form", { className: "ad-hs__form", onSubmit: submit },
-        h("div", { className: "ad-hs__row" },
-          h(SelectField, { label: "Make", placeholder: "Any make", options: mode === "stock" ? Object.keys(MAKES) : Object.keys(ALL_MAKES), value: make, onChange: function (ev) { setMake(ev.target.value); setModel(""); } }),
-          h(SelectField, { label: "Model", placeholder: make ? "Any " + make : "Choose a make first", options: models, value: model, disabled: !make, onChange: function (ev) { setModel(ev.target.value); } }),
-          h("button", { type: "button", className: "ad-hs__more", "aria-expanded": more, "aria-controls": "ad-hs-more", onClick: function () { setMore(!more); } },
-            h(Icon, { name: more ? "minus" : "plus", size: 16 }), mode === "stock" ? "More filters" : "More options", extra ? h("span", { className: "ad-hs__cnt" }, extra) : null, h(Icon, { name: "chevron-down", size: 16, className: "ad-hs__chev" })),
-          more ? h("div", { id: "ad-hs-more", className: "ad-hs__extra" },
-            mode === "stock"
-            ? h(SelectField, { label: "Body type", placeholder: "Any body", options: BODY_TYPES, value: type, onChange: function (ev) { setType(ev.target.value); } })
-            : h(TextField, { label: "Chassis code", placeholder: "e.g. NKE165", mono: true, value: chassis, onChange: function (ev) { setChassis(ev.target.value.toUpperCase()); } }),
-          h(SelectField, { label: mode === "stock" ? "Year from" : "Model year", placeholder: "Any year", options: YEARS, value: yFrom, onChange: function (ev) { setYFrom(ev.target.value); } }),
-          mode === "stock"
-            ? h(RangeSlider, { className: "ad-hs__budget", label: "Budget", min: pb[0], max: pb[1], step: 250000, value: budget, onChange: setBudget, format: lkr })
-            : h("p", { className: "ad-hs__budget ad-small ad-muted" }, "We search this week’s USS, TAA and JU lots for you.")) : null,
-          h(Button, { type: "submit", variant: mode === "stock" ? "primary" : "accent", size: "l", icon: "search", className: "ad-hs__go" },
-            mode === "stock" ? "Show " + count + " vehicle" + (count === 1 ? "" : "s") : "Search auctions"))));
+  /* ---------- HomeStock: slim filter bar + brand/body sidebar + the cars, all filtering live ---------- */
+  // Budget choices that overlap the real price range of the stock. Value is "low-high" in rupees.
+  function budgetOptions(pb) {
+    var cuts = [0, 5000000, 8000000, 12000000, 20000000, Infinity], out = [];
+    for (var i = 0; i < cuts.length - 1; i++) {
+      var lo = cuts[i], hi = cuts[i + 1];
+      if (hi <= pb[0] || lo >= pb[1]) continue;
+      out.push({ value: Math.max(lo, pb[0]) + "-" + Math.min(hi, pb[1]), label: i === 0 ? "Under " + lkr(hi) : hi === Infinity ? lkr(lo) + " and above" : lkr(lo) + " – " + lkr(hi) });
+    }
+    return out;
+  }
+  function HomeStock(p) {
+    var vehicles = p.vehicles || VEHICLES, pb = priceBounds();
+    var st = useState({ mode: "stock", make: "", model: "", type: "", yFrom: "", budget: "", chassis: "" }), f = st[0], setF = st[1];
+    var sh = useState(false), sheet = sh[0], setSheet = sh[1];
+    var sd = useState("brands"), side = sd[0], setSide = sd[1];
+    var al = useState(false), allSide = al[0], setAllSide = al[1];
+    function set(k) { return function (ev) { var v = ev && ev.target ? ev.target.value : ev; setF(function (o) { var n = Object.assign({}, o); n[k] = v; if (k === "make") n.model = ""; return n; }); }; }
+    function toggle(k, v) { setF(function (o) { var n = Object.assign({}, o); n[k] = o[k] === v ? "" : v; if (k === "make") n.model = ""; return n; }); }
+    useEffect(function () {
+      if (!sheet) return;
+      function key(e) { if (e.key === "Escape") setSheet(false); }
+      document.addEventListener("keydown", key); document.body.style.overflow = "hidden";
+      return function () { document.removeEventListener("keydown", key); document.body.style.overflow = ""; };
+    }, [sheet]);
+    var stock = f.mode === "stock";
+    var range = f.budget ? f.budget.split("-").map(Number) : pb;
+    var list = vehicles.filter(function (v) {
+      return v.status !== "Sold" && (!f.make || v.make === f.make) && (!f.model || v.model === f.model) && (!f.type || v.type === f.type) &&
+        inPrice(v, range) && (!f.yFrom || v.year >= Number(f.yFrom));
+    }).sort(function (a, b) { return (b.featured - a.featured) || (new Date(b.added) - new Date(a.added)); });
+    var shown = list.slice(0, 9);
+    var models = f.make ? (stock ? MAKES : ALL_MAKES)[f.make] || [] : [];
+    var extra = (f.model ? 1 : 0) + (f.type ? 1 : 0) + (f.yFrom ? 1 : 0) + (f.budget ? 1 : 0);
+    var filtered = !!(f.make || f.model || f.type || f.yFrom || f.budget);
+    function clear() { setF(function (o) { return Object.assign({}, o, { make: "", model: "", type: "", yFrom: "", budget: "" }); }); }
+    function go(ev) {
+      if (ev && ev.preventDefault) ev.preventDefault();
+      p.onSearch && p.onSearch({ mode: f.mode, make: f.make, model: f.model, type: f.type, budget: range, bounds: pb, yearFrom: f.yFrom, chassis: f.chassis });
+    }
+    function sel(label, ph, options, key, disabled) {
+      return h(SelectField, { label: label, placeholder: ph, options: options, value: f[key], disabled: disabled, className: "ad-hb__f", onChange: set(key) });
+    }
+    var count = h("span", { className: "ad-hb__cnt", role: "status", "aria-live": "polite" }, h("span", { className: "ad-pulse", "aria-hidden": true }), h("b", null, list.length), " vehicle" + (list.length === 1 ? "" : "s"));
+    var tabs = h(Tabs, { tabs: [{ id: "stock", label: "In Ex Stock", icon: "car" }, { id: "auction", label: "Japan auctions", icon: "gavel" }], value: f.mode, onChange: function (x) { setF(Object.assign({}, f, { mode: x })); }, label: "Search in", className: "ad-hb__tabs" });
+
+    if (!stock) {
+      return h("div", { className: "ad-hb" }, tabs,
+        h("form", { className: "ad-hb__bar ad-hb__bar--auction", onSubmit: go },
+          sel("Make", "Make", Object.keys(ALL_MAKES), "make"), sel("Model", f.make ? "Any " + f.make : "Model", models, "model", !f.make),
+          h(TextField, { label: "Chassis code", placeholder: "Chassis code, e.g. NKE165", mono: true, className: "ad-hb__f", value: f.chassis, onChange: function (ev) { set("chassis")(ev.target.value.toUpperCase()); } }),
+          sel("Model year", "Model year", YEARS, "yFrom"),
+          h(Button, { type: "submit", variant: "accent", icon: "search", className: "ad-hb__go" }, "Search auctions")),
+        h("p", { className: "ad-small ad-muted" }, "We search this week’s USS, TAA and JU lots for you and send every auction sheet, translated, before any bid."));
+    }
+
+    // Sidebar list (desktop) and brand chips (phone) share the same data.
+    var src = (side === "brands" ? BRANDS : ALL_TYPES).slice().sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name); });
+    var none = src.filter(function (i) { return !(i.count > 0); }), live = src.filter(function (i) { return i.count > 0; });
+    var items = allSide ? src : live, isBrand = side === "brands", key = isBrand ? "make" : "type";
+    var sidebar = h("aside", { className: "ad-hb__side", "aria-label": "Browse our stock" },
+      h("div", { className: "ad-hb__sidehead" }, h("h2", null, "Browse our stock"), filtered ? h("button", { type: "button", className: "ad-link ad-small", onClick: clear }, "Clear") : null),
+      h("div", { className: "ad-bside__seg", role: "tablist", "aria-label": "Browse by" }, [["brands", "Brand"], ["types", "Body type"]].map(function (x) {
+        return h("button", { key: x[0], type: "button", role: "tab", "aria-selected": side === x[0], className: side === x[0] ? "is-on" : "", onClick: function () { setSide(x[0]); setAllSide(false); } }, x[1]);
+      })),
+      h("ul", { className: "ad-bside__list" }, items.map(function (i) {
+        var on = f[key] === i.name, has = i.count > 0;
+        var icon = isBrand ? (i.image ? h("img", { src: i.image, alt: "", loading: "lazy", onError: function (e) { e.target.style.display = "none"; } }) : h("span", { className: "ad-browse__ini", "aria-hidden": true }, i.name.charAt(0)))
+          : (i.image ? h("img", { src: i.image, alt: "", loading: "lazy" }) : h(Icon, { name: typeIcon(i.name), size: 20, stroke: 1.5 }));
+        return h("li", { key: i.id || i.name }, h("button", { type: "button", className: cx("ad-bside__it", on && "is-on", !has && "is-empty"), "aria-pressed": on, disabled: !has && !on, onClick: function () { toggle(key, i.name); } },
+          h("span", { className: "ad-bside__ic" }, icon), h("span", { className: "ad-bside__nm" }, i.name), h("span", { className: "ad-bside__n ad-mono" }, num(i.count))));
+      })),
+      none.length ? h("button", { type: "button", className: "ad-link ad-small ad-bside__more", "aria-expanded": allSide, onClick: function () { setAllSide(!allSide); } }, allSide ? "Show fewer" : "Show " + none.length + " more with no stock right now") : null,
+      h("a", { href: HREF("stock"), className: "ad-bside__all", onClick: function (e) { e.preventDefault(); p.onSearch && p.onSearch({ mode: "stock", budget: pb, bounds: pb }); } }, "All Ex Stock", h(Icon, { name: "arrow-right", size: 14 })));
+
+    var brandChips = live.length && BRANDS.length ? h("div", { className: "ad-hb__chips", role: "group", "aria-label": "Brand" },
+      h("button", { type: "button", className: cx("ad-chip", !f.make && "is-on"), "aria-pressed": !f.make, onClick: function () { set("make")(""); } }, "All"),
+      BRANDS.filter(function (b) { return b.count > 0; }).sort(function (a, b) { return b.count - a.count; }).map(function (b) {
+        return h("button", { key: b.id, type: "button", className: cx("ad-chip", f.make === b.name && "is-on"), "aria-pressed": f.make === b.name, onClick: function () { toggle("make", b.name); } }, b.name);
+      })) : null;
+
+    return h("div", { className: "ad-hb" }, tabs,
+      // desktop: one slim bar
+      h("form", { className: "ad-hb__bar", onSubmit: go }, count,
+        sel("Make", "Make", Object.keys(MAKES), "make"), sel("Model", f.make ? "Any " + f.make : "Model", models, "model", !f.make),
+        sel("Body type", "Body type", BODY_TYPES, "type"), sel("Year from", "Year from", YEARS, "yFrom"),
+        sel("Budget", "Budget", budgetOptions(pb), "budget"),
+        h(Button, { type: "submit", icon: "search", className: "ad-hb__go" }, "Search")),
+      // phone: Make + Filters button, then brand chips
+      h("div", { className: "ad-hb__m" },
+        h("div", { className: "ad-hb__mrow" }, sel("Make", "Any make", Object.keys(MAKES), "make"),
+          h("button", { type: "button", className: "ad-hb__fbtn", "aria-haspopup": "dialog", onClick: function () { setSheet(true); } }, h(Icon, { name: "filter", size: 18 }), "Filters", extra ? h("span", { className: "ad-hs__cnt" }, extra) : null)),
+        brandChips, h("div", { className: "ad-hb__mcount" }, count, filtered ? h("button", { type: "button", className: "ad-link ad-small", onClick: clear }, "Clear filters") : null)),
+      h("div", { className: "ad-hb__body" }, sidebar,
+        h("div", { className: "ad-hb__main" },
+          shown.length ? h("div", { className: "ad-stock__grid ad-stock__grid--3 ad-hb__grid" }, shown.map(p.renderCard)) :
+            h(Empty, { icon: "car", title: "No cars match these filters", text: "Try removing a filter, or tell us what you want and we’ll bid for it at the Japanese auctions." },
+              h("div", { className: "ad-row" }, h(Button, { variant: "secondary", onClick: clear }, "Clear filters"), h(Button, { variant: "accent", icon: "gavel", onClick: p.onRequest }, "Request a bid"))),
+          list.length > shown.length || filtered ? h("div", { className: "ad-hb__more" }, h("span", { className: "ad-muted" }, "Showing " + shown.length + " of " + list.length),
+            h(Button, { variant: "secondary", iconRight: "arrow-right", onClick: go }, "See all in Ex Stock")) : null,
+          p.tray || null)),
+      sheet ? h("div", { className: "ad-sheet", role: "dialog", "aria-modal": true, "aria-label": "Filters", onClick: function () { setSheet(false); } },
+        h("div", { className: "ad-sheet__box", onClick: function (e) { e.stopPropagation(); } },
+          h("div", { className: "ad-sheet__grip", "aria-hidden": true }),
+          h("div", { className: "ad-row ad-row--between" }, h("h2", { className: "ad-h2" }, "Filters"), h("button", { type: "button", className: "ad-link", onClick: clear }, "Clear all")),
+          h("div", { className: "ad-sheet__fields" },
+            sel("Make", "Any make", Object.keys(MAKES), "make"), sel("Model", f.make ? "Any " + f.make : "Choose a make first", models, "model", !f.make),
+            sel("Body type", "Any body type", BODY_TYPES, "type"), sel("Year from", "Any year", YEARS, "yFrom"), sel("Budget", "Any budget", budgetOptions(pb), "budget")),
+          h(Button, { size: "l", block: true, icon: "search", onClick: function () { setSheet(false); } }, "Show " + list.length + " vehicle" + (list.length === 1 ? "" : "s")))) : null);
   }
 
   /* ---------- VehicleCard ---------- */
@@ -1250,46 +1318,14 @@
       } }) : null);
   }
 
-  /* ---------- BrowseSide: "Browse our stock" bar (brands / body types) beside the search. A collapsible bar on phones. ---------- */
-  function BrowseSide(p) {
-    var t = useState("brands"), tab = t[0], setTab = t[1];
-    var o = useState(false), open = o[0], setOpen = o[1];
-    var m = useState(false), all = m[0], setAll = m[1];
-    var isBrand = tab === "brands";
-    var src = (isBrand ? BRANDS : ALL_TYPES).slice().sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name); });
-    var none = src.filter(function (i) { return !(i.count > 0); });
-    var shown = all ? src : src.filter(function (i) { return i.count > 0; });
-    if (!BRANDS.length && !ALL_TYPES.length) return null;
-    return h("aside", { className: cx("ad-bside", open && "is-open"), "aria-label": "Browse our stock" },
-      h("button", { type: "button", className: "ad-bside__head", "aria-expanded": open, "aria-controls": "ad-bside-body", onClick: function () { setOpen(!open); } },
-        h("span", null, h("span", { className: "ad-kicker" }, "Browse"), h("b", null, "Browse our stock")), h(Icon, { name: "chevron-down", size: 18, className: "ad-bside__chev" })),
-      h("div", { id: "ad-bside-body", className: "ad-bside__body" },
-        h("div", { className: "ad-bside__seg", role: "tablist", "aria-label": "Browse by" },
-          [["brands", "Brand"], ["types", "Body type"]].map(function (x) {
-            return h("button", { key: x[0], type: "button", role: "tab", "aria-selected": tab === x[0], className: tab === x[0] ? "is-on" : "", onClick: function () { setTab(x[0]); setAll(false); } }, x[1]);
-          })),
-        h("ul", { className: "ad-bside__list" }, shown.map(function (i) {
-          var on = i.count > 0, q = isBrand ? { make: i.name } : { type: i.name };
-          var icon = isBrand
-            ? (i.image ? h("img", { src: i.image, alt: "", loading: "lazy", onError: function (e) { e.target.style.display = "none"; } }) : h("span", { className: "ad-browse__ini", "aria-hidden": true }, i.name.charAt(0)))
-            : (i.image ? h("img", { src: i.image, alt: "", loading: "lazy" }) : h(Icon, { name: typeIcon(i.name), size: 20, stroke: 1.5 }));
-          var inner = [h("span", { key: "i", className: "ad-bside__ic" }, icon), h("span", { key: "n", className: "ad-bside__nm" }, i.name), h("span", { key: "c", className: "ad-bside__n ad-mono" }, num(i.count))];
-          return h("li", { key: i.id || i.name }, on
-            ? h("a", { href: HREF("stock") + "?" + (isBrand ? "make=" : "type=") + encodeURIComponent(i.name), className: "ad-bside__it", onClick: function (e) { e.preventDefault(); setOpen(false); p.onBrowse(q); } }, inner)
-            : h("span", { className: "ad-bside__it is-empty", "aria-disabled": true }, inner));
-        })),
-        none.length ? h("button", { type: "button", className: "ad-link ad-small ad-bside__more", "aria-expanded": all, onClick: function () { setAll(!all); } }, all ? "Show fewer" : "Show " + none.length + " more with no stock right now") : null,
-        h("a", { href: HREF("stock"), className: "ad-bside__all", onClick: function (e) { e.preventDefault(); setOpen(false); p.onBrowse({}); } }, "All Ex Stock", h(Icon, { name: "arrow-right", size: 14 }))));
-  }
-
   var AD = {
     Logo: Logo, Icon: Icon, Button: Button, Badge: Badge, StatusBadge: StatusBadge, GradeSeal: GradeSeal, LotTag: LotTag,
     TextField: TextField, SelectField: SelectField, RangeSlider: RangeSlider, ChipGroup: ChipGroup, Switch: Switch, Checkbox: Checkbox, Tabs: Tabs,
-    SiteHeader: SiteHeader, SiteFooter: SiteFooter, HeroSearch: HeroSearch, VehicleCard: VehicleCard, StockBrowser: StockBrowser,
+    SiteHeader: SiteHeader, SiteFooter: SiteFooter, HomeStock: HomeStock, VehicleCard: VehicleCard, StockBrowser: StockBrowser,
     CompareTray: CompareTray, CompareTable: CompareTable, VehicleGallery: VehicleGallery, SpecSheet: SpecSheet, LoanCalculator: LoanCalculator,
     InquiryForm: InquiryForm, LiveAuctionFrame: LiveAuctionFrame, AuctionSheetDecoder: AuctionSheetDecoder, AuctionRequestForm: AuctionRequestForm,
     ProcessSteps: ProcessSteps, Glossary: Glossary, Testimonials: Testimonials, AuthCard: AuthCard, OrderTracker: OrderTracker,
-    AccountDashboard: AccountDashboard, ContactPanel: ContactPanel, BrowseSection: BrowseSection, BrowseSide: BrowseSide, Empty: Empty, PhotoPending: PhotoPending, Spec: Spec,
+    AccountDashboard: AccountDashboard, ContactPanel: ContactPanel, BrowseSection: BrowseSection, Empty: Empty, PhotoPending: PhotoPending, Spec: Spec,
     data: { vehicles: VEHICLES, testimonials: TESTIMONIALS, brands: BRANDS, types: ALL_TYPES, locations: LOCATIONS, features: FEATURES, makes: ALL_MAKES, stockMakes: MAKES, glossary: GLOSSARY, images: IMG, load: loadData },
     hooks: HOOKS, site: SITE, themes: THEMES, applyTheme: applyTheme, seasons: SEASONS, seasonState: seasonState, applySeasonDecor: applySeasonDecor, applySiteTheme: applySiteTheme, T: T, on: on,
     format: { lkr: lkr, lkrFull: lkrFull, yen: yen, num: num, title: title, emi: emi, cx: cx, priceBounds: priceBounds }
