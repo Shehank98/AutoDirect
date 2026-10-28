@@ -16,16 +16,17 @@ async function upsertProfile(decoded) {
   const email = (decoded.email || '').toLowerCase();
   // Only a VERIFIED email can be promoted via ADMIN_EMAILS. Firebase lets anyone sign up with any
   // address, so without this check someone could register the admin's email first and become admin.
-  const seedAdmin = ADMIN_EMAILS.includes(email) && decoded.email_verified === true;
+  // Admin when the email is an owner (ADMIN_EMAILS) or was added in Admin > Admins, and only once verified.
+  const verified = decoded.email_verified === true;
   const { rows } = await db.query(
     `INSERT INTO profiles (uid, email, name, is_admin)
-       VALUES ($1, $2, $3, $4)
+       VALUES ($1, $2, $3, ($4 OR ($5 AND EXISTS (SELECT 1 FROM admin_emails a WHERE a.email = $2))))
      ON CONFLICT (uid) DO UPDATE
        SET email = EXCLUDED.email,
-           is_admin = profiles.is_admin OR $4,
+           is_admin = profiles.is_admin OR EXCLUDED.is_admin,
            updated_at = now()
      RETURNING *`,
-    [decoded.uid, email, decoded.name || '', seedAdmin]
+    [decoded.uid, email, decoded.name || '', ADMIN_EMAILS.includes(email) && verified, verified]
   );
   return rows[0];
 }
@@ -62,4 +63,4 @@ function requireAdmin(req, res, next) {
 // True when ADMIN_EMAILS names at least one owner, so the first admin can be created.
 const adminEmailsConfigured = () => ADMIN_EMAILS.length > 0;
 
-module.exports = { attachUser, requireAuth, requireAdmin, adminEmailsConfigured };
+module.exports = { attachUser, requireAuth, requireAdmin, adminEmailsConfigured, ownerEmails: () => ADMIN_EMAILS.slice() };

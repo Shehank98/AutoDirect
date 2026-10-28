@@ -377,6 +377,20 @@
   }
 
   /* Staff sign-in with the ADMIN_USERNAME / ADMIN_PASSWORD server variables. */
+  // Sign-in pop-up opened from "Sign in" in the header. Customers and staff use the same one.
+  function SignInDialog(p) {
+    useEffect(function () {
+      function k(e) { if (e.key === "Escape") p.onClose(); }
+      document.addEventListener("keydown", k); document.body.style.overflow = "hidden";
+      return function () { document.removeEventListener("keydown", k); document.body.style.overflow = ""; };
+    }, []);
+    return h("div", { className: "ad-modal ad-modal--auth", role: "dialog", "aria-modal": true, "aria-label": "Sign in", onMouseDown: function (e) { if (e.target === e.currentTarget) p.onClose(); } },
+      h("div", { className: "ad-signin" },
+        h("button", { type: "button", className: "ad-signin__x", "aria-label": "Close", onClick: p.onClose }, h(A.Icon, { name: "x", size: 18 })),
+        h(A.AuthCard, { mode: "login", onDone: p.onDone }),
+        h("p", { className: "ad-small ad-muted ad-center" }, "Customers and staff sign in here. Staff get an Admin button once signed in.")));
+  }
+
   // /admin is protected by Firebase sign-in. Signed out -> sign-in form; signed in but not an admin -> how to get access.
   function AdminDenied(p) {
     var u = p.user, st = useState(""), msg = st[0], setMsg = st[1], bz = useState(false), busy = bz[0], setBusy = bz[1];
@@ -489,6 +503,7 @@
     var c = useState(function () { return (store("ad-compare") || []).filter(byRef); }), cmp = c[0], setCmp = c[1];
     var sv = useState(function () { return (store("ad-saved") || []).filter(byRef); }), saved = sv[0], setSaved = sv[1];
     var rq = useState(null), prefill = rq[0], setPrefill = rq[1];
+    var si = useState(false), signin = si[0], setSignin = si[1];
     var rl = useState(0), setVer = rl[1];
 
     useEffect(function () { function on() { setRoute(parse()); window.scrollTo(0, 0); } window.addEventListener("popstate", on); return function () { window.removeEventListener("popstate", on); }; }, []);
@@ -575,9 +590,13 @@
     return h("div", { className: "ad-page" },
       season && season.effect ? h(SeasonFX, { kind: season.def.effect, density: season.density }) : null,
       season && season.banner ? h(SeasonBanner, { st: season }) : null,
-      h(A.SiteHeader, { active: active, onNavigate: function (id, init) { if (id === "logout") signOut(); else nav(id, init); }, compareCount: cmp.length, user: userName, isAdmin: !!(user && user.is_admin) }),
+      h(A.SiteHeader, { active: active, onNavigate: function (id, init) { if (id === "logout") signOut(); else if (id === "login" && fb && !user) setSignin(true); else nav(id, init); }, compareCount: cmp.length, user: userName, isAdmin: !!(user && user.is_admin) }),
       h("main", { key: pg + (route.seo || ""), className: "ad-main" }, body),
       h(A.SiteFooter, { onNavigate: function (id, init) { nav(id, init); } }),
+      signin ? h(SignInDialog, { onClose: function () { setSignin(false); }, onDone: function () {
+        // Fresh details, then staff go straight to the admin and customers to their account.
+        api.get("/api/account/me").then(function (row) { me = row; setUser(row); setSignin(false); nav(row.is_admin ? "admin" : "account"); }, function () { setSignin(false); nav("account"); });
+      } }) : null,
       h(WhatsAppFab, null),
       h(ThemeToggle, null));
   }

@@ -700,6 +700,43 @@
   }
   var Fragment2 = Frag;
 
+  /* ------------------------------------------------------------ admins: who may open this admin */
+  function Admins(p) {
+    var d = useLoad("/api/admin/admins");
+    var s1 = useState(""), email = s1[0], setEmail = s1[1], s2 = useState(false), busy = s2[0], setBusy = s2[1], s3 = useState(null), del = s3[0], setDel = s3[1], s4 = useState(""), err = s4[0], setErr = s4[1];
+    function add(e) {
+      e.preventDefault(); setErr("");
+      if (!/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(email.trim())) { setErr("Enter a valid email address."); return; }
+      setBusy(true);
+      api.post("/api/admin/admins", { email: email.trim() }).then(function () { setBusy(false); setEmail(""); d.reload(); p.say("Added. They can sign in on the website with that email."); }, function (x) { setBusy(false); setErr(x.message); });
+    }
+    function status(r) {
+      if (r.is_admin) return h(A.Badge, { tone: "success", icon: "check" }, "Active");
+      if (r.signed_up) return h(A.Badge, { tone: "warning", icon: "clock" }, "Needs to verify their email");
+      return h(A.Badge, { tone: "neutral", icon: "clock" }, "Waiting for them to sign up");
+    }
+    var rows = d.data ? d.data.owners.map(function (o) { return { owner: true, email: o.email, name: o.name, r: o }; }).concat(d.data.added.map(function (a) { return { owner: false, email: a.email, name: a.name, r: a, by: a.added_by }; })) : [];
+    return h(Frag, null,
+      h(Card, { title: "Add an admin", text: "Type their email. They then sign in on the website (top right, “Sign in”) with that email, verify it, and an Admin button appears for them." },
+        h("form", { className: "ad-row ad-admins__form", onSubmit: add },
+          h(A.TextField, { label: "Email address", type: "email", placeholder: "name@example.com", value: email, onChange: function (e) { setEmail(e.target.value); setErr(""); }, error: err, className: "ad-admins__f" }),
+          h(A.Button, { type: "submit", icon: "plus", loading: busy }, "Add admin")),
+        h("p", { className: "ad-small ad-muted" }, "They don’t have an account yet? They tap “Sign in”, choose “Create account” with the same email, and open the link in the email we send. Only a verified email is ever made an admin.")),
+      d.error ? h(Err, { text: d.error }) : !d.data ? h("p", { className: "ad-muted" }, "Loading…") :
+        h(Card, { title: "People who can open the admin" },
+          h(Table, { cols: [{ label: "Email" }, { label: "Status" }, { label: "Added by" }, { label: "" }],
+            empty: rows.length ? null : h(A.Empty, { icon: "users", title: "No admins listed yet" }),
+            rows: rows.map(function (x) {
+              return h("tr", { key: x.email },
+                h("td", null, h("b", null, x.email), x.name ? h("div", { className: "ad-small ad-muted" }, x.name) : null),
+                h("td", null, x.owner ? h(A.Badge, { tone: "info", icon: "lock" }, "Owner · set on the server") : status(x.r)),
+                h("td", { className: "ad-small ad-muted" }, x.owner ? "ADMIN_EMAILS" : (x.by || "-")),
+                h("td", { className: "ad-dt__act" }, x.owner ? null : h(A.Button, { variant: "ghost", size: "s", icon: "trash", "aria-label": "Remove " + x.email, onClick: function () { setDel(x); } })));
+            }) })),
+      del ? h(Confirm, { title: "Remove " + del.email + "?", text: "They lose admin access straight away. They can still sign in as a normal customer.", okLabel: "Remove", onCancel: function () { setDel(null); },
+        onOk: function () { api.del("/api/admin/admins/" + encodeURIComponent(del.email)).then(function () { setDel(null); d.reload(); p.say("Removed"); }, function (e) { setDel(null); p.say(e.message, "danger"); }); } }) : null);
+  }
+
   /* ------------------------------------------------------------ overview */
   function greet() { var h = new Date().getHours(); return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; }
   function Chip(p) { return h("button", { type: "button", className: cx("ad-ovchip", p.on && "is-on"), onClick: p.onClick }, h("span", { className: "ad-ovchip__dot", "aria-hidden": true }), h("span", null, h("small", null, p.label), p.value)); }
@@ -718,7 +755,7 @@
   }
   var DIRECTORY = [
     ["Cars and catalogue", "car", [["vehicles", "Vehicles", "Add, edit, price, photos, status"], ["manufacturers", "Brands", "Names and logos"], ["models", "Models", "Models for each brand"], ["types", "Body types", "Sedan, SUV, van…"], ["colours", "Colours", "Colour list"], ["features", "Features", "Options such as sunroof"]]],
-    ["Customers", "users", [["inquiries", "Inquiries", "Messages and stock quotes"], ["requests", "Auction requests", "Track each import"], ["customers", "Customers", "Accounts and admins"], ["newsletters", "Newsletter", "Subscribers"]]],
+    ["Customers", "users", [["inquiries", "Inquiries", "Messages and stock quotes"], ["requests", "Auction requests", "Track each import"], ["customers", "Customers", "Accounts"], ["admins", "Admins", "Who can open the admin"], ["newsletters", "Newsletter", "Subscribers"]]],
     ["Website content", "layers", [["home", "Home page", "Sections and wording"], ["testimonials", "Testimonials", "Customer reviews"], ["buy", "How to buy", "Steps and deposit answer"], ["about", "About us", "Values and banner"], ["contact", "Contact & locations", "Showrooms and offices"], ["glossary", "Vocabulary", "Import terms"]]],
     ["Look and feel", "palette", [["appearance", "Colours & fonts", "Themes, own colours, font"], ["seasons", "Seasons", "Christmas, Easter, Deepavali…"], ["site", "Site details", "Phone, WhatsApp, address, SEO"]]]
   ];
@@ -766,13 +803,13 @@
   var NAV = [
     ["Start", [["overview", "home", "Overview"]]],
     ["Inventory", [["vehicles", "car", "Vehicles"], ["manufacturers", "tag", "Brands"], ["models", "layers", "Models"], ["types", "grid", "Body types"], ["colours", "palette", "Colours"], ["features", "check", "Features"]]],
-    ["Customers", [["inquiries", "doc", "Inquiries"], ["requests", "send", "Auction requests"], ["customers", "users", "Customers"], ["newsletters", "mail", "Newsletter"]]],
+    ["Customers", [["inquiries", "doc", "Inquiries"], ["requests", "send", "Auction requests"], ["customers", "users", "Customers"], ["admins", "lock", "Admins"], ["newsletters", "mail", "Newsletter"]]],
     ["Pages", [["buy", "ship", "How to buy"], ["about", "users", "About us"], ["contact", "pin", "Contact & locations"], ["glossary", "list", "Vocabulary"]]],
     ["Website", [["home", "layers", "Home page"], ["testimonials", "star", "Testimonials"], ["seasons", "bell", "Seasons"], ["site", "settings", "Site details"], ["appearance", "palette", "Colours & fonts"]]]
   ];
   var BLURB = {
     overview: "A quick look at the business.", home: "Turn home page sections on or off and change their wording.", testimonials: "Customer reviews on the home page.",
-    buy: "The five buying steps and the deposit answer.", about: "The About us page.", contact: "Showrooms and offices on the Contact page.", glossary: "The import terms explained on the Vocabulary page.",
+    admins: "Who can open this admin. Add an email here, no Firebase needed.", buy: "The five buying steps and the deposit answer.", about: "The About us page.", contact: "Showrooms and offices on the Contact page.", glossary: "The import terms explained on the Vocabulary page.",
     seasons: "Christmas snow, Santa hats and other festive looks for the whole website.", site: "Phone, WhatsApp, address, links and header/footer text.", appearance: "Choose the colours and font of the whole website."
   };
   function AdminTheme() {
@@ -797,7 +834,7 @@
     var label = NAV.reduce(function (a, g) { return a.concat(g[1]); }, []).filter(function (x) { return x[0] === mod; })[0];
     var group = NAV.filter(function (g) { return g[1].some(function (x) { return x[0] === mod; }); })[0][0];
     var common = { user: p.user, exit: p.onExit, say: say, changed: p.onDataChanged || function () {}, L: L, reloadL: function () { setLv(lv + 1); }, refreshStats: l.reload, go: go };
-    var body = mod === "overview" ? h(Overview, common) : mod === "appearance" ? h(Appearance, common) : mod === "site" ? h(SiteDetails, common) : mod === "home" ? h(HomeContent, common) : mod === "seasons" ? h(Seasons, common) : mod === "buy" ? h(BuyPage, common) : mod === "about" ? h(AboutPage, common) : mod === "contact" ? h(ContactPage, common) : mod === "glossary" ? h(GlossaryPage, common) : mod === "testimonials" ? h(Testimonials, common) :
+    var body = mod === "overview" ? h(Overview, common) : mod === "appearance" ? h(Appearance, common) : mod === "site" ? h(SiteDetails, common) : mod === "home" ? h(HomeContent, common) : mod === "seasons" ? h(Seasons, common) : mod === "admins" ? h(Admins, common) : mod === "buy" ? h(BuyPage, common) : mod === "about" ? h(AboutPage, common) : mod === "contact" ? h(ContactPage, common) : mod === "glossary" ? h(GlossaryPage, common) : mod === "testimonials" ? h(Testimonials, common) :
       !L ? h("p", { className: "ad-muted" }, "Loading…") :
       mod === "vehicles" ? h(Vehicles, common) : TAX[mod] ? h(Taxonomy, Object.assign({ mod: mod, key: mod }, common)) :
       mod === "inquiries" || mod === "requests" ? h(Tracking, Object.assign({ mod: mod, key: mod }, common)) :

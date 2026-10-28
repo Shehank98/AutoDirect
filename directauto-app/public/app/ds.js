@@ -471,6 +471,7 @@
         h("div", { className: "ad-nav__actions" },
           h("a", { href: HREF("compare"), className: "ad-nav__icon", "aria-label": "Compare list, " + (p.compareCount || 0) + " vehicles", onClick: go("compare") },
             h(Icon, { name: "compare" }), p.compareCount ? h("span", { className: "ad-count" }, p.compareCount) : null),
+          p.isAdmin ? h(Button, { variant: "secondary", size: "s", icon: "settings", className: "ad-nav__admin", onClick: function () { setMenu(null); setOpen(false); p.onNavigate && p.onNavigate("admin"); } }, "Admin") : null,
           p.user ? h("div", { className: "ad-nav__dd" },
             h("button", { type: "button", className: "ad-avatar-btn", "aria-expanded": menu === "acct", onClick: function () { setMenu(menu === "acct" ? null : "acct"); } },
               h("span", { className: "ad-avatar" }, p.user.split(" ").map(function (w) { return w[0] || ""; }).join("").slice(0, 2)),

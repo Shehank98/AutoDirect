@@ -42,9 +42,9 @@ sample photos switch off by themselves and the photos uploaded in the admin are 
 Admin access uses **Firebase sign-in**, there is no shared username or password.
 
 1. Set `ADMIN_EMAILS` on the server to the owner's email(s), comma separated.
-2. Open `/admin`, choose **Create account** (or sign in) with that email, and verify the email using the link Firebase sends.
-3. Press **Check again** on the admin page. The owner is now an admin.
-4. More staff: they create an account the same way, then an admin turns on **Admin** for them under **Customers**.
+2. On the website press **Sign in** (top right), choose **Create account** with that email, and verify the email using the link Firebase sends.
+3. Sign in again. An **Admin** button appears in the header (signing in as an admin also opens the admin directly).
+4. More staff: in **Admin > Admins** type their email and press **Add admin**. They sign in on the website with that email and verify it. No Firebase console needed.
 
 Only a **verified** email in `ADMIN_EMAILS` becomes admin automatically, so nobody can claim it by registering first.
 

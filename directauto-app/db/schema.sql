@@ -188,3 +188,10 @@ CREATE TABLE IF NOT EXISTS settings (
 
 -- One label shown as a bar on the car photo (e.g. "New arrival", "Hot deal"); chosen per car in Admin > Vehicles.
 ALTER TABLE vehicle ADD COLUMN IF NOT EXISTS badge VARCHAR(40) NOT NULL DEFAULT '';
+
+-- Emails that become admins when that person signs in with a verified email. Managed in Admin > Admins.
+CREATE TABLE IF NOT EXISTS admin_emails (
+    email       VARCHAR(200) PRIMARY KEY,
+    added_by    VARCHAR(200) DEFAULT '',
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);

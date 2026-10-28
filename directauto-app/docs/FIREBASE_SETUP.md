@@ -44,10 +44,10 @@ SITE_URL=https://your-website-address
 ```
 
 Redeploy. Then:
-1. Open `https://your-website-address/admin` and choose **Create account** with the `ADMIN_EMAILS` address.
+1. On the website press **Sign in** (top right), choose **Create account** with the `ADMIN_EMAILS` address.
 2. Open the verification email Firebase sends (check spam) and tap the link.
-3. Back on the admin page press **Check again**. You are in.
-4. More staff: they create an account the same way. In **Admin > Customers** switch on **Admin** for them.
+3. Sign in again. You land in the admin, and an **Admin** button shows in the header from now on.
+4. More staff: go to **Admin > Admins**, type their email and press **Add admin**. They sign in on the website with that email and verify it. You never need the Firebase console for this.
 
 ## 7. Try a photo upload
 **Admin > Vehicles > Add vehicle > Photos > Upload photos.** The sample photos switch off by themselves once Storage is connected.

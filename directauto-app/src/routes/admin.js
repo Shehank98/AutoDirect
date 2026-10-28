@@ -4,7 +4,7 @@ const express = require('express');
 const crypto = require('crypto');
 const multer = require('multer');
 const db = require('../../db/pool');
-const { requireAdmin } = require('../auth');
+const { requireAdmin, ownerEmails } = require('../auth');
 const { bucket, isConfigured } = require('../firebase');
 const samples = require('../samples');
 const { invalidate, siteDefaults } = require('./catalog');
@@ -290,9 +290,54 @@ router.put('/customers/:uid', async (req, res, next) => {
   try {
     const makeAdmin = !!(req.body && req.body.is_admin);
     if (!makeAdmin && req.user && req.params.uid === req.user.uid) return res.status(400).json({ error: "You can't remove your own admin access." });
-    const { rows } = await db.query('UPDATE profiles SET is_admin = $2, updated_at = now() WHERE uid = $1 RETURNING uid, is_admin', [req.params.uid, makeAdmin]);
+    const { rows } = await db.query('UPDATE profiles SET is_admin = $2, updated_at = now() WHERE uid = $1 RETURNING uid, email, is_admin', [req.params.uid, makeAdmin]);
     if (!rows.length) return res.status(404).json({ error: 'User not found.' });
-    res.json(rows[0]);
+    // Keep the Admins list in step so the change survives their next sign-in.
+    const email = String(rows[0].email || '').toLowerCase();
+    if (email) {
+      if (makeAdmin) await db.query('INSERT INTO admin_emails (email, added_by) VALUES ($1, $2) ON CONFLICT (email) DO NOTHING', [email, req.user ? req.user.email : '']);
+      else await db.query('DELETE FROM admin_emails WHERE email = $1', [email]);
+    }
+    res.json({ uid: rows[0].uid, is_admin: rows[0].is_admin });
+  } catch (e) { next(e); }
+});
+
+// ---------- Admins: who may open this admin ----------
+const adminEmail = (s) => String(s || '').trim().toLowerCase();
+const EMAIL_OK = /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/;
+
+router.get('/admins', async (_req, res, next) => {
+  try {
+    const owners = ownerEmails();
+    const { rows } = await db.query(
+      `SELECT a.email, a.added_by, a.created_at, p.uid, COALESCE(p.is_admin, false) AS is_admin, p.name
+         FROM admin_emails a LEFT JOIN profiles p ON lower(p.email) = a.email ORDER BY a.created_at`);
+    const ownerRows = (await db.query('SELECT lower(email) AS email, name, is_admin FROM profiles WHERE lower(email) = ANY($1)', [owners])).rows;
+    res.json({
+      owners: owners.map((e) => { const p = ownerRows.find((x) => x.email === e); return { email: e, name: p ? p.name : '', is_admin: !!(p && p.is_admin), signed_up: !!p }; }),
+      added: rows.map((r) => ({ email: r.email, added_by: r.added_by, created_at: r.created_at, name: r.name || '', signed_up: !!r.uid, is_admin: r.is_admin })),
+    });
+  } catch (e) { next(e); }
+});
+
+// Add an email. They become admin when they sign in with that email and have verified it.
+router.post('/admins', async (req, res, next) => {
+  try {
+    const email = adminEmail(req.body && req.body.email);
+    if (!EMAIL_OK.test(email) || email.length > 200) return res.status(400).json({ error: 'Enter a valid email address.' });
+    await db.query('INSERT INTO admin_emails (email, added_by) VALUES ($1, $2) ON CONFLICT (email) DO NOTHING', [email, req.user ? req.user.email : '']);
+    res.status(201).json({ ok: true, email });
+  } catch (e) { next(e); }
+});
+
+router.delete('/admins/:email', async (req, res, next) => {
+  try {
+    const email = adminEmail(decodeURIComponent(req.params.email));
+    if (ownerEmails().includes(email)) return res.status(400).json({ error: 'This is an owner email set on the server (ADMIN_EMAILS). Remove it there.' });
+    if (req.user && adminEmail(req.user.email) === email) return res.status(400).json({ error: "You can't remove your own admin access." });
+    await db.query('DELETE FROM admin_emails WHERE email = $1', [email]);
+    await db.query('UPDATE profiles SET is_admin = false, updated_at = now() WHERE lower(email) = $1', [email]);
+    res.json({ ok: true });
   } catch (e) { next(e); }
 });
 
