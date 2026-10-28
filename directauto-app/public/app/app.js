@@ -433,13 +433,15 @@
       if (!cv || (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
       var ctx = cv.getContext("2d"), W = 0, H = 0, raf = 0, parts = [], kind = p.kind;
       var base = { light: 35, normal: 70, heavy: 130 }[p.density] || 70;
-      var COLS = { confetti: ["#f2b729", "#d6336c", "#2f9e44", "#1c7ed6", "#e8590c"], petals: ["#f08c00", "#fcc419", "#e8590c", "#f06595"] };
+      var COLS = { confetti: ["#f2b729", "#d6336c", "#2f9e44", "#1c7ed6", "#e8590c"], petals: ["#f08c00", "#fcc419", "#e8590c", "#f06595"], eggs: ["#f783ac", "#74c0fc", "#ffd43b", "#b197fc", "#8ce99a"], sparkles: ["#ffd43b", "#ff922b", "#fff3bf"] };
       function rnd(a, b) { return a + Math.random() * (b - a); }
       function make(top) {
         var s = { x: rnd(0, W), y: top ? rnd(-H, 0) : rnd(-20, -4), r: rnd(1.5, 4.2), v: rnd(0.6, 1.8), ph: rnd(0, 6.28), sw: rnd(0.3, 1.1), rot: rnd(0, 6.28), vr: rnd(-0.04, 0.04) };
         if (kind === "confetti") { s.v = rnd(1.2, 3); s.w = rnd(5, 9); s.h = rnd(8, 14); s.c = COLS.confetti[(Math.random() * 5) | 0]; }
         if (kind === "petals") { s.v = rnd(0.7, 1.6); s.w = rnd(5, 9); s.h = rnd(3, 5); s.c = COLS.petals[(Math.random() * 4) | 0]; }
         if (kind === "lights") { s.v = rnd(0.3, 0.9); s.r = rnd(3, 8); }
+        if (kind === "eggs") { s.v = rnd(0.8, 1.8); s.w = rnd(5, 8); s.h = s.w * 1.3; s.c = COLS.eggs[(Math.random() * 5) | 0]; s.vr = rnd(-0.02, 0.02); }
+        if (kind === "sparkles") { s.v = rnd(0.5, 1.4); s.r = rnd(4, 9); s.c = COLS.sparkles[(Math.random() * 3) | 0]; }
         return s;
       }
       function size() {
@@ -454,6 +456,8 @@
           var s = parts[i]; s.y += s.v; s.x += Math.sin(t / 1000 * s.sw + s.ph) * 0.6; s.rot += s.vr;
           if (s.y > H + 20) parts[i] = s = make(false);
           if (kind === "snow") { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.283); ctx.fillStyle = "#fff"; ctx.fill(); ctx.strokeStyle = "rgba(110,140,180,.55)"; ctx.lineWidth = 1; ctx.stroke(); }
+          else if (kind === "eggs") { ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.rot * 0.5); ctx.fillStyle = s.c; ctx.beginPath(); ctx.ellipse(0, 0, s.w, s.h, 0, 0, 6.283); ctx.fill(); ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.fillRect(-s.w, -1, s.w * 2, 2.4); ctx.restore(); }
+          else if (kind === "sparkles") { var tw = 0.5 + 0.5 * Math.sin(t / 250 + s.ph); var q = s.r * (0.6 + 0.6 * tw); ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.rot * 0.3); ctx.fillStyle = s.c; ctx.globalAlpha = 0.55 + 0.45 * tw; ctx.beginPath(); ctx.moveTo(0, -q); ctx.quadraticCurveTo(0, 0, q, 0); ctx.quadraticCurveTo(0, 0, 0, q); ctx.quadraticCurveTo(0, 0, -q, 0); ctx.quadraticCurveTo(0, 0, 0, -q); ctx.fill(); ctx.restore(); }
           else if (kind === "lights") { var g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 3); var a = 0.55 + 0.35 * Math.sin(t / 400 + s.ph); g.addColorStop(0, "rgba(255,214,102," + a + ")"); g.addColorStop(1, "rgba(255,214,102,0)"); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s.x, s.y, s.r * 3, 0, 6.283); ctx.fill(); }
           else { ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.rot); ctx.fillStyle = s.c; if (kind === "petals") { ctx.beginPath(); ctx.ellipse(0, 0, s.w, s.h, 0, 0, 6.283); ctx.fill(); } else ctx.fillRect(-s.w / 2, -s.h / 2, s.w, s.h); ctx.restore(); }
         }

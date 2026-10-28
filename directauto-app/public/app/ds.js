@@ -74,6 +74,8 @@
     christmas: { name: "Christmas", emoji: "🎄", effect: "snow", effectName: "Snowfall", decor: "Santa hats", brand: "#9e1b2b", accent: "#1f7a4a", message: "🎄 Merry Christmas from all of us at AutoDirect! Wishing you and your family a joyful season." },
     newyear: { name: "New Year", emoji: "🎆", effect: "confetti", effectName: "Confetti", decor: "Gold stars", brand: "#1d2b64", accent: "#b8860b", message: "🎆 Happy New Year from AutoDirect! Here’s to a great year ahead." },
     avurudu: { name: "Sinhala & Tamil New Year", emoji: "🌼", effect: "petals", effectName: "Falling petals", decor: "Flowers", brand: "#b4440e", accent: "#0f766e", message: "🌼 Subha Aluth Avuruddak Wewa! Happy Sinhala & Tamil New Year from AutoDirect." },
+    easter: { name: "Easter", emoji: "🐣", effect: "eggs", effectName: "Falling Easter eggs", decor: "Easter eggs", brand: "#6a4c93", accent: "#b7791f", message: "🐣 Happy Easter from AutoDirect! Wishing you a blessed and joyful Easter." },
+    deepavali: { name: "Deepavali", emoji: "🪔", effect: "sparkles", effectName: "Golden sparkles", decor: "Oil lamps", brand: "#a63a00", accent: "#7a1f5c", message: "🪔 Happy Deepavali from AutoDirect! May the festival of lights brighten your home." },
     vesak: { name: "Vesak", emoji: "🏮", effect: "lights", effectName: "Glowing lights", decor: "Lanterns", brand: "#7a5200", accent: "#0e4f45", message: "🏮 Wishing you a peaceful and blessed Vesak from the AutoDirect team." }
   };
   function today() { var n = new Date(); return n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"); }

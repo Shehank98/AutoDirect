@@ -3,7 +3,7 @@
 const db = require('../db/pool');
 
 const THEMES = ['forest', 'ocean', 'crimson', 'royal', 'sunset', 'slate', 'custom'];
-const SEASONS = ['christmas', 'newyear', 'avurudu', 'vesak'];
+const SEASONS = ['christmas', 'newyear', 'avurudu', 'vesak', 'easter', 'deepavali'];
 const DENSITIES = ['light', 'normal', 'heavy'];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const URL_RE = /^https?:\/\/[^\s]+$/i;
