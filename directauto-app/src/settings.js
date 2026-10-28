@@ -2,7 +2,7 @@
 // `settings` table; a key with no row falls back to the default (server env vars / built-in text).
 const db = require('../db/pool');
 
-const THEMES = ['forest', 'ocean', 'crimson', 'royal', 'sunset', 'slate', 'custom'];
+const THEMES = ['forest', 'directauto', 'ocean', 'crimson', 'royal', 'sunset', 'slate', 'custom'];
 const SEASONS = ['christmas', 'newyear', 'avurudu', 'vesak', 'easter', 'deepavali'];
 const DENSITIES = ['light', 'normal', 'heavy'];
 const FONTS = ['inter', 'poppins', 'nunito', 'playfair', 'montserrat'];   // anything else = the built-in font

@@ -50,6 +50,7 @@
     crimson: { name: "Crimson", brand: "#8f1d2c", tint: "#f8e6e8", accent: "#b8741a", dBrand: "#ff8a96", dOn: "#2a0a0e", dTint: "#2b1a1c", dAccent: "#f2b729" },
     royal: { name: "Royal", brand: "#4b2e83", tint: "#ece6f7", accent: "#d6336c", dBrand: "#b79cf0", dOn: "#1a1030", dTint: "#231c33", dAccent: "#ff7aa8" },
     sunset: { name: "Sunset", brand: "#b4440e", tint: "#fbe9de", accent: "#0f766e", dBrand: "#ff9a62", dOn: "#2a1204", dTint: "#2d2018", dAccent: "#4fd1c5" },
+    directauto: { name: "Direct Auto logo", brand: "#233f85", tint: "#e4e9f5", accent: "#c2610a", dBrand: "#9bb2ec", dOn: "#0b1430", dTint: "#1a2236", dAccent: "#ffa733" },
     slate: { name: "Slate", brand: "#1f2933", tint: "#e6e9ec", accent: "#c93a17", dBrand: "#cbd5df", dOn: "#11161b", dTint: "#1f262c", dAccent: "#ff6a42" }
   };
   var HEX = /^#[0-9a-f]{6}$/i;
@@ -230,10 +231,12 @@
   }
 
   /* ---------- Logo ---------- */
+  // The company logo (cart + car + clock). Sits on a small white tile in dark places so the navy letters stay readable.
+  var LOGO_RATIO = 1101 / 391;
   function Logo(p) {
-    return h("span", { className: cx("ad-logo", p.inverse && "ad-logo--inverse", p.className), style: { fontSize: p.size || 22 } },
-      h("span", { className: "ad-logo__word" }, "Direct ", h("b", null, "Auto")),
-      p.suffix ? h("span", { className: "ad-logo__tld" }, p.suffix) : null);
+    var ht = Math.round((p.size || 22) * 2);
+    return h("span", { className: cx("ad-logo", p.inverse && "ad-logo--inverse", p.className) },
+      h("img", { className: "ad-logo__img", src: "/assets/brand/logo.webp", alt: "Direct Auto", width: Math.round(ht * LOGO_RATIO), height: ht, style: { height: ht + "px" }, decoding: "async" }));
   }
 
   /* ---------- Button ---------- */
@@ -414,7 +417,7 @@
         h("span", { className: "ad-topbar__sp" }),
         h("span", { className: "ad-topbar__live" }, h("span", { className: "ad-pulse", "aria-hidden": true }), T("topbarText", "Japan auction imports for Sri Lanka")))),
       h("div", { className: "ad-wrap ad-nav" },
-        h("a", { href: HREF("home"), className: "ad-nav__brand", "aria-label": "Direct Auto home", onClick: go("home") }, h(Logo, { size: 22 })),
+        h("a", { href: HREF("home"), className: "ad-nav__brand", "aria-label": "Direct Auto home", onClick: go("home") }, h(Logo, { size: 25 })),
         h("nav", { className: cx("ad-nav__links", open && "is-open"), "aria-label": "Main" },
           NAV.filter(function (n) { return !n.hidden || SITE.showAbout === true; }).map(function (n) {
             var isActive = active === n.id || (n.children && n.children.some(function (c) { return c.id === active; }));
