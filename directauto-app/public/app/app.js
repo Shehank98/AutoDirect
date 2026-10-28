@@ -244,7 +244,7 @@
       h("div", { className: "ad-vp__top" },
         h(A.VehicleGallery, { key: v.id, alt: fmt.title(v), items: items }),
         h("aside", { className: "ad-vp__buy" },
-          h("div", { className: "ad-row" }, A.vehicleLabel(v) ? h(A.Badge, { tone: ({ sold: "neutral", warn: "warning", hot: "highlight", brand: "success" })[A.vehicleLabel(v).tone] }, A.vehicleLabel(v).text) : null, h("span", { className: "ad-mono ad-muted ad-small" }, v.id)),
+          h("div", { className: "ad-row" }, A.vehicleLabel(v) ? A.labelBadge(A.vehicleLabel(v)) : null, h("span", { className: "ad-mono ad-muted ad-small" }, v.id)),
           h("h1", { className: "ad-h1" }, fmt.title(v)), h("p", { className: "ad-muted" }, [v.grade, v.color].filter(Boolean).join(" · ")),
           h("ul", { className: "ad-vcard__specs ad-vp__specs" },
             h(A.Spec, { icon: "gauge" }, v.mileage ? fmt.num(v.mileage) + " km" : "-"), h(A.Spec, { icon: "fuel" }, v.fuel || "-"),

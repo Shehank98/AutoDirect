@@ -21,13 +21,13 @@ router.get('/me', (req, res) => res.json({
   username: req.user.email,
   uploads: isConfigured(),               // Firebase Storage available for photo upload
   sampleImages: samples.enabled(),       // listings show the bundled sample photos
-  email: { enabled: mailer.enabled(), recipients: mailer.recipients().length },   // new-message alerts to staff
+  email: { enabled: mailer.enabled() },   // Google Apps Script mail service connected (alerts to staff, updates to customers)
 }));
 
-// Sends a test alert so the SMTP settings can be checked from the admin.
+// Sends a test email through the Google Apps Script so the connection can be checked from the admin.
 router.post('/email-test', async (req, res) => {
-  const r = await mailer.notify('Test email', [['Result', 'If you can read this, email alerts are working.'], ['Sent by', req.user && req.user.email]]);
-  res.status(r.ok ? 200 : 502).json(r.ok ? { ok: true, to: mailer.recipients() } : { error: r.error });
+  const r = await mailer.send('test', { by: req.user && req.user.email });
+  res.status(r.ok ? 200 : 502).json(r.ok ? { ok: true, to: r.to || [] } : { error: r.error });
 });
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
@@ -215,10 +215,12 @@ router.get('/inquiries', async (_req, res, next) => {
 });
 
 // Update tracking info (stage 0..6, customer-visible note, ETA) and the handled flag.
+const REF_BASE = { inquiries: ['INQ-', 24000], live_inquiries: ['AR-', 3000] };
 function trackingUpdate(table) {
   return async (req, res, next) => {
     try {
       const b = req.body || {};
+      const before = (await db.query(`SELECT stage FROM ${table} WHERE id = $1`, [parseInt(req.params.id, 10)])).rows[0];
       const sets = [], params = [];
       const add = (col, val) => { params.push(val); sets.push(`${col} = $${params.length}`); };
       if (b.status !== undefined) add('status', parseInt(b.status, 10) ? 1 : 0);
@@ -230,6 +232,20 @@ function trackingUpdate(table) {
       const { rows } = await db.query(`UPDATE ${table} SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING *`, params);
       if (!rows.length) return res.status(404).json({ error: 'Not found.' });
       res.json(rows[0]);
+      // The customer gets an email when their order moves to a new stage (needs an email address on the request).
+      const r = rows[0];
+      if (before && r.stage !== before.stage && mailer.validEmail(r.email)) {
+        let car = '';
+        if (table === 'inquiries') {
+          const v = await db.query(`SELECT v.year, v.trim, m.name AS make, mo.name AS model FROM vehicle v
+            LEFT JOIN vehicle_manufacturer m ON m.id = v.vehicle_manufacturer LEFT JOIN vehicle_model mo ON mo.id = v.vehicle_model WHERE v.id = $1`, [r.vehicle_id]).catch(() => ({ rows: [] }));
+          if (v.rows[0]) car = [v.rows[0].year, v.rows[0].make, v.rows[0].model, v.rows[0].trim].filter(Boolean).join(' ');
+        } else car = [r.make, r.model].filter(Boolean).join(' ');
+        mailer.send('stage', {
+          ref: REF_BASE[table][0] + (REF_BASE[table][1] + r.id), kind: r.kind, name: r.name, email: r.email, car,
+          stage: r.stage, stageName: mailer.STAGES[r.stage] || '', note: r.note || '', eta: r.eta ? new Date(r.eta).toISOString().slice(0, 10) : '',
+        });
+      }
     } catch (e) { next(e); }
   };
 }

@@ -275,6 +275,13 @@
     var low = t.toLowerCase();
     return { text: t, tone: /sold/.test(low) ? "sold" : /reserved|in transit/.test(low) ? "warn" : /new|hot|reduced|special|landed|offer/.test(low) ? "hot" : "brand" };
   }
+  // The one badge on a car's photo, drawn like the old status badges (check icon on green, yellow for new / deals ...).
+  function labelBadge(l) {
+    var known = STATUS[l.text];
+    if (known) return h(StatusBadge, { status: l.text });
+    var tone = { sold: "neutral", warn: "warning", hot: "highlight", brand: "success" }[l.tone];
+    return h(Badge, { tone: tone, icon: l.tone === "brand" ? "check" : null }, l.text);
+  }
   function GradeSeal(p) {
     var sz = p.size || 56;
     return h("span", { className: cx("ad-seal", p.className), style: { width: sz, height: sz }, role: "img", "aria-label": "Auction grade " + p.grade + (p.interior ? ", interior " + p.interior : "") },
@@ -615,7 +622,7 @@
     return h("article", { className: cx("ad-vcard", p.layout === "row" && "ad-vcard--row", v.status === "Sold" && "is-sold", p.className) },
       h("div", { className: "ad-vcard__media" },
         v.img ? h("img", { src: v.img, alt: (title(v) + " " + v.grade).trim(), loading: "lazy" }) : h(PhotoPending, null),
-        vehicleLabel(v) ? h("div", { className: "ad-vcard__bar is-" + vehicleLabel(v).tone }, vehicleLabel(v).text) : null,
+        vehicleLabel(v) ? h("div", { className: "ad-vcard__tags" }, labelBadge(vehicleLabel(v))) : null,
         p.onSave ? h("button", { type: "button", className: cx("ad-vcard__save", p.saved && "is-on"), "aria-pressed": !!p.saved, "aria-label": (p.saved ? "Remove " : "Save ") + title(v), onClick: p.onSave }, h(Icon, { name: "heart", size: 18 })) : null,
         h("button", { type: "button", className: "ad-vcard__ask", "aria-label": "Ask the price of " + title(v), onClick: function (e) { e.stopPropagation(); (p.onPrice || p.onOpen) && (p.onPrice || p.onOpen)(v); } }, "Price", h(Icon, { name: "chevron-right", size: 14 }))),
       h("div", { className: "ad-vcard__body" },
@@ -1365,7 +1372,7 @@
   }
 
   var AD = {
-    Logo: Logo, Icon: Icon, Button: Button, Badge: Badge, StatusBadge: StatusBadge, vehicleLabel: vehicleLabel, GradeSeal: GradeSeal, LotTag: LotTag,
+    Logo: Logo, Icon: Icon, Button: Button, Badge: Badge, StatusBadge: StatusBadge, vehicleLabel: vehicleLabel, labelBadge: labelBadge, GradeSeal: GradeSeal, LotTag: LotTag,
     TextField: TextField, SelectField: SelectField, RangeSlider: RangeSlider, ChipGroup: ChipGroup, Switch: Switch, Checkbox: Checkbox, Tabs: Tabs,
     SiteHeader: SiteHeader, SiteFooter: SiteFooter, HomeStock: HomeStock, VehicleCard: VehicleCard, StockBrowser: StockBrowser,
     CompareTray: CompareTray, CompareTable: CompareTable, VehicleGallery: VehicleGallery, SpecSheet: SpecSheet, LoanCalculator: LoanCalculator,

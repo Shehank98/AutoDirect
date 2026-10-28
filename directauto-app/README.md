@@ -70,16 +70,15 @@ npm start                # http://localhost:3000, creates the schema and loads s
 5. Optional: `SEED_DEMO_DATA=false` before the first boot to skip the 7 sample cars; `SITE_*` variables for contact details.
 
 ### Firebase (required for the admin)
+Step-by-step: `docs/FIREBASE_SETUP.md`.
 Turns on admin and customer sign-in (My account, order tracking) and photo upload. Create a Firebase project, enable
 **Authentication (Email/Password)** and **Storage**, then set `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_STORAGE_BUCKET` and the
 web config variables in `.env.example`. Emails in `ADMIN_EMAILS` become admins only when the email is **verified**.
 Sign-up sends a verification email.
 
 ## Email alerts, SEO, chat and analytics
-- **Email alerts** (as on the old site): set `SMTP_*` and `NOTIFY_TO` and the team gets an email for every new quote, viewing,
-  contact message, sell-your-car request, auction request and newsletter signup, with the customer's email as Reply-To.
-  The admin **Inquiries** page shows whether alerts are on and has a **Send test email** button. If the mail server is down,
-  customers are not affected (the error is logged).
+- **Email** through a Google Apps Script (`docs/email/SETUP.md`): the team gets an email for every new quote, viewing, contact message and
+  auction request, customers get a receipt, and customers get an email when their order stage changes. Set `APPS_SCRIPT_URL` and `APPS_SCRIPT_SECRET`.
 - **SEO**: `/robots.txt`, a live `/sitemap.xml` (every published car) and, for each page, a server-filled title, description,
   link-preview image (WhatsApp / Facebook) and structured data for cars. Set `SITE_URL` to your public address.
 - **Live chat / analytics**: `TAWK_PROPERTY_ID` and `GA_MEASUREMENT_ID` turn on Tawk.to and Google Analytics 4. Both are off by

@@ -1,60 +1,52 @@
-// Email alerts for the sales team (the old site sent these too): a message arrives on the website ->
-// an email goes to NOTIFY_TO. Configure with SMTP_* variables; with none set, alerts are simply off.
+// Email through a Google Apps Script web app (see docs/email/). The server posts a small JSON event to the
+// script and the script sends the emails from your Google account:
+//   inquiry / auction_request / newsletter  -> alert to the team (and a "we received it" email to the customer)
+//   stage                                    -> an email to the customer when their order moves to a new stage
 //
-//   SMTP_HOST, SMTP_PORT (587 default), SMTP_SECURE (true for port 465), SMTP_USER, SMTP_PASS
-//   MAIL_FROM   "Direct Auto <alerts@yourdomain.lk>"   (defaults to SMTP_USER)
-//   NOTIFY_TO   comma separated recipients (required), NOTIFY_CC, NOTIFY_BCC
+//   APPS_SCRIPT_URL      the web app URL that ends in /exec
+//   APPS_SCRIPT_SECRET   a long random text; the same value is saved in the script's properties
 //
 // Sending never blocks or fails a customer's request: errors are logged and swallowed.
-const nodemailer = require('nodemailer');
+const settings = require('./settings');
 
 const EMAIL_RE = /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/;
-const list = (s) => String(s || '').split(',').map((x) => x.trim()).filter((x) => EMAIL_RE.test(x));
-const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const STAGES = ['Requested', 'Bidding', 'Won', 'LC opened', 'Shipped', 'Arrived', 'Delivered'];
 
-const to = () => list(process.env.NOTIFY_TO);
-const enabled = () => !!process.env.SMTP_HOST && to().length > 0;
+const url = () => (process.env.APPS_SCRIPT_URL || '').trim();
+const secret = () => (process.env.APPS_SCRIPT_SECRET || '').trim();
+const enabled = () => /^https:\/\/script\.google(usercontent)?\.com\//.test(url()) && secret().length >= 12;
+const validEmail = (s) => EMAIL_RE.test(String(s || '').trim());
 
-let transport = null;
-let transportKey = '';
-function getTransport() {
-  const key = [process.env.SMTP_HOST, process.env.SMTP_PORT, process.env.SMTP_SECURE, process.env.SMTP_USER, process.env.SMTP_PASS].join('|');
-  if (transport && key === transportKey) return transport;
-  const port = Number(process.env.SMTP_PORT) || 587;
-  transport = nodemailer.createTransport({
-    host: process.env.SMTP_HOST, port,
-    secure: String(process.env.SMTP_SECURE || '').toLowerCase() === 'true' || port === 465,
-    auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || '' } : undefined,
-    connectionTimeout: 8000, greetingTimeout: 8000, socketTimeout: 15000,
-  });
-  transportKey = key;
-  return transport;
+// Public details the emails use (name, phone, WhatsApp, website address).
+async function siteInfo() {
+  const o = await settings.overrides();
+  const phone = o.phone || process.env.SITE_PHONE || '+94 768 65 65 15';
+  const wa = o.whatsapp || (process.env.SITE_WHATSAPP || phone).replace(/[^0-9]/g, '');
+  return {
+    name: 'Direct Auto', phone, whatsapp: wa, email: o.email || process.env.SITE_EMAIL || '',
+    url: (process.env.SITE_URL || '').replace(/\/+$/, ''),
+    notifyCustomers: o.notifyCustomers !== false,           // Admin > Site details switch (on by default)
+  };
 }
 
-// fields: [[label, value], ...]. Returns { ok, error? } and never throws.
-async function notify(subject, fields, { replyTo } = {}) {
-  if (!enabled()) return { ok: false, error: 'Email alerts are not configured (set SMTP_HOST and NOTIFY_TO).' };
-  const rows = fields.filter((f) => f[1] !== undefined && f[1] !== null && String(f[1]).trim() !== '');
-  const adminUrl = process.env.SITE_URL ? `${process.env.SITE_URL.replace(/\/+$/, '')}/admin` : '';
-  const html = `<div style="font:14px/1.5 -apple-system,Segoe UI,Arial,sans-serif;color:#14171a;max-width:620px">
-  <h2 style="margin:0 0 12px;font-size:18px">${esc(subject)}</h2>
-  <table style="border-collapse:collapse;width:100%">${rows.map((r) =>
-    `<tr><td style="padding:6px 12px 6px 0;color:#5a5f66;vertical-align:top;white-space:nowrap">${esc(r[0])}</td><td style="padding:6px 0;white-space:pre-wrap">${esc(r[1])}</td></tr>`).join('')}</table>
-  ${adminUrl ? `<p style="margin-top:18px"><a href="${esc(adminUrl)}">Open the admin panel</a></p>` : ''}
-  <p style="color:#857e70;font-size:12px;margin-top:18px">Sent automatically by the Direct Auto website.</p></div>`;
-  const text = rows.map((r) => `${r[0]}: ${r[1]}`).join('\n') + (adminUrl ? `\n\nAdmin: ${adminUrl}` : '');
+// Returns { ok, error?, ... } and never throws.
+async function send(event, data) {
+  if (!enabled()) return { ok: false, error: 'Email is not connected (set APPS_SCRIPT_URL and APPS_SCRIPT_SECRET).' };
   try {
-    await getTransport().sendMail({
-      from: process.env.MAIL_FROM || process.env.SMTP_USER,
-      to: to(), cc: list(process.env.NOTIFY_CC), bcc: list(process.env.NOTIFY_BCC),
-      replyTo: replyTo && EMAIL_RE.test(replyTo) ? replyTo : undefined,   // staff can just hit Reply
-      subject: `[Direct Auto] ${subject}`.replace(/[\r\n]+/g, ' '), text, html,
+    const res = await fetch(url(), {
+      method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: secret(), event, site: await siteInfo(), data }),
+      signal: AbortSignal.timeout(15000),
     });
-    return { ok: true };
+    const text = await res.text();
+    let out = null; try { out = JSON.parse(text); } catch (_e) { /* not JSON */ }
+    if (!res.ok || !out) throw new Error(out && out.error ? out.error : `The mail script answered with ${res.status}. Check the deployment (Execute as: Me, Who has access: Anyone).`);
+    if (!out.ok) throw new Error(out.error || 'The mail script reported an error.');
+    return { ok: true, ...out };
   } catch (e) {
-    console.error('[mail] could not send "%s": %s', subject, e.message);
+    console.error('[mail] "%s" not sent: %s', event, e.message);
     return { ok: false, error: e.message };
   }
 }
 
-module.exports = { notify, enabled, recipients: to };
+module.exports = { send, enabled, validEmail, STAGES };

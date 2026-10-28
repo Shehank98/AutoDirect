@@ -1194,12 +1194,6 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
 .ad-card { align-content: start; }
 
 /* ============ Car card: one label bar + Price button on the photo ============ */
-.ad-vcard__tags { display: none; }
-.ad-vcard__bar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 7px 14px; font: 700 12.5px/1.2 var(--font-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--on-brand); background: color-mix(in srgb, var(--brand) 92%, transparent); }
-.ad-vcard__bar.is-hot { background: var(--highlight); color: var(--ink-on-highlight); }
-.ad-vcard__bar.is-warn { background: color-mix(in srgb, var(--warning) 90%, #000); color: #fff; }
-.ad-vcard__bar.is-sold { background: rgba(20, 23, 26, .88); color: #fff; }
-.ad-vcard__ask { position: absolute; right: 10px; bottom: 44px; z-index: 3; display: inline-flex; align-items: center; gap: 2px; min-height: 36px; padding: 0 12px 0 14px; border: 0; border-radius: 99px; background: var(--accent); color: var(--on-accent); font: 700 14px var(--font-sans); cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, .3); }
+.ad-vcard__ask { position: absolute; right: 10px; bottom: 10px; z-index: 3; display: inline-flex; align-items: center; gap: 2px; min-height: 36px; padding: 0 12px 0 14px; border: 0; border-radius: 99px; background: var(--accent); color: var(--on-accent); font: 700 14px var(--font-sans); cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, .3); }
 .ad-vcard__ask:hover { filter: brightness(1.08); }
 .ad-vcard__ask:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
-.ad-vcard__media:not(:has(.ad-vcard__bar)) .ad-vcard__ask { bottom: 10px; }

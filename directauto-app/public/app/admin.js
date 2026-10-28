@@ -12,7 +12,7 @@
   // Wording for the single bar on a car's photo. "" = no bar (a car that is Sold / Reserved / In transit still shows that status).
   var LABEL_PRESETS = ["New arrival", "Available now", "Just landed", "Hot deal", "Price reduced", "Reserved", "In transit", "Sold"];
   function labelOptions(cur) { var o = [{ value: "", label: "No label" }].concat(LABEL_PRESETS.map(function (x) { return { value: x, label: x }; })); if (cur && LABEL_PRESETS.indexOf(cur) < 0) o.push({ value: cur, label: cur + " (custom)" }); return o; }
-  var CAPS = { uploads: false, sampleImages: true, email: { enabled: false, recipients: 0 } };   // filled from /api/admin/me when the console opens
+  var CAPS = { uploads: false, sampleImages: true, email: { enabled: false } };   // filled from /api/admin/me when the console opens
 
   /* ------------------------------------------------------------ helpers */
   function day(d) { return d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "-"; }
@@ -271,14 +271,14 @@
   }
 
   /* ------------------------------------------------------------ inquiries + auction requests (shared) */
-  // Shows whether staff get an email for every new message, and lets you test the SMTP settings.
+  // Shows whether the Google mail service is connected (alerts to staff, updates to customers) and lets you send a test.
   function EmailStatus(p) {
     var b = useState(false), busy = b[0], setBusy = b[1];
-    function test() { setBusy(true); api.post("/api/admin/email-test", {}).then(function (r) { setBusy(false); p.say("Test email sent to " + r.to.join(", ")); }, function (e) { setBusy(false); p.say(e.message, "danger"); }); }
+    function test() { setBusy(true); api.post("/api/admin/email-test", {}).then(function (r) { setBusy(false); p.say(r.to && r.to.length ? "Test email sent to " + r.to.join(", ") : "Test email sent."); }, function (e) { setBusy(false); p.say(e.message, "danger"); }); }
     return CAPS.email.enabled
-      ? h("div", { className: "ad-note" }, h(A.Icon, { name: "mail", size: 16 }), "Email alerts are on (" + CAPS.email.recipients + " recipient" + (CAPS.email.recipients === 1 ? "" : "s") + ").",
+      ? h("div", { className: "ad-note" }, h(A.Icon, { name: "mail", size: 16 }), "Email is connected. The team gets an email for every new message, and customers get an email when their order moves to a new stage.",
         h(A.Button, { variant: "secondary", size: "s", loading: busy, onClick: test, className: "ad-note__btn" }, "Send test email"))
-      : h("div", { className: "ad-note is-muted" }, h(A.Icon, { name: "mail", size: 16 }), "Email alerts are off. Set SMTP_HOST and NOTIFY_TO on the server to get an email for every new message.");
+      : h("div", { className: "ad-note is-muted" }, h(A.Icon, { name: "mail", size: 16 }), "Email is off. Connect the Google mail script (APPS_SCRIPT_URL and APPS_SCRIPT_SECRET on the server) to get an email for every new message and to update customers.");
   }
 
   function Tracking(p) {
@@ -468,7 +468,7 @@
   }
   function on(f, k) { return f[k] === "" || f[k] == null ? true : f[k] !== false; }
 
-  var SITE_KEYS = ["seoTitle", "seoDescription", "phone", "email", "whatsapp", "address", "hours", "instagram", "whatsappMessage", "showWhatsapp", "liveAuctionUrl", "liveAuctionHint", "topbarText", "footerText"];
+  var SITE_KEYS = ["notifyCustomers", "seoTitle", "seoDescription", "phone", "email", "whatsapp", "address", "hours", "instagram", "whatsappMessage", "showWhatsapp", "liveAuctionUrl", "liveAuctionHint", "topbarText", "footerText"];
   function SiteDetails(p) {
     return h(SettingsForm, Object.assign({ keys: SITE_KEYS, render: function (f, set, tog) {
       return h(Frag, null,
@@ -489,6 +489,9 @@
         h(Card, { title: "Google and link previews", text: "How the home page appears in Google results and when the link is shared on WhatsApp or Facebook." },
           h(A.TextField, { label: "Home page title", value: f.seoTitle, onChange: set("seoTitle"), placeholder: "Japanese auction car imports for Sri Lanka" }),
           h(A.TextField, { label: "Description", multiline: true, rows: 3, value: f.seoDescription, onChange: set("seoDescription"), placeholder: "Browse imported cars in stock or let Direct Auto bid for your exact car at Japanese auctions…", hint: "One or two sentences. Search engines may take a few days to show a change." })),
+        h(Card, { title: "Emails to customers", text: "Sent through the Google mail script when the customer left an email address." },
+          h(A.Switch, { label: "Email customers a receipt when they send a message or request", checked: on(f, "notifyCustomers"), onChange: tog("notifyCustomers") }),
+          h("p", { className: "ad-small ad-muted" }, "This switch also controls the order-stage emails (Bidding, Won, Shipped and so on) sent from Inquiries and Auction requests. Emails to the team are always sent.")),
         h(Card, { title: "Header and footer text" },
           h(A.TextField, { label: "Top bar message (right side)", value: f.topbarText, onChange: set("topbarText"), placeholder: "Japan auction imports for Sri Lanka" }),
           h(A.TextField, { label: "Footer description", multiline: true, rows: 3, value: f.footerText, onChange: set("footerText"), placeholder: "Japanese auction imports for Sri Lanka, with original auction sheets, refundable deposits and door-to-door tracking." })));

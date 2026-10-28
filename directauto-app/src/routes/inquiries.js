@@ -43,8 +43,7 @@ router.post('/inquiries', async (req, res, next) => {
         LEFT JOIN vehicle_manufacturer m ON m.id = v.vehicle_manufacturer LEFT JOIN vehicle_model mo ON mo.id = v.vehicle_model WHERE v.id = $1`, [vehicleId]).catch(() => ({ rows: [] }));
       if (v.rows[0]) car = [v.rows[0].year, v.rows[0].make, v.rows[0].model, v.rows[0].trim].filter(Boolean).join(' ') + ` (AD-${String(vehicleId).padStart(4, '0')})`;
     }
-    const subject = { 'Stock quote': 'New quote request', Viewing: 'New viewing booking', Contact: 'New contact message', 'Sell your car': 'New sell-your-car request' }[kind] || 'New inquiry';
-    mailer.notify(subject, [['Reference', ref], ['Type', kind], ['Name', name], ['Phone', phone], ['Email', email], ['Vehicle', car], ['Message', message]], { replyTo: email });
+    mailer.send('inquiry', { ref, kind, name, phone, email: isEmail(email) ? email : '', car, message });
   } catch (e) { next(e); }
 });
 
@@ -56,7 +55,7 @@ router.post('/newsletter', async (req, res, next) => {
     const exists = await db.query('SELECT 1 FROM newsletters WHERE lower(email) = lower($1)', [email]);
     if (!exists.rowCount) {
       await db.query('INSERT INTO newsletters (name, email) VALUES ($1, $2)', [clip(name, 200), clip(email, 200)]);
-      mailer.notify('New newsletter subscriber', [['Email', email], ['Name', name]], { replyTo: email });
+      mailer.send('newsletter', { email, name: clip(name, 200) });
     }
     res.status(201).json({ ok: true, message: 'Subscribed successfully!' });
   } catch (e) { next(e); }
@@ -86,10 +85,13 @@ router.post('/live-inquiries', async (req, res, next) => {
     );
     const ref = 'AR-' + (3000 + rows[0].id);
     res.status(201).json({ ok: true, ref, message: 'Your auction request has been submitted.' });
-    mailer.notify('New auction request', [['Reference', ref], ['Name', name], ['Phone', phone], ['Email', clip(b.email || (req.user && req.user.email), 200)],
-      ['Car', `${make} ${clip(b.model, 100).trim() || 'any model'}`], ['Years', details.yearFrom && details.yearTo ? `${details.yearFrom} to ${details.yearTo}` : ''],
-      ['Chassis code', details.chassis], ['Budget (LKR)', details.budget ? details.budget.toLocaleString('en-US') : ''], ['Max mileage', details.maxKm ? `${details.maxKm.toLocaleString('en-US')} km` : ''],
-      ['Min grade', clip(b.grade, 50)], ['Colours', details.colours.join(', ')], ['Notes', clip(b.message, 2000)]], { replyTo: b.email });
+    const aemail = clip(b.email || (req.user && req.user.email), 200).trim();
+    mailer.send('auction_request', {
+      ref, name, phone, email: isEmail(aemail) ? aemail : '', car: `${make} ${clip(b.model, 100).trim() || 'any model'}`,
+      years: details.yearFrom && details.yearTo ? `${details.yearFrom} to ${details.yearTo}` : '', chassis: details.chassis,
+      budget: details.budget ? details.budget.toLocaleString('en-US') : '', maxKm: details.maxKm ? details.maxKm.toLocaleString('en-US') : '',
+      grade: clip(b.grade, 50), colours: details.colours.join(', '), notes: clip(b.message, 2000),
+    });
   } catch (e) { next(e); }
 });
 
