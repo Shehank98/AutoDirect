@@ -297,7 +297,7 @@
       p.children);
   }
   var STATUS = {
-    "Available": ["success", "check"], "Reserved": ["warning", "clock"], "In transit": ["info", "ship"], "Sold": ["neutral", "tag"],
+    "Available": ["success", "check"], "Ex Stock": ["info", "pin"], "Reserved": ["warning", "clock"], "In transit": ["info", "ship"], "Sold": ["neutral", "tag"],
     "Requested": ["neutral", "doc"], "Quote sent": ["info", "mail"], "Bidding": ["accent", "gavel"], "Won": ["success", "check"], "Outbid": ["danger", "x"],
     "LC opened": ["warning", "doc"], "Shipped": ["info", "ship"], "Arrived": ["info", "pin"], "Delivered": ["success", "check"],
     "Awaiting deposit": ["warning", "clock"], "Open": ["accent", "bell"], "Closed": ["neutral", "check"], "Published": ["success", "eye"], "Draft": ["neutral", "edit"]

@@ -148,7 +148,7 @@ CREATE TABLE IF NOT EXISTS newsletters (
 
 -- Trim/grade name shown under the model ("Hybrid WxB") and the sales status shown on cards.
 ALTER TABLE vehicle ADD COLUMN IF NOT EXISTS trim         VARCHAR(100) DEFAULT '';
-ALTER TABLE vehicle ADD COLUMN IF NOT EXISTS stock_status VARCHAR(20)  NOT NULL DEFAULT 'Available'; -- Available | Reserved | In transit | Sold
+ALTER TABLE vehicle ADD COLUMN IF NOT EXISTS stock_status VARCHAR(20)  NOT NULL DEFAULT 'Available'; -- Available | Ex Stock | Reserved | In transit | Sold
 CREATE INDEX IF NOT EXISTS idx_vehicle_stock_status ON vehicle(stock_status);
 
 -- Order tracking: every inquiry / auction request moves through the same 7 stages (0..6):

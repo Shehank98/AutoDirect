@@ -5,13 +5,15 @@
   var R = window.React, h = R.createElement, useState = R.useState, useEffect = R.useEffect, useRef = R.useRef, Frag = R.Fragment;
   var A = window.AD, api = A.api, fmt = A.format, cx = fmt.cx;
   var STAGES = ["Requested", "Bidding", "Won", "LC opened", "Shipped", "Arrived", "Delivered"];
-  var STOCK_STATUS = ["Available", "Reserved", "In transit", "Sold"];
+  var STOCK_STATUS = ["Available", "Ex Stock", "Reserved", "In transit", "Sold"];
   var FUELS = ["Petrol", "Diesel", "Hybrid", "Electric", "LPG"];
   var GEARS = ["Automatic", "Manual", "CVT"];
   var DRIVES = ["2WD", "4WD", "AWD"];
   // Wording for the single bar on a car's photo. "" = no bar (a car that is Sold / Reserved / In transit still shows that status).
-  var LABEL_PRESETS = ["New arrival", "Available now", "Just landed", "Hot deal", "Price reduced", "Reserved", "In transit", "Sold"];
+  var LABEL_PRESETS = ["New arrival", "Available now", "Ex Stock", "Just landed", "Hot deal", "Price reduced", "Reserved", "In transit", "Sold"];
   function labelOptions(cur) { var o = [{ value: "", label: "No label" }].concat(LABEL_PRESETS.map(function (x) { return { value: x, label: x }; })); if (cur && LABEL_PRESETS.indexOf(cur) < 0) o.push({ value: cur, label: cur + " (custom)" }); return o; }
+  // Car photos are shown 4:3 on the listing cards, so that is the default shape.
+  var CAR_CROP = { aspects: [{ label: "4:3 (car cards)", a: 4 / 3 }, { label: "3:2", a: 3 / 2 }, { label: "16:9", a: 16 / 9 }, { label: "Square", a: 1 }], def: 0 };
   var CAPS = { uploads: false, sampleImages: true, email: { enabled: false } };   // filled from /api/admin/me when the console opens
 
   /* ------------------------------------------------------------ helpers */
@@ -58,6 +60,80 @@
   function Err(p) { return p.text ? h("p", { className: "ad-field__error", role: "alert" }, h(A.Icon, { name: "info", size: 14 }), p.text) : null; }
   function Thumb(p) { return p.src ? h("img", { src: p.src, alt: "", className: p.logo ? "ad-dt__logo" : "" }) : h("span", { className: "ad-dt__ph" }, h(A.Icon, { name: p.icon || "image", size: 16 })); }
 
+  /* ------------------------------------------------------------ photo cropper */
+  // Drag to move, slider / wheel / pinch to zoom, pick the shape. Produces a JPEG of the chosen area.
+  function CropDialog(p) {
+    var aspects = p.aspects, ai = useState(p.def || 0), ia = ai[0], setIa = ai[1];
+    var asp = aspects[ia].a;
+    var src = useState(null), url = src[0], setUrl = src[1];
+    var nat = useState(null), size = nat[0], setSize = nat[1];            // natural size of the photo
+    var fwS = useState(0), fw = fwS[0], setFw = fwS[1];                   // frame width on screen
+    var vw = useState({ z: 1, ox: 0, oy: 0 }), view = vw[0], setView = vw[1];
+    var frame = useRef(null), imgRef = useRef(null), ptrs = useRef({}), last = useRef(null);
+    useEffect(function () { var u = URL.createObjectURL(p.file); setUrl(u); return function () { URL.revokeObjectURL(u); }; }, [p.file]);
+    useEffect(function () {
+      function measure() { if (frame.current) setFw(frame.current.getBoundingClientRect().width); }
+      measure(); window.addEventListener("resize", measure); return function () { window.removeEventListener("resize", measure); };
+    }, [ia, !!size]);
+    var fh = fw / asp;
+    var s0 = size && fw ? Math.max(fw / size.w, fh / size.h) : 1, s = s0 * view.z;
+    function clamp(ox, oy, z) {
+      var sc = s0 * z, dw = size.w * sc, dh = size.h * sc;
+      return { z: z, ox: Math.min(0, Math.max(fw - dw, ox)), oy: Math.min(0, Math.max(fh - dh, oy)) };
+    }
+    function center(z) { var sc = s0 * z; return clamp((fw - size.w * sc) / 2, (fh - size.h * sc) / 2, z); }
+    // Start centred whenever the photo or the shape changes.
+    useEffect(function () { if (size && fw) setView(center(1)); }, [size, ia, fw > 0]);
+    function zoomTo(z) {
+      z = Math.min(4, Math.max(1, z));
+      setView(function (v) {   // keep whatever is in the middle of the frame in the middle
+        var cx = (fw / 2 - v.ox) / (s0 * v.z), cy = (fh / 2 - v.oy) / (s0 * v.z);
+        return clamp(fw / 2 - cx * s0 * z, fh / 2 - cy * s0 * z, z);
+      });
+    }
+    function down(e) { frame.current.setPointerCapture(e.pointerId); ptrs.current[e.pointerId] = { x: e.clientX, y: e.clientY }; last.current = null; }
+    function move(e) {
+      var pt = ptrs.current[e.pointerId]; if (!pt || !size) return;
+      var ids = Object.keys(ptrs.current);
+      if (ids.length === 1) {
+        var dx = e.clientX - pt.x, dy = e.clientY - pt.y;
+        setView(function (v) { return clamp(v.ox + dx, v.oy + dy, v.z); });
+      } else if (ids.length === 2) {
+        var o = ptrs.current[ids.filter(function (k) { return Number(k) !== e.pointerId; })[0]];
+        var d = Math.hypot(e.clientX - o.x, e.clientY - o.y);
+        if (last.current) zoomTo(view.z * d / last.current);
+        last.current = d;
+      }
+      ptrs.current[e.pointerId] = { x: e.clientX, y: e.clientY };
+    }
+    function up(e) { delete ptrs.current[e.pointerId]; last.current = null; }
+    function wheel(e) { e.preventDefault(); zoomTo(view.z * (e.deltaY < 0 ? 1.1 : 1 / 1.1)); }
+    useEffect(function () { var el = frame.current; if (!el) return; el.addEventListener("wheel", wheel, { passive: false }); return function () { el.removeEventListener("wheel", wheel); }; });
+    function apply() {
+      var im = imgRef.current, sw = fw / s, sh = fh / s, sx = -view.ox / s, sy = -view.oy / s;
+      var ow = Math.min(1600, Math.round(sw)), oh = Math.round(ow * fh / fw);
+      var cv = document.createElement("canvas"); cv.width = ow; cv.height = oh;
+      var cx = cv.getContext("2d"); cx.fillStyle = "#fff"; cx.fillRect(0, 0, ow, oh); cx.imageSmoothingQuality = "high";
+      cx.drawImage(im, sx, sy, sw, sh, 0, 0, ow, oh);
+      cv.toBlob(function (b) { p.onDone(new File([b], (p.file.name.replace(/\.[^.]+$/, "") || "photo") + ".jpg", { type: "image/jpeg" })); }, "image/jpeg", 0.9);
+    }
+    return h(Modal, { title: "Crop photo" + (p.total > 1 ? " " + (p.index + 1) + " of " + p.total : ""), wide: true, onClose: p.onCancel },
+      h("div", { className: "ad-crop" },
+        h("p", { className: "ad-small ad-muted" }, "Drag the photo to move it. Use the slider (or pinch) to zoom. The cropped area is what visitors will see."),
+        h("div", { className: "ad-crop__shapes", role: "radiogroup", "aria-label": "Shape" }, aspects.map(function (x, i) {
+          return h("button", { key: x.label, type: "button", role: "radio", "aria-checked": i === ia, className: cx("ad-chip", i === ia && "is-on"), onClick: function () { setIa(i); } }, x.label);
+        })),
+        h("div", { ref: frame, className: "ad-crop__frame", style: { aspectRatio: String(asp) }, onPointerDown: down, onPointerMove: move, onPointerUp: up, onPointerCancel: up },
+          url ? h("img", { ref: imgRef, src: url, alt: "", draggable: false, onLoad: function (e) { setSize({ w: e.target.naturalWidth, h: e.target.naturalHeight }); },
+            style: size && fw ? { width: size.w * s, height: size.h * s, left: view.ox, top: view.oy } : { visibility: "hidden" } }) : null,
+          h("span", { className: "ad-crop__grid", "aria-hidden": true })),
+        h("label", { className: "ad-crop__zoom" }, h("span", { className: "ad-small" }, "Zoom"),
+          h("input", { type: "range", min: 1, max: 4, step: 0.01, value: view.z, onChange: function (e) { zoomTo(Number(e.target.value)); }, "aria-label": "Zoom" })),
+        h("div", { className: "ad-row ad-row--between" },
+          h(A.Button, { variant: "ghost", onClick: p.onSkip }, "Upload without cropping"),
+          h("div", { className: "ad-row" }, h(A.Button, { variant: "ghost", onClick: p.onCancel }, "Cancel"), h(A.Button, { icon: "check", onClick: apply, disabled: !size }, "Use this crop")))));
+  }
+
   /* ------------------------------------------------------------ image uploader (single or many) */
   function ImageField(p) {
     var ref = useRef(null), bs = useState(false), busy = bs[0], setBusy = bs[1], er = useState(""), err = er[0], setErr = er[1];
@@ -68,11 +144,27 @@
       return h(A.TextField, { label: "", "aria-label": "Image URL", placeholder: "https://… link to an image (optional)", value: images[0] || "", onChange: function (e) { p.onChange(e.target.value ? [e.target.value.trim()] : []); },
         hint: "Image upload turns on when Firebase Storage is configured." });
     }
-    function pick(e) {
-      var files = e.target.files; if (!files.length) return;
+    var cq = useState(null), queue = cq[0], setQueue = cq[1];   // { files, i, out } while the crop window is open
+    function send(files) {
       setBusy(true); setErr("");
       upload(files, p.folder).then(function (urls) { p.onChange(p.multiple ? images.concat(urls) : urls.slice(0, 1)); setBusy(false); }, function (x) { setErr(x.message); setBusy(false); });
-      e.target.value = "";
+    }
+    function pick(e) {
+      var input = e.target, chosen = Array.prototype.slice.call(input.files); if (!chosen.length) return;
+      // Read every file into memory straight away, so nothing depends on the file input once it is cleared.
+      Promise.all(chosen.map(function (f) { return f.arrayBuffer().then(function (buf) { return new File([buf], f.name, { type: f.type, lastModified: f.lastModified }); }); })).then(function (files) {
+        input.value = "";
+        if (!p.crop) { send(files); return; }
+        // Only JPEG / PNG / WebP can be cropped; anything else (GIF, SVG) goes up as it is.
+        var first = files.findIndex(function (f) { return /^image\/(jpeg|png|webp)$/.test(f.type); });
+        if (first < 0) { send(files); return; }
+        setQueue({ files: files, i: first, out: files.slice(0, first) });
+      }, function () { input.value = ""; setErr("Could not read that file."); });
+    }
+    function next(file) {   // the cropped (or original) file for this photo; then the next one, then upload
+      var q = queue, out = q.out.concat([file]), i = q.i + 1;
+      while (i < q.files.length && !/^image\/(jpeg|png|webp)$/.test(q.files[i].type)) { out.push(q.files[i]); i++; }
+      if (i >= q.files.length) { setQueue(null); send(out); } else setQueue({ files: q.files, i: i, out: out });
     }
     function move(i, to) { if (to < 0 || to >= images.length) return; var a = images.slice(); a.splice(to, 0, a.splice(i, 1)[0]); p.onChange(a); }
     return h("div", { className: "ad-imgs" },
@@ -80,6 +172,8 @@
         h(A.Button, { variant: "secondary", size: "s", icon: "plus", loading: busy, onClick: function () { ref.current.click(); } }, p.multiple ? "Upload photos" : images.length ? "Replace image" : "Upload image"),
         p.multiple ? h("span", { className: "ad-small ad-muted" }, "First photo is the cover shown in listings.") : null),
       h(Err, { text: err }),
+      queue ? h(CropDialog, { key: queue.i, file: queue.files[queue.i], index: queue.i, total: queue.files.length, aspects: p.crop.aspects, def: p.crop.def,
+        onDone: next, onSkip: function () { next(queue.files[queue.i]); }, onCancel: function () { setQueue(null); } }) : null,
       images.length ? h("div", { className: "ad-imgs__grid" }, images.map(function (u, i) {
         return h("div", { key: u + i, className: cx("ad-imgs__tile", i === 0 && p.multiple && "is-cover") }, h("img", { src: u, alt: "" }),
           i === 0 && p.multiple ? h("span", { className: "ad-imgs__cover" }, "Cover") : null,
@@ -131,7 +225,7 @@
         h("div", { className: "ad-span3" }, txt("description", "Description", { multiline: true, rows: 3, maxLength: 500, hint: "Shown on the vehicle page." }))),
       CAPS.sampleImages
         ? h("p", { className: "ad-note" }, h(A.Icon, { name: "image", size: 16 }), "Sample car photos are shown on every listing for now, so there is nothing to upload.")
-        : h(Frag, null, h("div", { className: "ad-label" }, "Photos"), h(ImageField, { multiple: true, folder: "vehicles", images: f.images, onChange: function (a) { setF(Object.assign({}, f, { images: a })); } })),
+        : h(Frag, null, h("div", { className: "ad-label" }, "Photos"), h(ImageField, { multiple: true, folder: "vehicles", crop: CAR_CROP, images: f.images, onChange: function (a) { setF(Object.assign({}, f, { images: a })); } })),
       h("div", { className: "ad-label" }, "Features"),
       h(A.ChipGroup, { multiple: true, label: "Features", value: f.feature_ids.map(String), onChange: function (a) { setF(Object.assign({}, f, { feature_ids: a.map(Number) })); },
         options: L.features.filter(function (x) { return x.status === 1 || f.feature_ids.indexOf(x.id) >= 0; }).map(function (x) { return { value: String(x.id), label: x.name }; }) }),
@@ -417,7 +511,7 @@
         h(A.TextField, { label: "Job / place", optional: true, placeholder: "e.g. Bank of Ceylon (BOC), Kegalle Branch", value: f.role, onChange: set("role") }),
         h(A.TextField, { label: "Review", multiline: true, rows: 6, value: f.quote, onChange: set("quote") }),
         h(A.SelectField, { label: "Language", options: [{ value: "en", label: "English" }, { value: "si", label: "Sinhala" }], value: f.lang, onChange: set("lang") }),
-        h("div", null, h("div", { className: "ad-field__label" }, "Customer photo (optional)"), h(ImageField, { folder: "testimonials", images: f.image ? [f.image] : [], onChange: function (a) { setF(Object.assign({}, f, { image: a[0] || "" })); } })),
+        h("div", null, h("div", { className: "ad-field__label" }, "Customer photo (optional)"), h(ImageField, { folder: "testimonials", crop: { aspects: [{ label: "Square", a: 1 }, { label: "4:3", a: 4 / 3 }], def: 0 }, images: f.image ? [f.image] : [], onChange: function (a) { setF(Object.assign({}, f, { image: a[0] || "" })); } })),
         h(A.Switch, { label: "Featured (pinned and highlighted on the home page; replaces the current one)", checked: f.featured, onChange: function (x) { setF(Object.assign({}, f, { featured: x })); } }),
         h(A.Switch, { label: "Active (visible on the website)", checked: f.status === 1, onChange: function (x) { setF(Object.assign({}, f, { status: x ? 1 : 0 })); } }),
         h(Err, { text: err }),

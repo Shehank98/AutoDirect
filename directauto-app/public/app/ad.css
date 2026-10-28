@@ -1255,3 +1255,17 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
 .ad-pendingbar__t svg { flex: none; margin-top: 2px; }
 .ad-pendingbar em { font-style: normal; font-weight: 700; }
 @media (max-width: 640px) { .ad-pendingbar { padding: 10px 14px; } }
+
+/* Photo cropper (admin) */
+.ad-crop { display: grid; gap: 12px; }
+.ad-crop__shapes { display: flex; flex-wrap: wrap; gap: 8px; }
+.ad-crop__frame { position: relative; width: 100%; max-width: 640px; margin: 0 auto; overflow: hidden; background: #111; border-radius: 12px; touch-action: none; cursor: grab; user-select: none; }
+.ad-crop__frame:active { cursor: grabbing; }
+.ad-crop__frame img { position: absolute; max-width: none; pointer-events: none; user-select: none; }
+.ad-crop__grid { position: absolute; inset: 0; pointer-events: none; border: 2px solid rgba(255,255,255,.85); border-radius: 12px;
+  background: linear-gradient(to right, transparent 33.2%, rgba(255,255,255,.35) 33.3%, transparent 33.5%, transparent 66.5%, rgba(255,255,255,.35) 66.6%, transparent 66.8%),
+              linear-gradient(to bottom, transparent 33.2%, rgba(255,255,255,.35) 33.3%, transparent 33.5%, transparent 66.5%, rgba(255,255,255,.35) 66.6%, transparent 66.8%); }
+.ad-crop__zoom { display: flex; align-items: center; gap: 12px; max-width: 640px; width: 100%; margin: 0 auto; }
+.ad-crop__zoom input { flex: 1; accent-color: var(--brand); height: 32px; }
+.ad-modal__box--wide .ad-crop .ad-row--between { gap: 8px; }
+@media (max-width: 640px) { .ad-crop .ad-row--between { flex-direction: column; align-items: stretch; } .ad-crop .ad-row { flex-wrap: wrap; } }
