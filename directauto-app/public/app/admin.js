@@ -419,7 +419,18 @@
     var d = useLoad("/api/admin/settings");
     return d;
   }
-  function pickSettings(values, keys) { var o = {}; keys.forEach(function (k) { o[k] = values[k] == null ? "" : values[k]; }); return o; }
+  function clone(x) { return JSON.parse(JSON.stringify(x)); }
+  function isList(k) { return !!(A.defaults && A.defaults[k]) && Array.isArray(A.defaults[k]); }
+  // Lists start from what the website shows now: the admin's saved version, or the built-in rows.
+  function pickSettings(values, keys) {
+    var o = {};
+    keys.forEach(function (k) { o[k] = isList(k) ? clone(Array.isArray(values[k]) && values[k].length ? values[k] : A.defaults[k]) : (values[k] == null ? "" : values[k]); });
+    return o;
+  }
+  function same(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+  // Only these fields of each row are saved, so built-in rows (which may carry extras like an icon) compare equal.
+  var LIST_FIELDS = { buySteps: ["t", "d", "body"], aboutValues: ["title", "text"], locationsList: ["name", "text"], glossaryItems: ["term", "cat", "def", "example"], auctionPoints: ["title", "text"] };
+  function norm(k, rows) { return (rows || []).map(function (x) { var o = {}; LIST_FIELDS[k].forEach(function (c) { o[c] = x[c] == null ? "" : String(x[c]); }); return o; }); }
   function SaveBar(p) {
     return h("div", { className: "ad-savebar" }, h("span", { className: "ad-small ad-muted" }, p.dirty ? "You have unsaved changes." : "All changes saved."),
       h("div", { className: "ad-row" }, p.dirty ? h(A.Button, { variant: "ghost", onClick: p.onReset }, "Discard") : null, h(A.Button, { type: "submit", icon: "check", loading: p.busy, disabled: !p.dirty }, "Save changes")));
@@ -434,12 +445,12 @@
     if (d.error) return h(Err, { text: d.error });
     if (!d.data || !f) return h("p", { className: "ad-muted" }, "Loading…");
     var saved = pickSettings(d.data.values, p.keys);
-    var dirty = p.keys.some(function (k) { return String(f[k]) !== String(saved[k]); });
+    var dirty = p.keys.some(function (k) { return isList(k) ? !same(norm(k, f[k]), norm(k, saved[k])) : String(f[k]) !== String(saved[k]); });
     function set(k) { return function (e) { var o = Object.assign({}, f); o[k] = e && e.target ? e.target.value : e; setF(o); }; }
     function tog(k) { return function (x) { var o = Object.assign({}, f); o[k] = x; setF(o); }; }
     function submit(e) {
       e.preventDefault(); setBusy(true);
-      var body = {}; p.keys.forEach(function (k) { body[k] = typeof f[k] === "boolean" ? f[k] : String(f[k]).trim(); });
+      var body = {}; p.keys.forEach(function (k) { body[k] = isList(k) ? (same(norm(k, f[k]), norm(k, A.defaults[k])) ? "" : norm(k, f[k])) : typeof f[k] === "boolean" ? f[k] : String(f[k]).trim(); });
       api.put("/api/admin/settings", body).then(function (r) { d.set(r); setBusy(false); p.say("Saved. The website is updated."); p.changed(); }, function (x) { setBusy(false); p.say(x.message, "danger"); });
     }
     return h("form", { className: "ad-settings", onSubmit: submit }, p.render(f, set, tog, d.data.defaults),
@@ -447,7 +458,7 @@
   }
   function on(f, k) { return f[k] === "" || f[k] == null ? true : f[k] !== false; }
 
-  var SITE_KEYS = ["phone", "email", "whatsapp", "address", "hours", "instagram", "whatsappMessage", "showWhatsapp", "liveAuctionUrl", "liveAuctionHint", "topbarText", "footerText"];
+  var SITE_KEYS = ["seoTitle", "seoDescription", "phone", "email", "whatsapp", "address", "hours", "instagram", "whatsappMessage", "showWhatsapp", "liveAuctionUrl", "liveAuctionHint", "topbarText", "footerText"];
   function SiteDetails(p) {
     return h(SettingsForm, Object.assign({ keys: SITE_KEYS, render: function (f, set, tog) {
       return h(Frag, null,
@@ -465,13 +476,16 @@
         h(Card, { title: "Live auction", text: "The Japan auction viewer shown on the Live auction page." },
           h(A.TextField, { label: "Auction viewer link", value: f.liveAuctionUrl, onChange: set("liveAuctionUrl"), placeholder: "https://jpcenter.ru/on?classic" }),
           h(A.TextField, { label: "Notice above the viewer", optional: true, value: f.liveAuctionHint, onChange: set("liveAuctionHint"), hint: "A short message such as login details or opening times." })),
+        h(Card, { title: "Google and link previews", text: "How the home page appears in Google results and when the link is shared on WhatsApp or Facebook." },
+          h(A.TextField, { label: "Home page title", value: f.seoTitle, onChange: set("seoTitle"), placeholder: "Japanese auction car imports for Sri Lanka" }),
+          h(A.TextField, { label: "Description", multiline: true, rows: 3, value: f.seoDescription, onChange: set("seoDescription"), placeholder: "Browse imported cars in stock or let AutoDirect bid for your exact car at Japanese auctions…", hint: "One or two sentences. Search engines may take a few days to show a change." })),
         h(Card, { title: "Header and footer text" },
           h(A.TextField, { label: "Top bar message (right side)", value: f.topbarText, onChange: set("topbarText"), placeholder: "Japan auction imports for Sri Lanka" }),
           h(A.TextField, { label: "Footer description", multiline: true, rows: 3, value: f.footerText, onChange: set("footerText"), placeholder: "Japanese auction imports for Sri Lanka, with original auction sheets, refundable deposits and door-to-door tracking." })));
     } }, p));
   }
 
-  var HOME_KEYS = ["showAuction", "auctionTitle", "auctionLead", "showReviews", "reviewsTitle", "showCta", "ctaTitle", "ctaText"];
+  var HOME_KEYS = ["showAuction", "auctionPoints", "auctionTitle", "auctionLead", "showReviews", "reviewsTitle", "showCta", "ctaTitle", "ctaText"];
   function HomeContent(p) {
     return h(SettingsForm, Object.assign({ keys: HOME_KEYS, render: function (f, set, tog) {
       return h(Frag, null,
@@ -479,7 +493,9 @@
         h(Card, { title: "Live auction", text: "The Japan auctions promo strip." },
           h(A.Switch, { label: "Show this section", checked: on(f, "showAuction"), onChange: tog("showAuction") }),
           h("div", { className: "ad-fgrid" }, h(A.TextField, { label: "Heading", value: f.auctionTitle, onChange: set("auctionTitle"), placeholder: "Watch Japan auctions live" }),
-            h(A.TextField, { label: "Sub-heading", value: f.auctionLead, onChange: set("auctionLead"), placeholder: "Browse live lots from Japanese auction houses without leaving AutoDirect." }))),
+            h(A.TextField, { label: "Sub-heading", value: f.auctionLead, onChange: set("auctionLead"), placeholder: "Browse live lots from Japanese auction houses without leaving AutoDirect." })),
+          h("div", { className: "ad-field__label" }, "The three points under it"),
+          h(ListEditor, { rows: f.auctionPoints, listKey: "auctionPoints", defaults: A.defaults.auctionPoints, onChange: set("auctionPoints"), fields: [{ key: "title", label: "Title", half: true }, { key: "text", label: "Text", half: true }], min: 1, max: 6, addLabel: "Add a point" })),
         h(Card, { title: "Customer reviews", text: "Add and edit the reviews themselves under Website > Testimonials." },
           h(A.Switch, { label: "Show this section", checked: on(f, "showReviews"), onChange: tog("showReviews") }),
           h(A.TextField, { label: "Heading", value: f.reviewsTitle, onChange: set("reviewsTitle"), placeholder: "What our customers say" })),
@@ -499,25 +515,25 @@
     var d = useSettings();
     var s = useState(null), f = s[0], setF = s[1], b = useState(false), busy = b[0], setBusy = b[1];
     var themes = A.themes;
-    useEffect(function () { if (d.data) setF({ theme: d.data.values.theme || "forest", brandColor: d.data.values.brandColor || "#0e4f45", accentColor: d.data.values.accentColor || "#c93a17" }); }, [d.data]);
+    useEffect(function () { if (d.data) setF({ theme: d.data.values.theme || "forest", brandColor: d.data.values.brandColor || "#0e4f45", accentColor: d.data.values.accentColor || "#c93a17", font: d.data.values.fontTheme || "default" }); }, [d.data]);
+    useEffect(function () { Object.keys(A.fonts).forEach(A.loadFont); }, []);
     // Preview while choosing; when leaving the page without saving, go back to what is saved.
-    useEffect(function () { if (f) A.applyTheme(f.theme, f.brandColor, f.accentColor); }, [f]);
-    useEffect(function () { return function () { var v = latest.current; if (v) A.applyTheme(v.theme, v.brandColor, v.accentColor); }; }, []);
-    var latest = useRef(null);
-    useEffect(function () { if (d.data) latest.current = { theme: d.data.values.theme, brandColor: d.data.values.brandColor, accentColor: d.data.values.accentColor }; }, [d.data]);
+    useEffect(function () { if (f) { A.applyTheme(f.theme, f.brandColor, f.accentColor); A.applyFont(f.font); } }, [f]);
+    useEffect(function () { return function () { A.applySiteTheme(A.site); }; }, []);
     if (d.error) return h(Err, { text: d.error });
     if (!d.data || !f) return h("p", { className: "ad-muted" }, "Loading…");
     var v = d.data.values, cur = v.theme || "forest";
-    var dirty = f.theme !== cur || (f.theme === "custom" && (f.brandColor !== (v.brandColor || "#0e4f45") || f.accentColor !== (v.accentColor || "#c93a17")));
+    var curFont = v.fontTheme || "default";
+    var dirty = f.theme !== cur || f.font !== curFont || (f.theme === "custom" && (f.brandColor !== (v.brandColor || "#0e4f45") || f.accentColor !== (v.accentColor || "#c93a17")));
     var tooLight = f.theme === "custom" && lum(f.brandColor) > 0.3;
     function pick(id) { setF(Object.assign({}, f, { theme: id })); }
     function save(e) {
       e.preventDefault(); setBusy(true);
-      var body = { theme: f.theme === "forest" ? "" : f.theme, brandColor: f.theme === "custom" ? f.brandColor : "", accentColor: f.theme === "custom" ? f.accentColor : "" };
-      api.put("/api/admin/settings", body).then(function (r) { d.set(r); setBusy(false); p.say("Colour theme saved. The whole website now uses it."); p.changed(); }, function (x) { setBusy(false); p.say(x.message, "danger"); });
+      var body = { fontTheme: f.font === "default" ? "" : f.font, theme: f.theme === "forest" ? "" : f.theme, brandColor: f.theme === "custom" ? f.brandColor : "", accentColor: f.theme === "custom" ? f.accentColor : "" };
+      api.put("/api/admin/settings", body).then(function (r) { d.set(r); setBusy(false); p.say("Saved. The whole website now uses your colours and font."); p.changed(); }, function (x) { setBusy(false); p.say(x.message, "danger"); });
     }
     return h("form", { className: "ad-settings", onSubmit: save },
-      h("p", { className: "ad-note" }, h(A.Icon, { name: "palette", size: 16 }), "Pick a theme to preview it right here, then press Save to publish it to the whole website and this admin. Light and dark mode both follow the theme."),
+      h("p", { className: "ad-note" }, h(A.Icon, { name: "palette", size: 16 }), "Pick colours and a font to preview them right here, then press Save to publish them to the whole website and this admin. Light and dark mode both follow the theme."),
       h(Card, { title: "Colour themes" },
         h("div", { className: "ad-themes", role: "radiogroup", "aria-label": "Colour theme" },
           Object.keys(themes).map(function (id) {
@@ -533,10 +549,78 @@
           h(A.TextField, { label: "Main colour", type: "color", value: f.brandColor, onChange: function (e) { setF(Object.assign({}, f, { brandColor: e.target.value })); }, hint: "Buttons, links, highlights." }),
           h(A.TextField, { label: "Accent colour", type: "color", value: f.accentColor, onChange: function (e) { setF(Object.assign({}, f, { accentColor: e.target.value })); }, hint: "Request-a-bid button and small highlights." }),
           tooLight ? h("p", { className: "ad-field__error ad-span2", role: "alert" }, h(A.Icon, { name: "info", size: 14 }), "This main colour is quite light, so white button text may be hard to read. Try a darker shade.") : null) : null),
-      h(Card, { title: "Preview", text: "These samples use the colours you picked." },
+      h(Card, { title: "Font", text: "The lettering used across the website and this admin. Sinhala and Tamil text uses your device’s own font." },
+        h("div", { className: "ad-themes ad-fonts", role: "radiogroup", "aria-label": "Font" },
+          Object.keys(A.fonts).map(function (id) {
+            var ft = A.fonts[id], css = id === "default" ? undefined : { fontFamily: '"' + ft.display + '", system-ui, sans-serif' };
+            return h("button", { key: id, type: "button", role: "radio", "aria-checked": f.font === id, className: cx("ad-theme", "ad-font", f.font === id && "is-on"), onClick: function () { setF(Object.assign({}, f, { font: id })); } },
+              h("span", { className: "ad-font__aa", style: css, "aria-hidden": true }, "Aa"), h("b", null, ft.name), h("span", { className: "ad-small ad-muted" }, ft.note),
+              id === curFont ? h("span", { className: "ad-small ad-muted" }, "In use") : null, f.font === id ? h(A.Icon, { name: "check", size: 16, className: "ad-theme__ck" }) : null);
+          }))),
+      h(Card, { title: "Preview", text: "These samples use the colours and font you picked." },
         h("div", { className: "ad-row ad-themeprev" }, h(A.Button, null, "Show 6 vehicles"), h(A.Button, { variant: "accent", icon: "gavel" }, "Request a bid"), h(A.Button, { variant: "secondary" }, "Secondary"), h(A.Badge, { tone: "success" }, "Available"),
           h("a", { href: "#", className: "ad-link", onClick: function (e) { e.preventDefault(); } }, "A text link"))),
-      h(SaveBar, { dirty: dirty, busy: busy, onReset: function () { setF({ theme: cur, brandColor: v.brandColor || "#0e4f45", accentColor: v.accentColor || "#c93a17" }); } }));
+      h(SaveBar, { dirty: dirty, busy: busy, onReset: function () { setF({ theme: cur, brandColor: v.brandColor || "#0e4f45", accentColor: v.accentColor || "#c93a17", font: curFont }); } }));
+  }
+
+  /* ------------------------------------------------------------ editable lists and pages */
+  function ListEditor(p) {
+    var rows = p.rows, fields = p.fields;
+    function upd(i, k, v) { var a = rows.map(function (x) { return Object.assign({}, x); }); a[i][k] = v; p.onChange(a); }
+    function move(i, to) { if (to < 0 || to >= rows.length) return; var a = rows.slice(); a.splice(to, 0, a.splice(i, 1)[0]); p.onChange(a); }
+    function del(i) { var a = rows.slice(); a.splice(i, 1); p.onChange(a); }
+    function add() { var b = {}; fields.forEach(function (f) { b[f.key] = ""; }); p.onChange(rows.concat([b])); }
+    var canDel = rows.length > (p.min || 1);
+    return h("div", { className: "ad-list" },
+      rows.map(function (r, i) {
+        return h("div", { key: i, className: "ad-list__row" },
+          h("span", { className: "ad-list__n", "aria-hidden": true }, i + 1),
+          h("div", { className: "ad-list__f" }, fields.map(function (f) {
+            return h(A.TextField, { key: f.key, label: f.label, multiline: !!f.multiline, rows: f.rows || 2, optional: f.optional, className: f.half ? "" : "ad-span2", placeholder: f.placeholder, value: r[f.key] || "", onChange: function (e) { upd(i, f.key, e.target.value); } });
+          })),
+          h("div", { className: "ad-list__act" },
+            h(A.Button, { variant: "ghost", size: "s", icon: "arrow-left", "aria-label": "Move " + (i + 1) + " up", disabled: i === 0, className: "ad-list__up", onClick: function () { move(i, i - 1); } }),
+            h(A.Button, { variant: "ghost", size: "s", icon: "arrow-right", "aria-label": "Move " + (i + 1) + " down", disabled: i === rows.length - 1, className: "ad-list__down", onClick: function () { move(i, i + 1); } }),
+            h(A.Button, { variant: "ghost", size: "s", icon: "trash", "aria-label": "Delete " + (i + 1), disabled: !canDel, onClick: function () { del(i); } })));
+      }),
+      h("div", { className: "ad-row" }, !p.max || rows.length < p.max ? h(A.Button, { variant: "secondary", icon: "plus", onClick: add }, p.addLabel || "Add another") : h("span", { className: "ad-small ad-muted" }, "Maximum of " + p.max + " reached."),
+        p.defaults && !same(norm(p.listKey, rows), norm(p.listKey, p.defaults)) ? h(A.Button, { variant: "ghost", onClick: function () { p.onChange(clone(p.defaults)); } }, "Reset to standard wording") : null));
+  }
+  function listCard(f, set, key, title, text, fields, extra) {
+    return h(Card, { title: title, text: text }, h(ListEditor, Object.assign({ rows: f[key], listKey: key, defaults: A.defaults[key], onChange: set(key), fields: fields }, extra || {})));
+  }
+
+  function BuyPage(p) {
+    return h(SettingsForm, Object.assign({ keys: ["buySteps", "depositFaq"], render: function (f, set) {
+      return h(Frag, null,
+        listCard(f, set, "buySteps", "The buying steps", "Shown on the How to buy page. Use the arrows to change the order.", [
+          { key: "t", label: "Step title", half: true }, { key: "d", label: "How long", half: true, placeholder: "e.g. Day 1–3" }, { key: "body", label: "What happens", multiline: true, rows: 3 }], { min: 2, max: 8, addLabel: "Add a step" }),
+        h(Card, { title: "“Why do we ask for a deposit?”", text: "The answer shown under the steps." },
+          h(A.TextField, { label: "Answer", multiline: true, rows: 3, value: f.depositFaq, onChange: set("depositFaq"), placeholder: "Deposits are 100% refundable. They protect you and us from last-minute cancellations and spam bids…", hint: "Leave empty to use the standard answer." })));
+    } }, p));
+  }
+  function AboutPage(p) {
+    return h(SettingsForm, Object.assign({ keys: ["aboutValues", "aboutCtaTitle", "aboutCtaText"], render: function (f, set) {
+      return h(Frag, null,
+        listCard(f, set, "aboutValues", "About us: what we stand for", "The boxes on the About us page.", [{ key: "title", label: "Heading" }, { key: "text", label: "Text", multiline: true, rows: 2 }], { min: 1, max: 8, addLabel: "Add a box" }),
+        h(Card, { title: "Visit us banner", text: "The banner at the bottom of the About us page." },
+          h(A.TextField, { label: "Heading", value: f.aboutCtaTitle, onChange: set("aboutCtaTitle"), placeholder: "Visit us in Malabe or Colombo 07" }),
+          h(A.TextField, { label: "Text", value: f.aboutCtaText, onChange: set("aboutCtaText"), placeholder: "See landed stock in person, or sit down with our LC desk." })));
+    } }, p));
+  }
+  function ContactPage(p) {
+    return h(SettingsForm, Object.assign({ keys: ["locationsList"], render: function (f, set) {
+      return h(Frag, null,
+        h("p", { className: "ad-note" }, h(A.Icon, { name: "info", size: 16 }), "Phone, email, WhatsApp, address and opening hours are under Website > Site details."),
+        listCard(f, set, "locationsList", "Showrooms and offices", "Listed on the Contact page, and offered in the “Visit us” form.", [{ key: "name", label: "Name", half: true, placeholder: "Malabe showroom" }, { key: "text", label: "Short note", half: true, placeholder: "Visit and inspect stock" }], { min: 1, max: 6, addLabel: "Add a location" }));
+    } }, p));
+  }
+  function GlossaryPage(p) {
+    return h(SettingsForm, Object.assign({ keys: ["glossaryItems"], render: function (f, set) {
+      return listCard(f, set, "glossaryItems", "Import vocabulary", "The terms on the Vocabulary page. Terms with the same category are grouped together.", [
+        { key: "term", label: "Term", half: true, placeholder: "LC (Letter of Credit)" }, { key: "cat", label: "Category", half: true, placeholder: "Payment & docs" },
+        { key: "def", label: "Meaning", multiline: true, rows: 3 }, { key: "example", label: "Example", multiline: true, rows: 2, optional: true }], { min: 1, max: 80, addLabel: "Add a term" });
+    } }, p));
   }
 
   /* ------------------------------------------------------------ seasons (Christmas, New Year ...) */
@@ -589,26 +673,64 @@
   var Fragment2 = Frag;
 
   /* ------------------------------------------------------------ overview */
+  function greet() { var h = new Date().getHours(); return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; }
+  function Chip(p) { return h("button", { type: "button", className: cx("ad-ovchip", p.on && "is-on"), onClick: p.onClick }, h("span", { className: "ad-ovchip__dot", "aria-hidden": true }), h("span", null, h("small", null, p.label), p.value)); }
+  function RecentList(p) {
+    var d = useLoad(p.url);
+    var rows = (d.data || []).slice(0, 5);
+    return h("section", { className: "ad-card ad-recent" },
+      h("div", { className: "ad-row ad-row--between" }, h("h3", { className: "ad-h3" }, p.title), h(A.Button, { variant: "ghost", size: "s", iconRight: "arrow-right", onClick: function () { p.go(p.mod); } }, "See all")),
+      d.error ? h(Err, { text: d.error }) : !d.data ? h("p", { className: "ad-muted ad-small" }, "Loading…") : !rows.length ? h("p", { className: "ad-muted ad-small" }, p.empty) :
+        h("ul", { className: "ad-recent__list" }, rows.map(function (r) {
+          return h("li", { key: r.id }, h("button", { type: "button", onClick: function () { p.go(p.mod); } },
+            h("span", { className: "ad-avatar" }, (r.name || "?").slice(0, 2)),
+            h("span", { className: "ad-recent__t" }, h("b", null, r.name || "Customer"), h("span", { className: "ad-small ad-muted" }, (r.kind || p.kind) + " · " + day(r.created_at))),
+            r.status === 0 ? h(A.Badge, { tone: "accent" }, "New") : h("span", { className: "ad-small ad-muted" }, "Handled")));
+        })));
+  }
+  var DIRECTORY = [
+    ["Cars and catalogue", "car", [["vehicles", "Vehicles", "Add, edit, price, photos, status"], ["manufacturers", "Brands", "Names and logos"], ["models", "Models", "Models for each brand"], ["types", "Body types", "Sedan, SUV, van…"], ["colours", "Colours", "Colour list"], ["features", "Features", "Options such as sunroof"]]],
+    ["Customers", "users", [["inquiries", "Inquiries", "Messages and stock quotes"], ["requests", "Auction requests", "Track each import"], ["customers", "Customers", "Accounts and admins"], ["newsletters", "Newsletter", "Subscribers"]]],
+    ["Website content", "layers", [["home", "Home page", "Sections and wording"], ["testimonials", "Testimonials", "Customer reviews"], ["buy", "How to buy", "Steps and deposit answer"], ["about", "About us", "Values and banner"], ["contact", "Contact & locations", "Showrooms and offices"], ["glossary", "Vocabulary", "Import terms"]]],
+    ["Look and feel", "palette", [["appearance", "Colours & fonts", "Themes, own colours, font"], ["seasons", "Seasons", "Christmas, Easter, Deepavali…"], ["site", "Site details", "Phone, WhatsApp, address, SEO"]]]
+  ];
   function Overview(p) {
     var d = useLoad("/api/admin/stats");
-    var x = d.data;
-    var cards = x ? [
-      ["car", "Vehicles on the site", x.published, "of " + x.vehicles + " total", "vehicles"],
-      ["check", "Ready to drive", x.in_stock, "available in stock", "vehicles"],
-      ["ship", "In transit", x.in_transit, "on the way from Japan", "vehicles"],
-      ["doc", "New inquiries", x.new_inquiries, "of " + x.inquiries + " received", "inquiries"],
-      ["gavel", "Open auction requests", x.open_requests, "of " + x.live_requests + " in total", "requests"],
-      ["users", "Customers", x.customers, "registered accounts", "customers"],
-      ["mail", "Newsletter", x.subscribers, "subscribers", "newsletters"]] : [];
-    var tasks = [["car", "Add a vehicle", "vehicles"], ["star", "Add a customer review", "testimonials"], ["bell", "Turn on a festive season", "seasons"], ["palette", "Change the colour theme", "appearance"], ["layers", "Edit home page text", "home"], ["settings", "Update phone, WhatsApp, address", "site"]];
+    var x = d.data, site = A.site || {}, season = A.seasonState(site), name = (p.user && (p.user.name || p.user.email) || "there").split("@")[0];
+    var font = A.fonts[site.fontTheme] ? A.fonts[site.fontTheme].name : "Standard";
+    var theme = site.theme && A.themes[site.theme] ? A.themes[site.theme].name : site.theme === "custom" ? "Your own colours" : "Forest";
+    var kpis = x ? [["car", "On the website", x.published, "of " + x.vehicles + " vehicles", "vehicles"], ["check", "Ready to drive", x.in_stock, "available now", "vehicles"], ["users", "Customers", x.customers, "registered", "customers"], ["mail", "Subscribers", x.subscribers, "newsletter", "newsletters"]] : [];
+    var attn = x ? [
+      ["doc", x.new_inquiries, "new inquiries", x.new_inquiries ? "Waiting for a reply" : "All caught up", "inquiries", x.new_inquiries > 0],
+      ["gavel", x.open_requests, "open auction requests", x.open_requests ? "Need bidding or an update" : "Nothing open", "requests", x.open_requests > 0],
+      ["ship", x.in_transit, "cars on the way", x.in_transit ? "Shipping from Japan" : "None in transit", "vehicles", false]] : [];
     return h(Frag, null,
+      h("section", { className: "ad-ovhero" },
+        h("div", { className: "ad-ovhero__t" }, h("div", { className: "ad-label" }, new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })), h("h3", null, greet() + ", " + name), h("p", null, "Here’s how the business looks today. Everything on the website can be changed from this admin, no developer needed.")),
+        h("div", { className: "ad-row ad-ovhero__a" }, h(A.Button, { variant: "secondary", icon: "globe", onClick: p.exit }, "View website"), h(A.Button, { icon: "plus", onClick: function () { p.go("vehicles"); } }, "Add a vehicle"))),
       d.error ? h(Err, { text: d.error }) : null,
-      h("div", { className: "ad-ovgrid" }, !x && !d.error ? [0, 1, 2, 3].map(function (i) { return h("div", { key: i, className: "ad-ov is-load" }); }) : cards.map(function (c) {
-        return h("button", { key: c[1], type: "button", className: "ad-ov", onClick: function () { p.go(c[4]); } }, h("span", { className: "ad-ov__ic" }, h(A.Icon, { name: c[0], size: 20 })), h("b", null, c[2]), h("span", { className: "ad-ov__l" }, c[1]), h("span", { className: "ad-small ad-muted" }, c[3]));
+      h("div", { className: "ad-attn" }, !x && !d.error ? [0, 1, 2].map(function (i) { return h("div", { key: i, className: "ad-attn__c is-load" }); }) : attn.map(function (c) {
+        return h("button", { key: c[2], type: "button", className: cx("ad-attn__c", c[5] && "is-hot"), onClick: function () { p.go(c[4]); } },
+          h("span", { className: "ad-attn__ic" }, h(A.Icon, { name: c[0], size: 22 })), h("span", { className: "ad-attn__n" }, c[1]), h("span", { className: "ad-attn__l" }, c[2]), h("span", { className: "ad-small" }, c[3]));
       })),
-      h(Card, { title: "Quick actions", text: "Everything on the website can be changed from this admin. Pick a task:" },
-        h("div", { className: "ad-quick" }, tasks.map(function (t) {
-          return h("button", { key: t[1], type: "button", className: "ad-quick__b", onClick: function () { p.go(t[2]); } }, h(A.Icon, { name: t[0], size: 18 }), t[1], h(A.Icon, { name: "arrow-right", size: 16 }));
+      h("div", { className: "ad-kpirow" }, kpis.map(function (c) {
+        return h("button", { key: c[1], type: "button", className: "ad-kpi2", onClick: function () { p.go(c[4]); } }, h("span", { className: "ad-kpi2__ic" }, h(A.Icon, { name: c[0], size: 18 })), h("b", null, c[2]), h("span", null, c[1]), h("small", { className: "ad-muted" }, c[3]));
+      })),
+      h("div", { className: "ad-ov2" },
+        h(RecentList, { title: "Latest inquiries", url: "/api/admin/inquiries", mod: "inquiries", kind: "Inquiry", empty: "No inquiries yet.", go: p.go }),
+        h(RecentList, { title: "Latest auction requests", url: "/api/admin/live-inquiries", mod: "requests", kind: "Auction request", empty: "No auction requests yet.", go: p.go })),
+      h(Card, { title: "Website at a glance", text: "What visitors see right now. Click any item to change it." },
+        h("div", { className: "ad-ovchips" },
+          h(Chip, { label: "Colours", value: theme, on: true, onClick: function () { p.go("appearance"); } }), h(Chip, { label: "Font", value: font, on: true, onClick: function () { p.go("appearance"); } }),
+          h(Chip, { label: "Season", value: season ? season.def.name + " is on" : "None", on: !!season, onClick: function () { p.go("seasons"); } }),
+          h(Chip, { label: "WhatsApp button", value: site.showWhatsapp === false ? "Hidden" : "Shown", on: site.showWhatsapp !== false, onClick: function () { p.go("site"); } }),
+          h(Chip, { label: "Email alerts", value: CAPS.email.enabled ? "On" : "Off", on: CAPS.email.enabled, onClick: function () { p.go("inquiries"); } }),
+          h(Chip, { label: "Reviews", value: A.on("showReviews") ? "Shown" : "Hidden", on: A.on("showReviews"), onClick: function () { p.go("home"); } }))),
+      h("div", { className: "ad-dir" },
+        h("div", { className: "ad-card__h" }, h("h3", { className: "ad-h3" }, "Everything you can edit"), h("p", { className: "ad-small ad-muted" }, "Pick what you want to change.")),
+        h("div", { className: "ad-dir__grid" }, DIRECTORY.map(function (g) {
+          return h("section", { key: g[0], className: "ad-card ad-dir__g" }, h("h4", null, h("span", { className: "ad-dir__ic" }, h(A.Icon, { name: g[1], size: 18 })), g[0]),
+            h("ul", null, g[2].map(function (it) { return h("li", { key: it[0] }, h("button", { type: "button", onClick: function () { p.go(it[0]); } }, h("b", null, it[1]), h("span", { className: "ad-small ad-muted" }, it[2]), h(A.Icon, { name: "chevron-right", size: 16 }))); })));
         }))));
   }
 
@@ -617,11 +739,13 @@
     ["Start", [["overview", "home", "Overview"]]],
     ["Inventory", [["vehicles", "car", "Vehicles"], ["manufacturers", "tag", "Brands"], ["models", "layers", "Models"], ["types", "grid", "Body types"], ["colours", "palette", "Colours"], ["features", "check", "Features"]]],
     ["Customers", [["inquiries", "doc", "Inquiries"], ["requests", "send", "Auction requests"], ["customers", "users", "Customers"], ["newsletters", "mail", "Newsletter"]]],
-    ["Website", [["home", "layers", "Home page"], ["testimonials", "star", "Testimonials"], ["seasons", "bell", "Seasons"], ["site", "settings", "Site details"], ["appearance", "palette", "Colour themes"]]]
+    ["Pages", [["buy", "ship", "How to buy"], ["about", "users", "About us"], ["contact", "pin", "Contact & locations"], ["glossary", "list", "Vocabulary"]]],
+    ["Website", [["home", "layers", "Home page"], ["testimonials", "star", "Testimonials"], ["seasons", "bell", "Seasons"], ["site", "settings", "Site details"], ["appearance", "palette", "Colours & fonts"]]]
   ];
   var BLURB = {
     overview: "A quick look at the business.", home: "Turn home page sections on or off and change their wording.", testimonials: "Customer reviews on the home page.",
-    seasons: "Christmas snow, Santa hats and other festive looks for the whole website.", site: "Phone, WhatsApp, address, links and header/footer text.", appearance: "Choose the colours of the whole website."
+    buy: "The five buying steps and the deposit answer.", about: "The About us page.", contact: "Showrooms and offices on the Contact page.", glossary: "The import terms explained on the Vocabulary page.",
+    seasons: "Christmas snow, Santa hats and other festive looks for the whole website.", site: "Phone, WhatsApp, address, links and header/footer text.", appearance: "Choose the colours and font of the whole website."
   };
   function AdminTheme() {
     var s = useState(document.documentElement.getAttribute("data-theme") || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")), t = s[0], setT = s[1];
@@ -644,8 +768,8 @@
     function go(m) { setMod(m); setNavOpen(false); }
     var label = NAV.reduce(function (a, g) { return a.concat(g[1]); }, []).filter(function (x) { return x[0] === mod; })[0];
     var group = NAV.filter(function (g) { return g[1].some(function (x) { return x[0] === mod; }); })[0][0];
-    var common = { say: say, changed: p.onDataChanged || function () {}, L: L, reloadL: function () { setLv(lv + 1); }, refreshStats: l.reload, go: go };
-    var body = mod === "overview" ? h(Overview, common) : mod === "appearance" ? h(Appearance, common) : mod === "site" ? h(SiteDetails, common) : mod === "home" ? h(HomeContent, common) : mod === "seasons" ? h(Seasons, common) : mod === "testimonials" ? h(Testimonials, common) :
+    var common = { user: p.user, exit: p.onExit, say: say, changed: p.onDataChanged || function () {}, L: L, reloadL: function () { setLv(lv + 1); }, refreshStats: l.reload, go: go };
+    var body = mod === "overview" ? h(Overview, common) : mod === "appearance" ? h(Appearance, common) : mod === "site" ? h(SiteDetails, common) : mod === "home" ? h(HomeContent, common) : mod === "seasons" ? h(Seasons, common) : mod === "buy" ? h(BuyPage, common) : mod === "about" ? h(AboutPage, common) : mod === "contact" ? h(ContactPage, common) : mod === "glossary" ? h(GlossaryPage, common) : mod === "testimonials" ? h(Testimonials, common) :
       !L ? h("p", { className: "ad-muted" }, "Loading…") :
       mod === "vehicles" ? h(Vehicles, common) : TAX[mod] ? h(Taxonomy, Object.assign({ mod: mod, key: mod }, common)) :
       mod === "inquiries" || mod === "requests" ? h(Tracking, Object.assign({ mod: mod, key: mod }, common)) :

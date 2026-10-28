@@ -9,9 +9,9 @@ let template = null;
 const shell = () => (template = template || fs.readFileSync(TEMPLATE_PATH, 'utf8'));
 
 const NAME = 'AutoDirect';
-const DEFAULT_DESC = 'Browse imported cars in stock or let AutoDirect bid for your exact car at Japanese auctions, with the original auction sheet translated before every bid.';
+const DEFAULT_DESC_BUILTIN = 'Browse imported cars in stock or let AutoDirect bid for your exact car at Japanese auctions, with the original auction sheet translated before every bid.';
 const PAGES = {
-  '/': ['Japanese auction car imports for Sri Lanka', DEFAULT_DESC],
+  '/': ['Japanese auction car imports for Sri Lanka', DEFAULT_DESC_BUILTIN],
   '/our-stock': ['Ex Stock', 'Imported cars in stock in Sri Lanka. Filter by brand, body type, price, year and inventory location.'],
   '/live-auction': ['Live auction', 'Watch live Japanese car auctions and let us bid for you, with the auction sheet translated before every bid.'],
   '/request-a-bid': ['Request a bid', 'Tell us the car, year and budget and we shortlist matching lots at this week\'s Japanese auctions.'],
@@ -30,6 +30,8 @@ const carTitle = (v) => [v.year, v.make, v.model].filter(Boolean).join(' ');
 
 // Returns { html, status } for a request to a single-page-app route.
 function render(req, catalog) {
+  const o = (catalog && catalog.overrides) || {};      // text staff changed in Admin > Site details
+  const DEFAULT_DESC = o.seoDescription || DEFAULT_DESC_BUILTIN;
   const base = baseUrl(req);
   const pathname = req.path.replace(/\/+$/, '') || '/';
   let title, desc, image = `${base}/samples/toyota-corolla-axio.jpg`, type = 'website', status = 200, ld = null;
@@ -54,7 +56,7 @@ function render(req, catalog) {
   }
   if (!title) {
     const p = PAGES[pathname];
-    if (p) { [title, desc] = p; } else if (pathname === '/login' || pathname === '/register' || pathname.startsWith('/my-account') || pathname.startsWith('/admin')) { title = pathname.startsWith('/admin') ? 'Admin' : 'My account'; desc = DEFAULT_DESC; }
+    if (p) { [title, desc] = p; if (pathname === '/') { title = o.seoTitle || title; desc = DEFAULT_DESC; } } else if (pathname === '/login' || pathname === '/register' || pathname.startsWith('/my-account') || pathname.startsWith('/admin')) { title = pathname.startsWith('/admin') ? 'Admin' : 'My account'; desc = DEFAULT_DESC; }
     else { status = 404; title = 'Page not found'; desc = DEFAULT_DESC; }
   }
   const fullTitle = pathname === '/' ? `${NAME} | ${title}` : `${title} | ${NAME}`;

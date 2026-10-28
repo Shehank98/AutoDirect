@@ -99,7 +99,42 @@
     var st = seasonState(site || {});
     if (st && st.theme) applyTheme("custom", st.def.brand, st.def.accent); else applyTheme(site && site.theme, site && site.brandColor, site && site.accentColor);
     applySeasonDecor(st);
+    applyFont(site && site.fontTheme);
   }
+  /* Fonts. "default" is what the stylesheet already loads; the others are fetched from Google Fonts on demand. */
+  var FONTS = {
+    default: { name: "Standard", note: "Bricolage Grotesque + Instrument Sans" },
+    inter: { name: "Inter", note: "Clean and neutral", display: "Inter", body: "Inter", q: "family=Inter:wght@400..800" },
+    poppins: { name: "Poppins", note: "Rounded and modern", display: "Poppins", body: "Poppins", q: "family=Poppins:wght@400;500;600;700" },
+    nunito: { name: "Nunito", note: "Soft and friendly", display: "Nunito", body: "Nunito", q: "family=Nunito:wght@400..800" },
+    montserrat: { name: "Montserrat", note: "Bold and geometric", display: "Montserrat", body: "Montserrat", q: "family=Montserrat:wght@400..800" },
+    playfair: { name: "Playfair + Source Sans", note: "Classic and elegant", display: "Playfair Display", body: "Source Sans 3", q: "family=Playfair+Display:wght@500..800&family=Source+Sans+3:wght@400..700" }
+  };
+  function loadFont(id) {
+    var f = FONTS[id];
+    if (!f || !f.q || document.getElementById("ad-font-link-" + id)) return;
+    var l = document.createElement("link"); l.id = "ad-font-link-" + id; l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?" + f.q + "&display=swap"; document.head.appendChild(l);
+  }
+  function applyFont(id) {
+    var f = FONTS[id], el = document.getElementById("ad-font");
+    if (!f || id === "default") { if (el) el.remove(); return; }
+    loadFont(id);
+    if (!el) { el = document.createElement("style"); el.id = "ad-font"; document.head.appendChild(el); }
+    el.textContent = ":root{--font-display:\"" + f.display + "\",system-ui,sans-serif;--font-sans:\"" + f.body + "\",system-ui,-apple-system,\"Segoe UI\",sans-serif;}";
+  }
+  // Editable lists (steps, glossary ...): the admin's version when there is one, otherwise the built-in rows.
+  function list(key, fallback) { var v = SITE[key]; return Array.isArray(v) && v.length ? v : fallback; }
+  // Built-in wording for every editable list; the admin starts from these and the site falls back to them.
+  var DEFAULTS = {
+    aboutValues: [
+      { title: "Honesty, transparency, trust", text: "We carefully select quality vehicles and share the original auction sheet with an English translation before every bid." },
+      { title: "Right choices, best price", text: "We never let you buy a car that isn’t right for you. No hidden fees." },
+      { title: "Japan, Australia and UK", text: "We source through reputed, reliable auto traders and auction houses." },
+      { title: "Faster, complete service", text: "Minimum paperwork and one team that handles the whole purchase for you." }],
+    locationsList: [{ name: "Malabe showroom", text: "Visit and inspect stock" }, { name: "Colombo 07 office", text: "LC & documentation desk" }],
+    auctionPoints: [{ title: "Live lots", text: "Search thousands of cars crossing the block this week." }, { title: "Sheet first", text: "We translate the original auction sheet before any bid." }, { title: "Refundable deposit", text: "Bidding starts after a 100% refundable deposit." }]
+  };
+  function locationsList() { return list("locationsList", DEFAULTS.locationsList); }
   // Editable site text: the admin's version when set, otherwise the built-in wording.
   function T(key, fallback) { var v = SITE[key]; return typeof v === "string" && v.trim() ? v : fallback; }
   function on(key) { return SITE[key] !== false; }        // server actions + navigation helpers, provided by app.js
@@ -1023,7 +1058,12 @@
     { t: "Shipping", d: "~20 days at sea", icon: "ship", body: "Export certificate and inspections done, the vehicle is loaded. Duty and levies go directly to Sri Lanka Customs via a nominated clearance agent." },
     { t: "Delivery", d: "30–45 days total", icon: "car", body: "Cleared, registered and handed over. Track every stage in My account." }
   ];
+  var STEP_ICONS = ["search", "gavel", "doc", "ship", "car"];
+  function steps() {
+    return list("buySteps", STEPS).map(function (x, k) { return { t: x.t, d: x.d, body: x.body, icon: x.icon || STEP_ICONS[Math.min(k, STEP_ICONS.length - 1)] }; });
+  }
   function ProcessSteps(p) {
+    var STEPS = steps();
     var s = useState(0), i = s[0], setI = s[1];
     var f = useState(false), faq = f[0], setFaq = f[1];
     var cur = STEPS[i];
@@ -1034,17 +1074,17 @@
       })),
       h("div", { className: "ad-process__panel", role: "tabpanel" },
         h("div", { className: "ad-process__icon" }, h(Icon, { name: cur.icon, size: 28, stroke: 1.5 })),
-        h("div", null, h("div", { className: "ad-label" }, "Step " + (i + 1) + " of 5 · " + cur.d), h("h3", { className: "ad-h2" }, cur.t), h("p", { className: "ad-bodyl" }, cur.body),
+        h("div", null, h("div", { className: "ad-label" }, "Step " + (i + 1) + " of " + STEPS.length + " · " + cur.d), h("h3", { className: "ad-h2" }, cur.t), h("p", { className: "ad-bodyl" }, cur.body),
           h("div", { className: "ad-row" },
             i > 0 ? h(Button, { variant: "ghost", size: "s", icon: "arrow-left", onClick: function () { setI(i - 1); } }, "Previous") : null,
-            i < 4 ? h(Button, { variant: "secondary", size: "s", iconRight: "arrow-right", onClick: function () { setI(i + 1); } }, "Next: " + STEPS[i + 1].t) : h(Button, { variant: "accent", size: "s", icon: "gavel", onClick: p.onStart }, "Start with a request")))),
+            i < STEPS.length - 1 ? h(Button, { variant: "secondary", size: "s", iconRight: "arrow-right", onClick: function () { setI(i + 1); } }, "Next: " + STEPS[i + 1].t) : h(Button, { variant: "accent", size: "s", icon: "gavel", onClick: p.onStart }, "Start with a request")))),
       h("div", { className: "ad-faq" }, h("button", { type: "button", "aria-expanded": faq, onClick: function () { setFaq(!faq); } }, h(Icon, { name: "shield", size: 18 }), "Why do we ask for a deposit?", h(Icon, { name: "chevron-down", size: 16, className: "ad-faq__chev" })),
-        faq ? h("p", null, "Deposits are 100% refundable. They protect you and us from last-minute cancellations and spam bids. We bid and pay for your car with our own resources, so every request has to be genuine.") : null));
+        faq ? h("p", null, T("depositFaq", "Deposits are 100% refundable. They protect you and us from last-minute cancellations and spam bids. We bid and pay for your car with our own resources, so every request has to be genuine.")) : null));
   }
 
   /* ---------- Glossary ---------- */
   function Glossary(p) {
-    var terms = p.terms || GLOSSARY;
+    var terms = p.terms || list("glossaryItems", GLOSSARY);
     var s = useState(""), q = s[0], setQ = s[1];
     var c = useState("All"), cat = c[0], setCat = c[1];
     var o = useState("Proxy bidding"), open = o[0], setOpen = o[1];
@@ -1057,7 +1097,7 @@
     }
     return h("div", { className: "ad-gloss" },
       h("div", { className: "ad-gloss__bar" },
-        h(TextField, { icon: "search", placeholder: "Search 13 import terms, try “LC”", value: q, onChange: function (e) { setQ(e.target.value); }, "aria-label": "Search terms" }),
+        h(TextField, { icon: "search", placeholder: "Search " + terms.length + " import terms, try “LC”", value: q, onChange: function (e) { setQ(e.target.value); }, "aria-label": "Search terms" }),
         h(ChipGroup, { label: "Category", value: cat, onChange: setCat, options: cats.map(function (x) { return { value: x, label: x, count: x === "All" ? terms.length : terms.filter(function (t) { return t.cat === x; }).length }; }) })),
       list.length ? h("dl", { className: "ad-gloss__list" }, list.map(function (t) {
         var on = open === t.term;
@@ -1255,7 +1295,7 @@
     return h("div", { className: "ad-contact" },
       h("div", { className: "ad-contact__info" },
         h("ul", null,
-          [["pin", "Malabe showroom", "Visit and inspect stock"], ["pin", "Colombo 07 office", "LC & documentation desk"], ["phone", SITE.phone, SITE.hours, "tel:" + SITE.phone.replace(/[^+0-9]/g, "")], ["whatsapp", "WhatsApp", "Auction alerts & quick questions", "https://wa.me/" + SITE.whatsapp], ["mail", SITE.email, "Quotes and paperwork", "mailto:" + SITE.email]].map(function (r) {
+          locationsList().map(function (x) { return ["pin", x.name, x.text]; }).concat([["phone", SITE.phone, SITE.hours, "tel:" + SITE.phone.replace(/[^+0-9]/g, "")], ["whatsapp", "WhatsApp", "Auction alerts & quick questions", "https://wa.me/" + SITE.whatsapp], ["mail", SITE.email, "Quotes and paperwork", "mailto:" + SITE.email]]).map(function (r) {
             return h("li", { key: r[1] }, h("span", { className: "ad-contact__ic" }, h(Icon, { name: r[0], size: 18 })), h("span", null, r[3] ? h("a", { href: r[3], className: "ad-link" }, r[1]) : h("b", null, r[1]), h("span", { className: "ad-muted ad-small" }, r[2])));
           }))),
       sent ? h("div", { className: "ad-form ad-success", role: "status" }, h("div", { className: "ad-success__icon" }, h(Icon, { name: "check", size: 26, stroke: 2.2 })),
@@ -1272,7 +1312,7 @@
               h(SelectField, { label: "Year", placeholder: "Choose", options: YEARS, value: d.year, onChange: set("year") }),
               h(TextField, { label: "Mileage", inputMode: "numeric", placeholder: "e.g. 42,000", value: d.km, onChange: set("km"), trailing: h("span", { className: "ad-input-wrap__suffix" }, "km") }),
               h(TextField, { label: "Asking price", prefix: "LKR", className: "ad-span2", optional: true, value: d.ask, onChange: set("ask") })) : null,
-            topic === "visit" ? h(SelectField, { label: "Location", className: "ad-span2", options: ["Malabe showroom", "Colombo 07 office"], value: d.location, onChange: set("location") }) : null,
+            topic === "visit" ? h(SelectField, { label: "Location", className: "ad-span2", options: locationsList().map(function (x) { return x.name; }), value: d.location, onChange: set("location") }) : null,
             h(TextField, { label: "Message", multiline: true, rows: 3, className: "ad-span2", optional: topic !== "general", value: d.msg, onChange: set("msg") })),
           errs.form ? h("p", { className: "ad-field__error", role: "alert" }, h(Icon, { name: "info", size: 14 }), errs.form) : null,
           h("div", { className: "ad-form__foot" }, h("span"), h(Button, { type: "submit", iconRight: "send", loading: busy }, topic === "sell" ? "Get a valuation" : "Send message"))));
@@ -1327,7 +1367,7 @@
     ProcessSteps: ProcessSteps, Glossary: Glossary, Testimonials: Testimonials, AuthCard: AuthCard, OrderTracker: OrderTracker,
     AccountDashboard: AccountDashboard, ContactPanel: ContactPanel, BrowseSection: BrowseSection, Empty: Empty, PhotoPending: PhotoPending, Spec: Spec,
     data: { vehicles: VEHICLES, testimonials: TESTIMONIALS, brands: BRANDS, types: ALL_TYPES, locations: LOCATIONS, features: FEATURES, makes: ALL_MAKES, stockMakes: MAKES, glossary: GLOSSARY, images: IMG, load: loadData },
-    hooks: HOOKS, site: SITE, themes: THEMES, applyTheme: applyTheme, seasons: SEASONS, seasonState: seasonState, applySeasonDecor: applySeasonDecor, applySiteTheme: applySiteTheme, T: T, on: on,
+    hooks: HOOKS, site: SITE, themes: THEMES, applyTheme: applyTheme, fonts: FONTS, applyFont: applyFont, loadFont: loadFont, list: list, defaults: Object.assign(DEFAULTS, { buySteps: STEPS, glossaryItems: GLOSSARY }), seasons: SEASONS, seasonState: seasonState, applySeasonDecor: applySeasonDecor, applySiteTheme: applySiteTheme, T: T, on: on,
     format: { lkr: lkr, lkrFull: lkrFull, yen: yen, num: num, title: title, emi: emi, cx: cx, priceBounds: priceBounds }
   };
   window.AD = Object.assign(window.AD || {}, AD);

@@ -197,8 +197,8 @@
       !A.on("showAuction") ? null : h(Sec, { tint: true, kicker: "Live auction", title: A.T("auctionTitle", "Watch Japan auctions live"), lead: A.T("auctionLead", "Browse live lots from Japanese auction houses without leaving AutoDirect."),
         action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("auction"); } }, "Open live auction") },
         h("div", { className: "ad-infostrip" },
-          [["gavel", "Live lots", "Search thousands of cars crossing the block this week."], ["doc", "Sheet first", "We translate the original auction sheet before any bid."], ["shield", "Refundable deposit", "Bidding starts after a 100% refundable deposit."]].map(function (x) {
-            return h("div", { key: x[1] }, h(A.Icon, { name: x[0], size: 22 }), h("b", null, x[1]), h("p", { className: "ad-small ad-muted" }, x[2]));
+          A.list("auctionPoints", A.defaults.auctionPoints).map(function (x, i) {
+            return h("div", { key: x.title + i }, h(A.Icon, { name: ["gavel", "doc", "shield"][i % 3], size: 22 }), h("b", null, x.title), h("p", { className: "ad-small ad-muted" }, x.text));
           }))),
       D.testimonials.length && A.on("showReviews") ? h(Sec, { kicker: "Reviews", title: A.T("reviewsTitle", "What our customers say") }, h(A.Testimonials, null)) : null,
       !A.on("showCta") ? null : h(Sec, { tight: true }, h(CTA, { title: A.T("ctaTitle", "Looking for one exact car?"), text: A.T("ctaText", "Tell us the model, year and budget. We shortlist lots and send every sheet before bidding.") },
@@ -328,17 +328,13 @@
   }
 
   function About(p) {
-    var pts = [
-      ["shield", "Honesty, transparency, trust", "We carefully select quality vehicles and share the original auction sheet with an English translation before every bid."],
-      ["tag", "Right choices, best price", "We never let you buy a car that isn’t right for you. No hidden fees."],
-      ["pin", "Japan, Australia and UK", "We source through reputed, reliable auto traders and auction houses."],
-      ["clock", "Faster, complete service", "Minimum paperwork and one team that handles the whole purchase for you."]
-    ];
+    var ICONS = ["shield", "tag", "pin", "clock"];
+    var pts = A.list("aboutValues", A.defaults.aboutValues).map(function (x, i) { return [ICONS[i % ICONS.length], x.title, x.text]; });
     return h(Frag, null,
       h(PageHead, { bare: true, crumb: "About", title: "About us" }),
       h("div", { className: "ad-wrap ad-pagebody" },
         h("div", { className: "ad-values" }, pts.map(function (x) { return h("div", { key: x[1] }, h("span", { className: "ad-contact__ic" }, h(A.Icon, { name: x[0], size: 20 })), h("h2", { className: "ad-h3" }, x[1]), h("p", { className: "ad-muted" }, x[2])); })),
-        h(CTA, { title: "Visit us in Malabe or Colombo 07", text: "See landed stock in person, or sit down with our LC desk." },
+        h(CTA, { title: A.T("aboutCtaTitle", "Visit us in Malabe or Colombo 07"), text: A.T("aboutCtaText", "See landed stock in person, or sit down with our LC desk.") },
           h(A.Button, { size: "l", icon: "pin", onClick: function () { p.nav("contact"); } }, "Contact & locations"))));
   }
 
@@ -571,7 +567,7 @@
       } else nav("request", { make: q.make, model: q.model, chassis: q.chassis });
     } }, common));
 
-    useEffect(function () { setMeta(pg === "vehicle" ? "" : TITLES[pg] || ""); }, [pg]);
+    useEffect(function () { setMeta(pg === "vehicle" ? "" : pg === "home" ? A.T("seoTitle", TITLES.home) : TITLES[pg] || ""); }, [pg]);
     useEffect(function () { var t = setTimeout(trackPage, 50); return function () { clearTimeout(t); }; }, [pg, route.seo]);
     // Signed in while on the login / register page -> go to the account.
     useEffect(function () { if (user && (pg === "login" || pg === "register")) { history.replaceState(null, "", PATHS.account); setRoute(parse()); window.scrollTo(0, 0); } }, [user, pg]);
