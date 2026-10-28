@@ -28,7 +28,7 @@ const FIELDS = {
   featuredTitle: ['s', 80], featuredLead: ['s', 200],
   auctionTitle: ['s', 80], auctionLead: ['s', 250],
   reviewsTitle: ['s', 80], ctaTitle: ['s', 100], ctaText: ['s', 250],
-  showFeatured: ['b'], showAuction: ['b'], showReviews: ['b'], showCta: ['b'],
+  showAbout: ['b'], showFeatured: ['b'], showAuction: ['b'], showReviews: ['b'], showCta: ['b'],
   // Seasons: one festive look at a time (effect, decorations, banner, colours), optionally between two dates.
   fontTheme: ['e', FONTS],
   seoTitle: ['s', 120], seoDescription: ['s', 300],

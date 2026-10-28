@@ -1,11 +1,11 @@
-/* Layout: sticky two-tier header, full-bleed sections on a 1240px wrap, near-black footer. Tokens from the AutoDirect design system. */
+/* Layout: sticky two-tier header, full-bleed sections on a 1240px wrap, near-black footer. Tokens from the Direct Auto design system. */
 :root { --surface-100: #f4f1ea; --surface-200: #ffffff; --surface-300: #e9e4d8; --surface-inverse: #14171a; --ink: #14171a; --ink-muted: #5a5f66; --ink-inverse: #f1eee7; --line: #d6d0c2; --line-strong: #857e70; --brand: #0e4f45; --on-brand: #ffffff; --brand-tint: #e3efea; --accent: #c93a17; --on-accent: #ffffff; --highlight: #f2b729; --ink-on-highlight: #14171a; --success: #1f7a4a; --warning: #a15c00; --danger: #b3261e; --info: #1f5fa8; --scrim: rgba(20, 23, 26, 0.56); --focus: var(--accent); --shadow-1: 0 1px 2px rgba(20, 23, 26, 0.06), 0 2px 8px rgba(20, 23, 26, 0.05); --shadow-2: 0 10px 30px rgba(20, 23, 26, 0.12), 0 2px 6px rgba(20, 23, 26, 0.06); --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 80px; --radius-s: 6px; --radius-m: 10px; --radius-l: 18px; --radius-pill: 999px; --font-display: "Bricolage Grotesque", "Instrument Sans", system-ui, sans-serif; --font-sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif; --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --surface-100: #121416; --surface-200: #1b1e21; --surface-300: #24282c; --surface-inverse: #08090a; --ink: #f1eee7; --ink-muted: #a3a8ae; --ink-inverse: #f1eee7; --line: #33383d; --line-strong: #7a8188; --brand: #5fc4ae; --on-brand: #0b1f1b; --brand-tint: #1d2b28; --accent: #ff6a42; --on-accent: #1a0a05; --highlight: #f2b729; --ink-on-highlight: #14171a; --success: #5ccb8b; --warning: #f0a640; --danger: #ff8a80; --info: #7fb2f0; --scrim: rgba(0, 0, 0, 0.64); --focus: var(--accent); --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4); --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.55); color-scheme: dark; } }
 :root[data-theme="dark"] { --surface-100: #121416; --surface-200: #1b1e21; --surface-300: #24282c; --surface-inverse: #08090a; --ink: #f1eee7; --ink-muted: #a3a8ae; --ink-inverse: #f1eee7; --line: #33383d; --line-strong: #7a8188; --brand: #5fc4ae; --on-brand: #0b1f1b; --brand-tint: #1d2b28; --accent: #ff6a42; --on-accent: #1a0a05; --highlight: #f2b729; --ink-on-highlight: #14171a; --success: #5ccb8b; --warning: #f0a640; --danger: #ff8a80; --info: #7fb2f0; --scrim: rgba(0, 0, 0, 0.64); --focus: var(--accent); --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4); --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.55); color-scheme: dark; }
 :root[data-theme="light"] { color-scheme: light; }
 html, body { background: var(--surface-100); color: var(--ink); }
 
-/* ============ AutoDirect base ============ */
+/* ============ Direct Auto base ============ */
 html, body { background: var(--surface-100); color: var(--ink); }
 body { margin: 0; font-family: var(--font-sans); font-size: 15px; line-height: 22px; -webkit-font-smoothing: antialiased; }
 .ad-page, .ad-page * , [class^="ad-"], [class^="ad-"] * { box-sizing: border-box; }
@@ -1192,3 +1192,14 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
   .ad-list__up svg, .ad-list__down svg { transform: none; }
 }
 .ad-card { align-content: start; }
+
+/* ============ Car card: one label bar + Price button on the photo ============ */
+.ad-vcard__tags { display: none; }
+.ad-vcard__bar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 7px 14px; font: 700 12.5px/1.2 var(--font-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--on-brand); background: color-mix(in srgb, var(--brand) 92%, transparent); }
+.ad-vcard__bar.is-hot { background: var(--highlight); color: var(--ink-on-highlight); }
+.ad-vcard__bar.is-warn { background: color-mix(in srgb, var(--warning) 90%, #000); color: #fff; }
+.ad-vcard__bar.is-sold { background: rgba(20, 23, 26, .88); color: #fff; }
+.ad-vcard__ask { position: absolute; right: 10px; bottom: 44px; z-index: 3; display: inline-flex; align-items: center; gap: 2px; min-height: 36px; padding: 0 12px 0 14px; border: 0; border-radius: 99px; background: var(--accent); color: var(--on-accent); font: 700 14px var(--font-sans); cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, .3); }
+.ad-vcard__ask:hover { filter: brightness(1.08); }
+.ad-vcard__ask:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.ad-vcard__media:not(:has(.ad-vcard__bar)) .ad-vcard__ask { bottom: 10px; }

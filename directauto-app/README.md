@@ -1,4 +1,4 @@
-# AutoDirect: Japan auction imports for Sri Lanka
+# Direct Auto: Japan auction imports for Sri Lanka
 
 Car store + Japan live-auction site. **Storefront and admin are one React single-page app** (no build step)
 served by a Node/Express API with PostgreSQL. Firebase is optional and only needed for customer accounts and photo upload.
@@ -35,13 +35,18 @@ block third-party sign-in cookies inside iframes. If visitors see a blank frame,
 `LIVE_AUCTION_HINT` can show a line of text above the frame (for example a guest login).
 
 ### Photos
-`USE_SAMPLE_IMAGES=true` (default): every listing shows the bundled sample photos, chosen by model or body type. Nothing
-stored in the database is used and the admin has no photo upload. Set it to `false` once Firebase Storage is configured to
-show real photos.
+Until Firebase Storage is configured every listing shows the bundled sample photos. Once Firebase is set up (see below) the
+sample photos switch off by themselves and the photos uploaded in the admin are shown. `USE_SAMPLE_IMAGES=true|false` forces it either way.
 
 ## Admin (`/admin`)
-Sign in with the **`ADMIN_USERNAME` / `ADMIN_PASSWORD`** variables set on the server (see below). The session lasts 12 hours
-or until you close the tab, and 8 wrong attempts lock that IP out for 15 minutes.
+Admin access uses **Firebase sign-in**, there is no shared username or password.
+
+1. Set `ADMIN_EMAILS` on the server to the owner's email(s), comma separated.
+2. Open `/admin`, choose **Create account** (or sign in) with that email, and verify the email using the link Firebase sends.
+3. Press **Check again** on the admin page. The owner is now an admin.
+4. More staff: they create an account the same way, then an admin turns on **Admin** for them under **Customers**.
+
+Only a **verified** email in `ADMIN_EMAILS` becomes admin automatically, so nobody can claim it by registering first.
 
 - **Vehicles**: add, edit, delete, features, sales status (Available, Reserved, In transit, Sold), featured, publish or hide, bulk actions
 - **Brands, Models, Body types, Colours, Features**: logo or icon by image URL (upload when Firebase Storage is on)
@@ -52,7 +57,7 @@ Changes show on the public site immediately (the catalogue cache is cleared on e
 
 ## Run locally
 ```bash
-cp .env.example .env     # set DATABASE_URL, ADMIN_USERNAME and ADMIN_PASSWORD
+cp .env.example .env     # set DATABASE_URL, ADMIN_EMAILS and the FIREBASE_* variables
 npm install
 npm start                # http://localhost:3000, creates the schema and loads sample cars
 ```
@@ -60,18 +65,15 @@ npm start                # http://localhost:3000, creates the schema and loads s
 ## Deploy on Railway
 1. **New Project, Deploy from GitHub repo**; service **Root Directory** = `directauto-app`.
 2. **New, Database, PostgreSQL**; on the app service add `DATABASE_URL = ${{Postgres.DATABASE_URL}}`.
-3. In **Variables** add `ADMIN_USERNAME` and `ADMIN_PASSWORD` (long and random, 8+ characters). Redeploy.
-4. Open `https://<your-domain>/admin` and sign in. Health check: `/api/health`.
+3. In **Variables** add `ADMIN_EMAILS` and the Firebase variables (below). Redeploy.
+4. Open `https://<your-domain>/admin` and sign in with Firebase. Health check: `/api/health`.
 5. Optional: `SEED_DEMO_DATA=false` before the first boot to skip the 7 sample cars; `SITE_*` variables for contact details.
 
-If `ADMIN_USERNAME` / `ADMIN_PASSWORD` are missing, blank, or the password is a known placeholder, the admin cannot be used
-and the server logs a warning at startup.
-
-### Firebase (optional, later)
-Turns on customer sign-in (My account, order tracking) and photo upload. Create a Firebase project, enable
+### Firebase (required for the admin)
+Turns on admin and customer sign-in (My account, order tracking) and photo upload. Create a Firebase project, enable
 **Authentication (Email/Password)** and **Storage**, then set `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_STORAGE_BUCKET` and the
 web config variables in `.env.example`. Emails in `ADMIN_EMAILS` become admins only when the email is **verified**.
-Sign-up sends a verification email. Then set `USE_SAMPLE_IMAGES=false` to use uploaded photos.
+Sign-up sends a verification email.
 
 ## Email alerts, SEO, chat and analytics
 - **Email alerts** (as on the old site): set `SMTP_*` and `NOTIFY_TO` and the team gets an email for every new quote, viewing,

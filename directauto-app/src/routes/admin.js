@@ -18,7 +18,7 @@ router.use((req, res, next) => { if (req.method !== 'GET') res.on('finish', inva
 
 // Who is signed in, and which optional features are available right now.
 router.get('/me', (req, res) => res.json({
-  username: req.admin ? req.admin.username : req.user.email,
+  username: req.user.email,
   uploads: isConfigured(),               // Firebase Storage available for photo upload
   sampleImages: samples.enabled(),       // listings show the bundled sample photos
   email: { enabled: mailer.enabled(), recipients: mailer.recipients().length },   // new-message alerts to staff
@@ -26,7 +26,7 @@ router.get('/me', (req, res) => res.json({
 
 // Sends a test alert so the SMTP settings can be checked from the admin.
 router.post('/email-test', async (req, res) => {
-  const r = await mailer.notify('Test email', [['Result', 'If you can read this, email alerts are working.'], ['Sent by', req.admin ? req.admin.username : (req.user && req.user.email)]]);
+  const r = await mailer.notify('Test email', [['Result', 'If you can read this, email alerts are working.'], ['Sent by', req.user && req.user.email]]);
   res.status(r.ok ? 200 : 502).json(r.ok ? { ok: true, to: mailer.recipients() } : { error: r.error });
 });
 
@@ -119,7 +119,7 @@ const VEHICLE_FIELDS = [
   'vehicle_type', 'vehicle_manufacturer', 'vehicle_model', 'main_color', 'other_color',
   'description', 'year', 'chassi_id', 'conditions', 'seats', 'doors', 'passengers',
   'engine_capacity', 'mileage', 'fuel_type', 'transmission', 'drive_type',
-  'auction_grade', 'grade', 'price', 'location', 'trim', 'stock_status', 'images', 'feature_ids', 'is_featured', 'is_latest', 'status',
+  'auction_grade', 'grade', 'price', 'location', 'trim', 'stock_status', 'badge', 'images', 'feature_ids', 'is_featured', 'is_latest', 'status',
 ];
 
 const INT_FIELDS = ['vehicle_type', 'vehicle_manufacturer', 'vehicle_model', 'main_color', 'seats', 'doors', 'passengers', 'status'];
@@ -132,6 +132,7 @@ function buildVehiclePayload(body) {
   for (const f of INT_FIELDS) if (f in v) v[f] = v[f] === '' || v[f] === null ? null : parseInt(v[f], 10);
   if ('price' in v) v.price = v.price === '' || v.price === null ? null : parseFloat(v.price);
   for (const f of BOOL_FIELDS) if (f in v) v[f] = v[f] === true || v[f] === 'true' || v[f] === 1;
+  if ('badge' in v) v.badge = String(v.badge == null ? '' : v.badge).trim().slice(0, 40);
   if ('status' in v && v.status === null) v.status = 1;
   // JSON columns
   if (v.images !== undefined) v.images = JSON.stringify(Array.isArray(v.images) ? v.images : []);

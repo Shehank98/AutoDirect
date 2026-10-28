@@ -53,6 +53,14 @@ async function ensureTestimonials(client) {
   console.log('[migrate] testimonials imported.');
 }
 
+// One-off: cars that had the old "New arrival" switch keep that wording as their photo label.
+async function ensureBadgeFromLatest(client) {
+  const KEY = 'badge_from_latest_v1';
+  if ((await client.query('SELECT 1 FROM app_meta WHERE key = $1', [KEY])).rowCount) return;
+  await client.query("UPDATE vehicle SET badge = 'New arrival' WHERE is_latest AND badge = ''");
+  await client.query('INSERT INTO app_meta (key) VALUES ($1)', [KEY]);
+}
+
 async function migrate() {
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   const seed = fs.readFileSync(path.join(__dirname, 'seed.sql'), 'utf8');
@@ -75,6 +83,7 @@ async function migrate() {
     }
     await ensureBrowseDefaults(client);
     await ensureTestimonials(client);
+    await ensureBadgeFromLatest(client);
     console.log('[migrate] done.');
   } finally {
     await client.query('SELECT pg_advisory_unlock(727274)').catch(() => {});

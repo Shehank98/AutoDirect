@@ -1,6 +1,6 @@
 // Sample car photos (public/samples). While USE_SAMPLE_IMAGES is on (the default), every listing shows
 // these instead of whatever is stored in the database, so the site looks complete without any image storage.
-// Set USE_SAMPLE_IMAGES=false once real photos are uploaded (needs Firebase Storage).
+// Once Firebase Storage is configured this switches off by itself (or set USE_SAMPLE_IMAGES explicitly).
 const POOL = [
   { file: 'toyota-corolla-axio.jpg', kind: 'sedan' },
   { file: 'honda-grace.jpg', kind: 'sedan' },
@@ -10,7 +10,13 @@ const POOL = [
   { file: 'range-rover.jpg', kind: 'suv' },
 ];
 const url = (f) => `/samples/${f}`;
-const enabled = () => String(process.env.USE_SAMPLE_IMAGES || 'true').toLowerCase() !== 'false';
+// Explicit USE_SAMPLE_IMAGES wins. Otherwise sample photos are used only until Firebase Storage is set up,
+// then the photos staff upload are shown.
+const enabled = () => {
+  const v = process.env.USE_SAMPLE_IMAGES;
+  if (v !== undefined && v !== '') return String(v).toLowerCase() !== 'false';
+  return !require('./firebase').isConfigured();
+};
 
 // Pick the most fitting sample for a vehicle (by model, then body type), falling back to a stable
 // choice based on its id so the same car always gets the same picture.

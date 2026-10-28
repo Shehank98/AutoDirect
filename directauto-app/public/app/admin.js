@@ -1,4 +1,4 @@
-/* AutoDirect admin console - loaded on demand when someone opens /admin.
+/* Direct Auto admin console - loaded on demand when someone opens /admin.
    Built from the same components as the storefront (window.AD) and wired to /api/admin/*. */
 (function () {
   "use strict";
@@ -9,6 +9,9 @@
   var FUELS = ["Petrol", "Diesel", "Hybrid", "Electric", "LPG"];
   var GEARS = ["Automatic", "Manual", "CVT"];
   var DRIVES = ["2WD", "4WD", "AWD"];
+  // Wording for the single bar on a car's photo. "" = no bar (a car that is Sold / Reserved / In transit still shows that status).
+  var LABEL_PRESETS = ["New arrival", "Available now", "Just landed", "Hot deal", "Price reduced", "Reserved", "In transit", "Sold"];
+  function labelOptions(cur) { var o = [{ value: "", label: "No label" }].concat(LABEL_PRESETS.map(function (x) { return { value: x, label: x }; })); if (cur && LABEL_PRESETS.indexOf(cur) < 0) o.push({ value: cur, label: cur + " (custom)" }); return o; }
   var CAPS = { uploads: false, sampleImages: true, email: { enabled: false, recipients: 0 } };   // filled from /api/admin/me when the console opens
 
   /* ------------------------------------------------------------ helpers */
@@ -99,7 +102,7 @@
       e.preventDefault(); setErr("");
       if (!f.vehicle_manufacturer || !f.vehicle_type) { setErr("Choose a brand and a body type."); return; }
       setBusy(true);
-      var body = Object.assign({}, f); delete body.id; delete body.created_at; delete body.updated_at; delete body.seo_url;
+      var body = Object.assign({}, f); delete body.__custom; delete body.id; delete body.created_at; delete body.updated_at; delete body.seo_url;
       delete body.manufacturer_name; delete body.model_name; delete body.type_name;
       (isNew ? api.post("/api/admin/vehicles", body) : api.put("/api/admin/vehicles/" + v.id, body))
         .then(function () { p.onSaved(isNew ? "Vehicle created" : "Changes saved"); }, function (x) { setErr(x.message); setBusy(false); });
@@ -136,7 +139,13 @@
       h("div", { className: "ad-row", style: { gap: 24 } },
         h(A.Switch, { label: "Published on the website", checked: String(f.status) !== "0", onChange: function (on) { setF(Object.assign({}, f, { status: on ? 1 : 0 })); } }),
         h(A.Switch, { label: "Featured on the home page", checked: !!f.is_featured, onChange: function (on) { setF(Object.assign({}, f, { is_featured: on })); } }),
-        h(A.Switch, { label: "New arrival badge", checked: !!f.is_latest, onChange: function (on) { setF(Object.assign({}, f, { is_latest: on })); } })),
+        h("span")),
+      h("div", { className: "ad-label" }, "Label on the photo"),
+      h("div", { className: "ad-form__grid ad-form__grid--3" },
+        h(A.SelectField, { label: "Bar shown on this car’s photo", options: labelOptions(LABEL_PRESETS.indexOf(f.badge || "") < 0 ? "" : f.badge).concat([{ value: "__custom", label: "Custom wording…" }]), value: f.__custom || (f.badge && LABEL_PRESETS.indexOf(f.badge) < 0) ? "__custom" : (f.badge || ""),
+          onChange: function (e) { var v2 = e.target.value; setF(Object.assign({}, f, v2 === "__custom" ? { __custom: true, badge: LABEL_PRESETS.indexOf(f.badge) >= 0 ? "" : (f.badge || "") } : { __custom: false, badge: v2 })); },
+          hint: "One bar on the photo, e.g. New arrival or Hot deal. “No label” shows nothing (Sold, Reserved and In transit still show their status)." }),
+        f.__custom || (f.badge && LABEL_PRESETS.indexOf(f.badge) < 0) ? txt("badge", "Your wording", { maxLength: 40, placeholder: "e.g. Eid special" }) : null),
       h(Err, { text: err }),
       h("div", { className: "ad-form__foot" }, h("span", { className: "ad-small ad-muted" }, isNew ? "You can add photos now or later." : "Changes go live on the website as soon as you save."),
         h("div", { className: "ad-row" }, h(A.Button, { variant: "ghost", onClick: p.onCancel }, "Cancel"), h(A.Button, { type: "submit", loading: busy, icon: "check" }, isNew ? "Create vehicle" : "Save changes"))));
@@ -163,7 +172,7 @@
       Promise.all(ids.map(function (id) { return api.del("/api/admin/vehicles/" + id); })).then(function () { setBusy(false); setConfirm(null); setPicked([]); d.reload(); p.say(ids.length + " vehicle" + (ids.length === 1 ? "" : "s") + " deleted"); p.changed(); }, function (e) { setBusy(false); p.say(e.message, "danger"); });
     }
     var allOn = list.length && list.every(function (v) { return picked.indexOf(v.id) >= 0; });
-    function blank() { return { status: 1, stock_status: "Available", is_latest: true, is_featured: false, location: "Japan", images: [], feature_ids: [] }; }
+    function blank() { return { status: 1, stock_status: "Available", badge: "New arrival", is_featured: false, location: "Japan", images: [], feature_ids: [] }; }
     return h(Frag, null,
       h("div", { className: "ad-kpis" }, [["In stock", st.in_stock, "car"], ["In transit", st.in_transit, "ship"], ["New inquiries", st.new_inquiries, "doc"], ["Subscribers", st.subscribers, "mail"]].map(function (k) {
         return h("div", { key: k[0], className: "ad-kpi" }, h(A.Icon, { name: k[2], size: 18 }), h("span", { className: "ad-label" }, k[0]), h("b", null, k[1] == null ? "-" : k[1]));
@@ -176,7 +185,7 @@
         h(A.Button, { size: "s", variant: "secondary", icon: "star", onClick: function () { Promise.all(picked.map(function (id) { return api.put("/api/admin/vehicles/" + id, { is_featured: true }); })).then(function () { d.reload(); setPicked([]); p.say("Featured"); p.changed(); }); } }, "Feature"),
         h(A.Button, { size: "s", variant: "danger", icon: "trash", onClick: function () { setConfirm("bulk"); } }, "Delete"),
         h("button", { type: "button", className: "ad-link", onClick: function () { setPicked([]); } }, "Clear")) : null,
-      h(Table, { cols: [{ label: h(A.Checkbox, { ariaLabel: "Select all vehicles", checked: !!allOn, onChange: function (x) { setPicked(x ? list.map(function (v) { return v.id; }) : []); } }) }, { label: "Vehicle" }, { label: "Price" }, { label: "Grade" }, { label: "Location" }, { label: "Sales status" }, { label: "Featured" }, { label: "" }],
+      h(Table, { cols: [{ label: h(A.Checkbox, { ariaLabel: "Select all vehicles", checked: !!allOn, onChange: function (x) { setPicked(x ? list.map(function (v) { return v.id; }) : []); } }) }, { label: "Vehicle" }, { label: "Price" }, { label: "Grade" }, { label: "Location" }, { label: "Sales status" }, { label: "Label on photo" }, { label: "Featured" }, { label: "" }],
         empty: list.length ? null : h(A.Empty, { title: "No vehicles", text: rows.length ? "Nothing matches your search." : "Add your first vehicle to get started." }),
         rows: list.map(function (v) {
           var on = picked.indexOf(v.id) >= 0;
@@ -187,6 +196,7 @@
                 v.status === 0 ? h("span", { className: "ad-small", style: { color: "var(--warning)" } }, "Hidden from website") : null))),
             h("td", { className: "ad-num" }, v.price ? fmt.lkr(Number(v.price)) : "On request"), h("td", null, v.auction_grade ? v.auction_grade + " / " + (v.grade || "-") : "-"), h("td", null, v.location || "-"),
             h("td", null, h(A.SelectField, { "aria-label": "Sales status of " + v.id, options: STOCK_STATUS, value: v.stock_status, className: "ad-select--s", onChange: function (e) { patch(v, { stock_status: e.target.value }, "Status updated"); } })),
+            h("td", null, h(A.SelectField, { "aria-label": "Label on the photo of " + v.id, options: labelOptions(v.badge), value: v.badge || "", className: "ad-select--s", onChange: function (e) { patch(v, { badge: e.target.value }, "Label updated"); } })),
             h("td", null, h(A.Switch, { label: "Feature " + v.id + " on home page", hideLabel: true, checked: !!v.is_featured, onChange: function (x) { patch(v, { is_featured: x }); } })),
             h("td", { className: "ad-dt__act" }, h(A.Button, { variant: "ghost", size: "s", icon: "edit", "aria-label": "Edit " + vtitle(v, L), onClick: function () { setEditing(v); } }),
               h(A.Button, { variant: "ghost", size: "s", icon: "trash", "aria-label": "Delete " + vtitle(v, L), onClick: function () { setConfirm(v.id); } })));
@@ -472,13 +482,13 @@
             h(A.TextField, { label: "Instagram link", className: "ad-span2", value: f.instagram, onChange: set("instagram"), placeholder: "https://www.instagram.com/yourpage/" }))),
         h(Card, { title: "WhatsApp button", text: "The green button that follows visitors on every page." },
           h(A.Switch, { label: "Show the WhatsApp button", checked: on(f, "showWhatsapp"), onChange: tog("showWhatsapp") }),
-          h(A.TextField, { label: "First message", value: f.whatsappMessage, onChange: set("whatsappMessage"), placeholder: "Hi AutoDirect, I have a question about importing a car.", hint: "What the chat starts with when a visitor taps the button. Leave empty for the standard message." })),
+          h(A.TextField, { label: "First message", value: f.whatsappMessage, onChange: set("whatsappMessage"), placeholder: "Hi Direct Auto, I have a question about importing a car.", hint: "What the chat starts with when a visitor taps the button. Leave empty for the standard message." })),
         h(Card, { title: "Live auction", text: "The Japan auction viewer shown on the Live auction page." },
           h(A.TextField, { label: "Auction viewer link", value: f.liveAuctionUrl, onChange: set("liveAuctionUrl"), placeholder: "https://jpcenter.ru/on?classic" }),
           h(A.TextField, { label: "Notice above the viewer", optional: true, value: f.liveAuctionHint, onChange: set("liveAuctionHint"), hint: "A short message such as login details or opening times." })),
         h(Card, { title: "Google and link previews", text: "How the home page appears in Google results and when the link is shared on WhatsApp or Facebook." },
           h(A.TextField, { label: "Home page title", value: f.seoTitle, onChange: set("seoTitle"), placeholder: "Japanese auction car imports for Sri Lanka" }),
-          h(A.TextField, { label: "Description", multiline: true, rows: 3, value: f.seoDescription, onChange: set("seoDescription"), placeholder: "Browse imported cars in stock or let AutoDirect bid for your exact car at Japanese auctions…", hint: "One or two sentences. Search engines may take a few days to show a change." })),
+          h(A.TextField, { label: "Description", multiline: true, rows: 3, value: f.seoDescription, onChange: set("seoDescription"), placeholder: "Browse imported cars in stock or let Direct Auto bid for your exact car at Japanese auctions…", hint: "One or two sentences. Search engines may take a few days to show a change." })),
         h(Card, { title: "Header and footer text" },
           h(A.TextField, { label: "Top bar message (right side)", value: f.topbarText, onChange: set("topbarText"), placeholder: "Japan auction imports for Sri Lanka" }),
           h(A.TextField, { label: "Footer description", multiline: true, rows: 3, value: f.footerText, onChange: set("footerText"), placeholder: "Japanese auction imports for Sri Lanka, with original auction sheets, refundable deposits and door-to-door tracking." })));
@@ -493,7 +503,7 @@
         h(Card, { title: "Live auction", text: "The Japan auctions promo strip." },
           h(A.Switch, { label: "Show this section", checked: on(f, "showAuction"), onChange: tog("showAuction") }),
           h("div", { className: "ad-fgrid" }, h(A.TextField, { label: "Heading", value: f.auctionTitle, onChange: set("auctionTitle"), placeholder: "Watch Japan auctions live" }),
-            h(A.TextField, { label: "Sub-heading", value: f.auctionLead, onChange: set("auctionLead"), placeholder: "Browse live lots from Japanese auction houses without leaving AutoDirect." })),
+            h(A.TextField, { label: "Sub-heading", value: f.auctionLead, onChange: set("auctionLead"), placeholder: "Browse live lots from Japanese auction houses without leaving Direct Auto." })),
           h("div", { className: "ad-field__label" }, "The three points under it"),
           h(ListEditor, { rows: f.auctionPoints, listKey: "auctionPoints", defaults: A.defaults.auctionPoints, onChange: set("auctionPoints"), fields: [{ key: "title", label: "Title", half: true }, { key: "text", label: "Text", half: true }], min: 1, max: 6, addLabel: "Add a point" })),
         h(Card, { title: "Customer reviews", text: "Add and edit the reviews themselves under Website > Testimonials." },
@@ -600,8 +610,10 @@
     } }, p));
   }
   function AboutPage(p) {
-    return h(SettingsForm, Object.assign({ keys: ["aboutValues", "aboutCtaTitle", "aboutCtaText"], render: function (f, set) {
+    return h(SettingsForm, Object.assign({ keys: ["showAbout", "aboutValues", "aboutCtaTitle", "aboutCtaText"], render: function (f, set, tog) {
       return h(Frag, null,
+        h(Card, { title: "Show “About us” on the website", text: "Off: the page is hidden from the menu and footer. You can still edit it here, and turn it on any time." },
+          h(A.Switch, { label: "Show About us in the menu and footer", checked: f.showAbout === true, onChange: tog("showAbout") })),
         listCard(f, set, "aboutValues", "About us: what we stand for", "The boxes on the About us page.", [{ key: "title", label: "Heading" }, { key: "text", label: "Text", multiline: true, rows: 2 }], { min: 1, max: 8, addLabel: "Add a box" }),
         h(Card, { title: "Visit us banner", text: "The banner at the bottom of the About us page." },
           h(A.TextField, { label: "Heading", value: f.aboutCtaTitle, onChange: set("aboutCtaTitle"), placeholder: "Visit us in Malabe or Colombo 07" }),

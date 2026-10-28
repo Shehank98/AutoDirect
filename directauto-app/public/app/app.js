@@ -1,4 +1,4 @@
-/* AutoDirect storefront - router, API client, Firebase auth and pages.
+/* Direct Auto storefront - router, API client, Firebase auth and pages.
    Components live in ds.js (window.AD); this file wires them to the Express API. */
 (function () {
   "use strict";
@@ -10,20 +10,16 @@
   var authReady;            // promise resolving when Firebase has been initialised (or found missing)
   var me = null;            // profile row from /api/account/me for the signed-in user
 
-  var cfgInfo = { adminLogin: false, adminReason: "" };   // from /api/config
+  var cfgInfo = { adminEmails: false };   // from /api/config
 
   function token() {
     try { return fb && fb.auth().currentUser ? fb.auth().currentUser.getIdToken() : Promise.resolve(""); }
     catch (e) { return Promise.resolve(""); }
   }
-  // Admin session (ADMIN_USERNAME / ADMIN_PASSWORD login). Kept per tab, so closing the tab signs out.
-  function adminToken() { try { return sessionStorage.getItem("ad-admin-token") || ""; } catch (e) { return ""; } }
-  function setAdminToken(t) { try { if (t) sessionStorage.setItem("ad-admin-token", t); else sessionStorage.removeItem("ad-admin-token"); } catch (e) { /* storage blocked */ } }
-  // Which credential a request carries: admin calls use the admin session when there is one.
-  function authFor(url) { return url.indexOf("/api/admin") === 0 && adminToken() ? Promise.resolve(adminToken()) : token(); }
+  // Every call (including admin) carries the signed-in Firebase user's ID token; the server checks the admin flag.
+  function authFor() { return token(); }
 
   function request(method, url, body) {
-    var usedAdmin = url.indexOf("/api/admin") === 0 && !!adminToken();
     return authFor(url).then(function (t) {
       var headers = { "Content-Type": "application/json" };
       if (t) headers.Authorization = "Bearer " + t;
@@ -31,7 +27,6 @@
     }).then(function (res) {
       return res.json().catch(function () { return null; }).then(function (data) {
         if (!res.ok) {
-          if (res.status === 401 && usedAdmin) { setAdminToken(""); window.dispatchEvent(new Event("ad-admin-expired")); }
           var e = new Error((data && data.error) || "Something went wrong (" + res.status + ")"); e.status = res.status; throw e;
         }
         return data;
@@ -57,7 +52,7 @@
     var path = location.pathname.replace(/\/+$/, "") || "/";
     var q = new URLSearchParams(location.search);
     var m = /^\/our-stock\/([^/]+)$/.exec(path);
-    if (m) { try { return { page: "vehicle", seo: decodeURIComponent(m[1]) }; } catch (e) { return { page: "notfound" }; } }
+    if (m) { try { return { page: "vehicle", seo: decodeURIComponent(m[1]), tab: q.get("tab") || "" }; } catch (e) { return { page: "notfound" }; } }
     if (/^\/my-account(\/|$)/.test(path)) return { page: "account", tab: ACCOUNT_TABS[path.split("/")[2]] || q.get("tab") || "overview" };
     if (/^\/admin(\/|$)/.test(path)) return { page: "admin" };
     for (var k in PATHS) if (PATHS[k] === path) {
@@ -73,7 +68,10 @@
     return { page: "notfound" };
   }
   function urlFor(page, arg) {
-    if (page === "vehicle") return "/our-stock/" + encodeURIComponent(arg);
+    if (page === "vehicle") {
+      var seo = arg && typeof arg === "object" ? arg.seo : arg, tab = arg && typeof arg === "object" && arg.tab ? "?tab=" + encodeURIComponent(arg.tab) : "";
+      return "/our-stock/" + encodeURIComponent(seo) + tab;
+    }
     if (page === "stock" && arg) {
       var q = new URLSearchParams();
       ["make", "type", "location"].forEach(function (n) { if (arg[n]) q.set(n, arg[n]); });
@@ -95,7 +93,7 @@
   };
   function initFirebase() {
     return api.get("/api/config").then(function (cfg) {
-      cfgInfo.adminLogin = !!cfg.adminLogin; cfgInfo.adminReason = cfg.adminLoginReason || "";
+      cfgInfo.adminEmails = !!cfg.adminEmails;
       if (!cfg.authEnabled || !cfg.firebase || !cfg.firebase.apiKey || !window.firebase) return null;
       if (!firebase.apps.length) firebase.initializeApp(cfg.firebase);
       fb = firebase;
@@ -163,7 +161,7 @@
   /* ------------------------------------------------------------------ small helpers */
   function byRef(id) { return D.vehicles.filter(function (v) { return v.id === id; })[0]; }
   function bySeo(seo) { return D.vehicles.filter(function (v) { return v.seo === seo; })[0]; }
-  function setMeta(title) { document.title = (title ? title + " | " : "") + "AutoDirect"; }
+  function setMeta(title) { document.title = (title ? title + " | " : "") + "Direct Auto"; }
 
   function PageHead(p) {
     // "bare" pages show only the breadcrumb and action; the title stays as a visually hidden h1.
@@ -194,7 +192,7 @@
       h("section", { className: "ad-sec ad-hb-sec" }, h("div", { className: "ad-wrap" },
         h(A.HomeStock, { onSearch: p.onSearch, onRequest: function () { p.nav("request"); }, renderCard: function (v) { return vehicleCard(p, v); },
           tray: h(A.CompareTray, { floating: true, items: p.cmp.map(byRef).filter(Boolean), onRemove: p.toggleCmp, onClear: p.clearCmp, onCompare: function () { p.nav("compare"); } }) }))),
-      !A.on("showAuction") ? null : h(Sec, { tint: true, kicker: "Live auction", title: A.T("auctionTitle", "Watch Japan auctions live"), lead: A.T("auctionLead", "Browse live lots from Japanese auction houses without leaving AutoDirect."),
+      !A.on("showAuction") ? null : h(Sec, { tint: true, kicker: "Live auction", title: A.T("auctionTitle", "Watch Japan auctions live"), lead: A.T("auctionLead", "Browse live lots from Japanese auction houses without leaving Direct Auto."),
         action: h(A.Button, { variant: "accent", icon: "gavel", onClick: function () { p.nav("auction"); } }, "Open live auction") },
         h("div", { className: "ad-infostrip" },
           A.list("auctionPoints", A.defaults.auctionPoints).map(function (x, i) {
@@ -208,7 +206,7 @@
   }
 
   function vehicleCard(p, v) {
-    return h(A.VehicleCard, { key: v.id, vehicle: v, onOpen: function () { p.nav("vehicle", v.seo); }, compared: p.cmp.indexOf(v.id) >= 0, compareDisabled: p.cmp.length >= 4,
+    return h(A.VehicleCard, { key: v.id, vehicle: v, onOpen: function () { p.nav("vehicle", v.seo); }, onPrice: function () { p.nav("vehicle", { seo: v.seo, tab: "inquiry" }); }, compared: p.cmp.indexOf(v.id) >= 0, compareDisabled: p.cmp.length >= 4,
       onCompare: function () { p.toggleCmp(v.id); }, saved: p.saved.indexOf(v.id) >= 0, onSave: function () { p.toggleSave(v.id); } });
   }
 
@@ -218,14 +216,18 @@
       h("div", { className: "ad-wrap ad-pagebody" }, h(A.StockBrowser, {
         key: JSON.stringify(p.filters), initial: p.filters, vehicles: D.vehicles,
         cmp: p.cmp, onToggleCmp: p.toggleCmp, onClearCmp: p.clearCmp, saved: p.saved, onToggleSave: p.toggleSave,
-        onOpen: function (v) { p.nav("vehicle", v.seo); }, onCompare: function () { p.nav("compare"); }, onRequest: function () { p.nav("request"); }
+        onOpen: function (v) { p.nav("vehicle", v.seo); }, onPrice: function (v) { p.nav("vehicle", { seo: v.seo, tab: "inquiry" }); }, onCompare: function () { p.nav("compare"); }, onRequest: function () { p.nav("request"); }
       })));
   }
 
   function Vehicle(p) {
     var v = bySeo(p.seo);
-    var t = useState("specs"), tab = t[0], setTab = t[1];
-    useEffect(function () { setTab("specs"); }, [p.seo]);
+    var t = useState(p.tab0 === "inquiry" || p.tab0 === "loan" ? p.tab0 : "specs"), tab = t[0], setTab = t[1];
+    useEffect(function () {
+      var first = p.tab0 === "inquiry" || p.tab0 === "loan" ? p.tab0 : "specs";
+      setTab(first);
+      if (first !== "specs") setTimeout(function () { var el = document.getElementById("vp-tabs"); if (el) el.scrollIntoView({ block: "start" }); }, 120);
+    }, [p.seo, p.tab0]);
     useEffect(function () { if (v) setMeta(fmt.title(v) + " " + v.grade); }, [p.seo]);
     if (!v) return h("div", { className: "ad-wrap ad-pagebody" },
       h(A.Empty, { icon: "car", title: "We couldn’t find that vehicle", text: "It may have been sold or taken down. Browse what’s in stock or ask us to find a similar car." },
@@ -242,7 +244,7 @@
       h("div", { className: "ad-vp__top" },
         h(A.VehicleGallery, { key: v.id, alt: fmt.title(v), items: items }),
         h("aside", { className: "ad-vp__buy" },
-          h("div", { className: "ad-row" }, h(A.StatusBadge, { status: v.status }), v.isNew ? h(A.Badge, { tone: "highlight" }, "New arrival") : null, h("span", { className: "ad-mono ad-muted ad-small" }, v.id)),
+          h("div", { className: "ad-row" }, A.vehicleLabel(v) ? h(A.Badge, { tone: ({ sold: "neutral", warn: "warning", hot: "highlight", brand: "success" })[A.vehicleLabel(v).tone] }, A.vehicleLabel(v).text) : null, h("span", { className: "ad-mono ad-muted ad-small" }, v.id)),
           h("h1", { className: "ad-h1" }, fmt.title(v)), h("p", { className: "ad-muted" }, [v.grade, v.color].filter(Boolean).join(" · ")),
           h("ul", { className: "ad-vcard__specs ad-vp__specs" },
             h(A.Spec, { icon: "gauge" }, v.mileage ? fmt.num(v.mileage) + " km" : "-"), h(A.Spec, { icon: "fuel" }, v.fuel || "-"),
@@ -254,7 +256,7 @@
           h("div", { className: "ad-row" },
             h(A.Button, { variant: "secondary", block: true, icon: inCmp ? "check" : "compare", onClick: function () { p.toggleCmp(v.id); }, "aria-pressed": inCmp }, inCmp ? "In compare (" + p.cmp.length + ")" : "Compare"),
             h(A.Button, { variant: "secondary", icon: "heart", "aria-label": saved ? "Remove from saved" : "Save", "aria-pressed": saved, className: saved ? "is-saved" : "", onClick: function () { p.toggleSave(v.id); } }),
-            h(A.Button, { variant: "secondary", icon: "whatsapp", "aria-label": "Share on WhatsApp", href: "https://wa.me/?text=" + encodeURIComponent(fmt.title(v) + " " + v.grade + " at AutoDirect " + location.origin + "/our-stock/" + v.seo), target: "_blank", rel: "noopener" })),
+            h(A.Button, { variant: "secondary", icon: "whatsapp", "aria-label": "Share on WhatsApp", href: "https://wa.me/?text=" + encodeURIComponent(fmt.title(v) + " " + v.grade + " at Direct Auto " + location.origin + "/our-stock/" + v.seo), target: "_blank", rel: "noopener" })),
           h("p", { className: "ad-small ad-muted ad-vp__trust" }, h(A.Icon, { name: "shield", size: 15 }), "Original auction sheet and translation available on request"))),
       h("div", { id: "vp-tabs" }, h(A.Tabs, { variant: "line", label: "Vehicle details", tabs: [{ id: "specs", label: "Specs & features" }, { id: "loan", label: "Loan calculator" }, { id: "inquiry", label: "Inquiry" }], value: tab, onChange: setTab })),
       h("div", { className: "ad-vp__panel" }, tab === "specs" ? h(A.SpecSheet, { vehicle: v }) : tab === "loan" ? h(A.LoanCalculator, { key: v.id, price: v.price }) :
@@ -375,27 +377,22 @@
   }
 
   /* Staff sign-in with the ADMIN_USERNAME / ADMIN_PASSWORD server variables. */
-  function AdminLogin(p) {
-    var f = useState({ u: "", p: "" }), d = f[0], setD = f[1];
-    var b = useState(false), busy = b[0], setBusy = b[1];
-    var e = useState(""), err = e[0], setErr = e[1];
-    function submit(ev) {
-      ev.preventDefault(); setErr(""); setBusy(true);
-      api.post("/api/admin-login", { username: d.u, password: d.p }).then(function (r) { setAdminToken(r.token); return p.onSignedIn(); })
-        .catch(function (x) { setErr(x.message); setBusy(false); });
-    }
-    return h("div", { className: "ad-wrap ad-authpage" },
-      h("form", { className: "ad-auth", onSubmit: submit },
-        h(A.Logo, { size: 20 }),
-        h("div", null, h("h2", { className: "ad-h2" }, "Admin sign in"), h("p", { className: "ad-muted ad-small" }, "Staff only.")),
-        !cfgInfo.adminLogin ? h("p", { className: "ad-field__error", role: "alert" }, h(A.Icon, { name: "info", size: 14 }),
-          ({ "no-username": "ADMIN_USERNAME is not set on the server.", "no-password": "ADMIN_PASSWORD is not set on the server.",
-             "short-password": "ADMIN_PASSWORD is too short. It needs at least 8 characters.", "placeholder-password": "ADMIN_PASSWORD is too common to be accepted. Use a long random one." }[cfgInfo.adminReason] || "Admin sign-in is not set up on the server.") +
-          " Set it in your host's Variables for this service, then redeploy.") : null,
-        h(A.TextField, { label: "Username", autoComplete: "username", value: d.u, onChange: function (ev) { setD(Object.assign({}, d, { u: ev.target.value })); }, autoFocus: true }),
-        h(A.TextField, { label: "Password", type: "password", autoComplete: "current-password", value: d.p, onChange: function (ev) { setD(Object.assign({}, d, { p: ev.target.value })); } }),
-        err ? h("p", { className: "ad-field__error", role: "alert" }, h(A.Icon, { name: "info", size: 14 }), err) : null,
-        h(A.Button, { type: "submit", block: true, size: "l", loading: busy, disabled: !cfgInfo.adminLogin || !d.u || !d.p }, "Sign in")));
+  // /admin is protected by Firebase sign-in. Signed out -> sign-in form; signed in but not an admin -> how to get access.
+  function AdminDenied(p) {
+    var u = p.user, st = useState(""), msg = st[0], setMsg = st[1], bz = useState(false), busy = bz[0], setBusy = bz[1];
+    var fu = fb && fb.auth().currentUser, verified = !!(fu && fu.emailVerified);
+    function recheck() { setBusy(true); setMsg(""); p.recheck().then(function () { setBusy(false); }, function (e) { setBusy(false); setMsg(e.message || "Couldn’t check just now."); }); }
+    function resend() { if (!fu) return; fu.sendEmailVerification().then(function () { setMsg("Verification email sent. Open it, tap the link, then press “Check again”."); }, function (e) { setMsg(e.message || "Couldn’t send the email."); }); }
+    return h("div", { className: "ad-wrap ad-authpage" }, h("div", { className: "ad-auth" },
+      h(A.Logo, { size: 20 }),
+      h("div", null, h("h2", { className: "ad-h2" }, "No admin access yet"), h("p", { className: "ad-muted ad-small" }, "You’re signed in as " + (u.email || "this account") + ", but it isn’t an admin account.")),
+      !verified ? h("p", { className: "ad-note" }, h(A.Icon, { name: "mail", size: 16 }), "Your email address isn’t verified yet. Open the verification email we sent, tap the link, then press “Check again”.") : null,
+      h("ul", { className: "ad-small ad-muted", style: { margin: 0, paddingLeft: 18, display: "grid", gap: 6 } },
+        h("li", null, cfgInfo.adminEmails ? "The owner’s email is added to ADMIN_EMAILS on the server, so the owner becomes admin after verifying that email." : "The server has no ADMIN_EMAILS yet. Add the owner’s email to it (in the host’s Variables) and redeploy."),
+        h("li", null, "Other staff: an existing admin turns on “Admin” for you under Customers.")),
+      msg ? h("p", { className: "ad-small", role: "status" }, msg) : null,
+      h("div", { className: "ad-row" }, h(A.Button, { loading: busy, onClick: recheck }, "Check again"), !verified ? h(A.Button, { variant: "secondary", onClick: resend }, "Resend verification email") : null,
+        h(A.Button, { variant: "ghost", onClick: p.signOut }, "Sign out"))));
   }
 
   /* Admin console is a separate file, loaded only when somebody opens /admin. */
@@ -411,7 +408,7 @@
       document.body.appendChild(el);
     }, []);
     if (!window.AD_ADMIN) return h(Loading, { text: "Loading admin…" });
-    return h("div", { className: "ad-adminroot" }, h(window.AD_ADMIN.Console, { user: { email: p.adminName }, onSignOut: p.signOut, onExit: function () { p.nav("home"); }, onDataChanged: p.reloadCatalog }));
+    return h("div", { className: "ad-adminroot" }, h(window.AD_ADMIN.Console, { user: { email: p.adminName, name: p.adminLabel }, onSignOut: p.signOut, onExit: function () { p.nav("home"); }, onDataChanged: p.reloadCatalog }));
   }
 
   /* ------------------------------------------------------------------ seasons: falling effect + greeting banner */
@@ -473,7 +470,7 @@
   function WhatsAppFab() {
     var num = String(A.site.whatsapp || A.site.phone || "").replace(/[^0-9]/g, "");
     if (!num || !A.on("showWhatsapp") || /^\/admin/.test(location.pathname)) return null;
-    return h("a", { className: "ad-wafab", href: "https://wa.me/" + num + "?text=" + encodeURIComponent(A.T("whatsappMessage", "Hi AutoDirect, I have a question about importing a car.")), target: "_blank", rel: "noopener", "aria-label": "Chat with us on WhatsApp" },
+    return h("a", { className: "ad-wafab", href: "https://wa.me/" + num + "?text=" + encodeURIComponent(A.T("whatsappMessage", "Hi Direct Auto, I have a question about importing a car.")), target: "_blank", rel: "noopener", "aria-label": "Chat with us on WhatsApp" },
       h(A.Icon, { name: "whatsapp", size: 26, stroke: 1.6 }), h("span", { className: "ad-wafab__t" }, "WhatsApp"));
   }
 
@@ -493,17 +490,10 @@
     var sv = useState(function () { return (store("ad-saved") || []).filter(byRef); }), saved = sv[0], setSaved = sv[1];
     var rq = useState(null), prefill = rq[0], setPrefill = rq[1];
     var rl = useState(0), setVer = rl[1];
-    var ad = useState(function () { return adminToken() ? undefined : null; }), admin = ad[0], setAdmin = ad[1];   // undefined = checking saved session
 
     useEffect(function () { function on() { setRoute(parse()); window.scrollTo(0, 0); } window.addEventListener("popstate", on); return function () { window.removeEventListener("popstate", on); }; }, []);
     useEffect(function () { store("ad-compare", cmp); }, [cmp]);
     useEffect(function () { store("ad-saved", saved); }, [saved]);
-    useEffect(function () {
-      function expired() { setAdmin(null); }
-      window.addEventListener("ad-admin-expired", expired);
-      if (adminToken()) api.get("/api/admin/me").then(function (r) { setAdmin({ username: r.username }); }, function () { setAdminToken(""); setAdmin(null); });
-      return function () { window.removeEventListener("ad-admin-expired", expired); };
-    }, []);
     useEffect(function () {
       authReady.then(function () {
         if (!fb) { setUser(null); return; }
@@ -525,10 +515,14 @@
     hooks.go = nav;
     function toggle(list, set, id, max) { set(list.indexOf(id) >= 0 ? list.filter(function (x) { return x !== id; }) : (max && list.length >= max ? list : list.concat([id]))); }
     function signOut() {
-      setAdminToken(""); setAdmin(null);
       (fb ? fb.auth().signOut() : Promise.resolve()).then(function () { me = null; setUser(null); nav("home"); });
     }
-    function adminSignedIn() { return api.get("/api/admin/me").then(function (r) { setAdmin({ username: r.username }); }); }
+    // Re-reads the account after the owner verifies their email (a fresh token carries email_verified).
+    function recheckAdmin() {
+      var fu = fb && fb.auth().currentUser;
+      if (!fu) return Promise.resolve();
+      return fu.reload().then(function () { return fu.getIdToken(true); }).then(function () { return api.get("/api/account/me"); }).then(function (row) { me = row; setUser(row); });
+    }
 
     var common = { nav: nav, cmp: cmp, saved: saved, clearCmp: function () { setCmp([]); },
       toggleCmp: function (id) { toggle(cmp, setCmp, id, 4); }, toggleSave: function (id) { toggle(saved, setSaved, id); }, signOut: signOut, reloadCatalog: reloadCatalog };
@@ -539,7 +533,7 @@
     }
 
     if (pg === "stock") body = h(Stock, Object.assign({ filters: route.filters || {} }, common));
-    else if (pg === "vehicle") body = h(Vehicle, Object.assign({ seo: route.seo }, common));
+    else if (pg === "vehicle") body = h(Vehicle, Object.assign({ seo: route.seo, tab0: route.tab }, common));
     else if (pg === "compare") body = h(Compare, common);
     else if (pg === "auction") body = h(Auction, common);
     else if (pg === "request") body = h(Request, Object.assign({ prefill: prefill }, common));
@@ -553,10 +547,12 @@
     else if (pg === "account" && !fb) body = h(AccountsOff, common);
     else if (pg === "account") body = user ? h(Account, Object.assign({ tab: route.tab }, common)) : needLogin("Sign in to see your inquiries and imports.");
     else if (pg === "admin") {
-      var adminOk = !!admin || !!(user && user.is_admin);
-      body = (admin === undefined || (user === undefined && !admin)) ? h(Loading, null)
-        : adminOk ? h(Admin, Object.assign({ adminName: admin ? admin.username : user.email }, common))
-        : h(AdminLogin, { onSignedIn: adminSignedIn });
+      if (user === undefined) body = h(Loading, null);
+      else if (!fb) body = h("div", { className: "ad-wrap ad-authpage" }, h("div", { className: "ad-auth" }, h(A.Logo, { size: 20 }), h("h2", { className: "ad-h2" }, "Admin sign-in isn’t set up"),
+        h("p", { className: "ad-muted ad-small" }, "Admin access uses Firebase sign-in. Add the FIREBASE_* variables (and ADMIN_EMAILS) to the server and redeploy.")));
+      else if (!user) body = h(Login, { mode: "login", note: "Staff sign-in. Use your admin account email and password.", onLogin: function () { setRoute(parse()); } });
+      else if (!user.is_admin) body = h(AdminDenied, { user: user, recheck: recheckAdmin, signOut: signOut });
+      else body = h(Admin, Object.assign({ adminName: user.email, adminLabel: user.name }, common));
     }
     else if (pg === "notfound") body = h(NotFound, common);
     else body = h(Home, Object.assign({ onSearch: function (q) {
@@ -579,7 +575,7 @@
     return h("div", { className: "ad-page" },
       season && season.effect ? h(SeasonFX, { kind: season.def.effect, density: season.density }) : null,
       season && season.banner ? h(SeasonBanner, { st: season }) : null,
-      h(A.SiteHeader, { active: active, onNavigate: function (id, init) { if (id === "logout") signOut(); else nav(id, init); }, compareCount: cmp.length, user: userName, isAdmin: !!(user && user.is_admin) || !!admin }),
+      h(A.SiteHeader, { active: active, onNavigate: function (id, init) { if (id === "logout") signOut(); else nav(id, init); }, compareCount: cmp.length, user: userName, isAdmin: !!(user && user.is_admin) }),
       h("main", { key: pg + (route.seo || ""), className: "ad-main" }, body),
       h(A.SiteFooter, { onNavigate: function (id, init) { nav(id, init); } }),
       h(WhatsAppFab, null),

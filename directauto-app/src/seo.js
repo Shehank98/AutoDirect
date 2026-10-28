@@ -8,8 +8,8 @@ const TEMPLATE_PATH = path.join(__dirname, '..', 'public', 'index.html');
 let template = null;
 const shell = () => (template = template || fs.readFileSync(TEMPLATE_PATH, 'utf8'));
 
-const NAME = 'AutoDirect';
-const DEFAULT_DESC_BUILTIN = 'Browse imported cars in stock or let AutoDirect bid for your exact car at Japanese auctions, with the original auction sheet translated before every bid.';
+const NAME = 'Direct Auto';
+const DEFAULT_DESC_BUILTIN = 'Browse imported cars in stock or let Direct Auto bid for your exact car at Japanese auctions, with the original auction sheet translated before every bid.';
 const PAGES = {
   '/': ['Japanese auction car imports for Sri Lanka', DEFAULT_DESC_BUILTIN],
   '/our-stock': ['Ex Stock', 'Imported cars in stock in Sri Lanka. Filter by brand, body type, price, year and inventory location.'],
@@ -18,7 +18,7 @@ const PAGES = {
   '/how-to-buy': ['How to buy', 'From auction floor to your driveway: the steps, timelines and documents for importing a car from Japan.'],
   '/how-to-read-auction-sheet': ['How to read an auction sheet', 'Decode Japanese auction sheet grades and damage codes in a minute.'],
   '/vocabulary': ['Import vocabulary', 'FOB, CIF, LC and other car import terms explained in plain English.'],
-  '/about-us': ['About us', 'AutoDirect imports quality vehicles from Japan, Australia and the UK with honest pricing and no hidden fees.'],
+  '/about-us': ['About us', 'Direct Auto imports quality vehicles from Japan, Australia and the UK with honest pricing and no hidden fees.'],
   '/contact-us': ['Contact us', 'Call, WhatsApp or visit our Malabe showroom and Colombo 07 office.'],
   '/compare': ['Compare vehicles', 'Compare up to four imported cars side by side.'],
 };

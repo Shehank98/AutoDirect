@@ -16,7 +16,7 @@ router.post('/inquiries', async (req, res, next) => {
     const email = clip(b.email, 200).trim();
     const phone = clip(b.phone, 50).trim();
     if (name.length < 2) return res.status(400).json({ error: 'Please tell us your name.' });
-    if (!isEmail(email) && phone.length < 7) return res.status(400).json({ error: 'A valid email or phone number is required.' });
+    if (phone.replace(/[^0-9]/g, '').length < 9) return res.status(400).json({ error: 'Please enter your mobile number.' });
     if (email && !isEmail(email)) return res.status(400).json({ error: 'That email address looks wrong.' });
 
     const kind = KINDS.includes(b.kind) ? b.kind : 'Stock quote';

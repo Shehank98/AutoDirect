@@ -185,3 +185,6 @@ CREATE TABLE IF NOT EXISTS settings (
     value       JSONB NOT NULL,
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- One label shown as a bar on the car photo (e.g. "New arrival", "Hot deal"); chosen per car in Admin > Vehicles.
+ALTER TABLE vehicle ADD COLUMN IF NOT EXISTS badge VARCHAR(40) NOT NULL DEFAULT '';

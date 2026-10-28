@@ -51,6 +51,7 @@ function toVehicle(r) {
     img: images[0] || null,
     images,
     featured: !!r.is_featured,
+    label: r.badge || '',     // the one bar shown on the photo; chosen per car in the admin
     isNew: !!r.is_latest,
     features: r.feature_names || [],
     location: r.location || '',

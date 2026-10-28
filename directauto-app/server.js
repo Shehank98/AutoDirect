@@ -1,4 +1,4 @@
-// AutoDirect - Express server.
+// Direct Auto - Express server.
 // Serves the single-page frontend from /public and the JSON API under /api.
 require('dotenv').config();
 const path = require('path');
@@ -6,9 +6,8 @@ const express = require('express');
 
 const migrate = require('./db/migrate');
 const db = require('./db/pool');
-const { attachUser } = require('./src/auth');
+const { attachUser, adminEmailsConfigured } = require('./src/auth');
 const { isConfigured } = require('./src/firebase');
-const adminAuth = require('./src/adminAuth');
 const rateLimit = require('./src/rateLimit');
 
 const app = express();
@@ -30,7 +29,7 @@ app.use((_req, res, next) => {
 if (process.env.CORS_ORIGIN) app.use(require('cors')({ origin: process.env.CORS_ORIGIN.split(',').map((s) => s.trim()) }));
 
 app.use(express.json({ limit: '100kb' }));
-app.use(attachUser); // populates req.user (Firebase) or req.admin (admin session) when a valid token is sent
+app.use(attachUser); // populates req.user (Firebase Auth) when a valid token is sent
 
 // ---------------- API ----------------
 const api = express.Router();
@@ -46,12 +45,8 @@ api.get('/config', (_req, res) => res.json({
     appId: process.env.FIREBASE_APP_ID || '',
   },
   authEnabled: isConfigured(),               // customer accounts (Firebase)
-  adminLogin: adminAuth.configured(),        // admin username / password from the server variables
-  adminLoginReason: adminAuth.status().reason, // why not (never the values), e.g. 'short-password'
+  adminEmails: adminEmailsConfigured(),      // ADMIN_EMAILS is set, so a verified owner email can become admin
 }));
-
-// Admin username/password sign-in (rate-limited inside).
-api.post('/admin-login', adminAuth.login);
 
 const formLimit = rateLimit({ windowMs: 10 * 60 * 1000, max: 15, message: 'Too many submissions. Please try again in a few minutes.' });
 api.post(['/inquiries', '/newsletter', '/live-inquiries'], formLimit);
@@ -120,16 +115,14 @@ app.use((err, req, res, _next) => {
 const PORT = process.env.PORT || 3000;
 
 async function start() {
-  const adm = adminAuth.status();
-  if (adm.ok) console.log('[admin] sign-in is enabled for user "' + (process.env.ADMIN_USERNAME || '').trim() + '"');
-  else console.warn('[admin] sign-in is DISABLED: ' + adminAuth.explain(adm.reason) + ' Set it in the service Variables and redeploy.');
+  if (!adminEmailsConfigured()) console.warn('[admin] ADMIN_EMAILS is not set: nobody can become the first admin. Set it to the owner email(s) in the service Variables.');
   try {
     if (process.env.DATABASE_URL) await migrate();
     else console.warn('[start] DATABASE_URL not set - skipping migrate. The API will error until Postgres is connected.');
   } catch (err) {
     console.error('[start] migration failed (continuing to boot):', err.message);
   }
-  const server = app.listen(PORT, () => console.log(`AutoDirect listening on :${PORT}`));
+  const server = app.listen(PORT, () => console.log(`Direct Auto listening on :${PORT}`));
 
   // Railway stops containers with SIGTERM: finish in-flight requests, then close the DB pool.
   const stop = () => {

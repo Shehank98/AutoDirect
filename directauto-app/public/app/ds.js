@@ -1,4 +1,4 @@
-/* AutoDirect design system components (React, no build step). Exposed as window.AD. */
+/* Direct Auto design system components (React, no build step). Exposed as window.AD. */
 (function () {
   "use strict";
   var R = window.React;
@@ -71,12 +71,12 @@
   /* Seasons: Admin > Seasons turns on one festive look (falling effect, decorations on buttons, greeting banner,
      optional colours), optionally only between two dates. */
   var SEASONS = {
-    christmas: { name: "Christmas", emoji: "🎄", effect: "snow", effectName: "Snowfall", decor: "Santa hats", brand: "#9e1b2b", accent: "#1f7a4a", message: "🎄 Merry Christmas from all of us at AutoDirect! Wishing you and your family a joyful season." },
-    newyear: { name: "New Year", emoji: "🎆", effect: "confetti", effectName: "Confetti", decor: "Gold stars", brand: "#1d2b64", accent: "#b8860b", message: "🎆 Happy New Year from AutoDirect! Here’s to a great year ahead." },
-    avurudu: { name: "Sinhala & Tamil New Year", emoji: "🌼", effect: "petals", effectName: "Falling petals", decor: "Flowers", brand: "#b4440e", accent: "#0f766e", message: "🌼 Subha Aluth Avuruddak Wewa! Happy Sinhala & Tamil New Year from AutoDirect." },
-    easter: { name: "Easter", emoji: "🐣", effect: "eggs", effectName: "Falling Easter eggs", decor: "Easter eggs", brand: "#6a4c93", accent: "#b7791f", message: "🐣 Happy Easter from AutoDirect! Wishing you a blessed and joyful Easter." },
-    deepavali: { name: "Deepavali", emoji: "🪔", effect: "sparkles", effectName: "Golden sparkles", decor: "Oil lamps", brand: "#a63a00", accent: "#7a1f5c", message: "🪔 Happy Deepavali from AutoDirect! May the festival of lights brighten your home." },
-    vesak: { name: "Vesak", emoji: "🏮", effect: "lights", effectName: "Glowing lights", decor: "Lanterns", brand: "#7a5200", accent: "#0e4f45", message: "🏮 Wishing you a peaceful and blessed Vesak from the AutoDirect team." }
+    christmas: { name: "Christmas", emoji: "🎄", effect: "snow", effectName: "Snowfall", decor: "Santa hats", brand: "#9e1b2b", accent: "#1f7a4a", message: "🎄 Merry Christmas from all of us at Direct Auto! Wishing you and your family a joyful season." },
+    newyear: { name: "New Year", emoji: "🎆", effect: "confetti", effectName: "Confetti", decor: "Gold stars", brand: "#1d2b64", accent: "#b8860b", message: "🎆 Happy New Year from Direct Auto! Here’s to a great year ahead." },
+    avurudu: { name: "Sinhala & Tamil New Year", emoji: "🌼", effect: "petals", effectName: "Falling petals", decor: "Flowers", brand: "#b4440e", accent: "#0f766e", message: "🌼 Subha Aluth Avuruddak Wewa! Happy Sinhala & Tamil New Year from Direct Auto." },
+    easter: { name: "Easter", emoji: "🐣", effect: "eggs", effectName: "Falling Easter eggs", decor: "Easter eggs", brand: "#6a4c93", accent: "#b7791f", message: "🐣 Happy Easter from Direct Auto! Wishing you a blessed and joyful Easter." },
+    deepavali: { name: "Deepavali", emoji: "🪔", effect: "sparkles", effectName: "Golden sparkles", decor: "Oil lamps", brand: "#a63a00", accent: "#7a1f5c", message: "🪔 Happy Deepavali from Direct Auto! May the festival of lights brighten your home." },
+    vesak: { name: "Vesak", emoji: "🏮", effect: "lights", effectName: "Glowing lights", decor: "Lanterns", brand: "#7a5200", accent: "#0e4f45", message: "🏮 Wishing you a peaceful and blessed Vesak from the Direct Auto team." }
   };
   function today() { var n = new Date(); return n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"); }
   // The season in force right now (or null): chosen in the admin and, if dates are set, inside them.
@@ -232,8 +232,7 @@
   /* ---------- Logo ---------- */
   function Logo(p) {
     return h("span", { className: cx("ad-logo", p.inverse && "ad-logo--inverse", p.className), style: { fontSize: p.size || 22 } },
-      h("span", { className: "ad-logo__seal", "aria-hidden": true }, "直"),
-      h("span", { className: "ad-logo__word" }, "Auto", h("b", null, "Direct")),
+      h("span", { className: "ad-logo__word" }, "Direct ", h("b", null, "Auto")),
       p.suffix ? h("span", { className: "ad-logo__tld" }, p.suffix) : null);
   }
 
@@ -267,6 +266,14 @@
   function StatusBadge(p) {
     var m = STATUS[p.status] || ["neutral", null];
     return h(Badge, { tone: m[0], icon: m[1], className: p.className }, p.status);
+  }
+  // The one bar on a car's photo: the label staff chose, else the status when it is not simply "Available".
+  function vehicleLabel(v) {
+    var t = (v.label || "").trim();
+    if (!t && v.status && v.status !== "Available") t = v.status;
+    if (!t) return null;
+    var low = t.toLowerCase();
+    return { text: t, tone: /sold/.test(low) ? "sold" : /reserved|in transit/.test(low) ? "warn" : /new|hot|reduced|special|landed|offer/.test(low) ? "hot" : "brand" };
   }
   function GradeSeal(p) {
     var sz = p.size || 56;
@@ -381,7 +388,7 @@
       { id: "sheet", label: "Reading an auction sheet", text: "Grades & damage codes decoded" },
       { id: "vocab", label: "Import vocabulary", text: "FOB, CIF, LC and more" }] },
     { id: "compare", label: "Compare" },
-    { id: "about", label: "About" },
+    { id: "about", label: "About", hidden: true },
     { id: "contact", label: "Contact" }
   ];
   function HREF(id) { return HOOKS.href ? HOOKS.href(id) : "#"; }
@@ -400,9 +407,9 @@
         h("span", { className: "ad-topbar__sp" }),
         h("span", { className: "ad-topbar__live" }, h("span", { className: "ad-pulse", "aria-hidden": true }), T("topbarText", "Japan auction imports for Sri Lanka")))),
       h("div", { className: "ad-wrap ad-nav" },
-        h("a", { href: HREF("home"), className: "ad-nav__brand", "aria-label": "AutoDirect home", onClick: go("home") }, h(Logo, { size: 22 })),
+        h("a", { href: HREF("home"), className: "ad-nav__brand", "aria-label": "Direct Auto home", onClick: go("home") }, h(Logo, { size: 22 })),
         h("nav", { className: cx("ad-nav__links", open && "is-open"), "aria-label": "Main" },
-          NAV.map(function (n) {
+          NAV.filter(function (n) { return !n.hidden || SITE.showAbout === true; }).map(function (n) {
             var isActive = active === n.id || (n.children && n.children.some(function (c) { return c.id === active; }));
             if (n.children) {
               return h("div", { key: n.id, className: "ad-nav__dd" },
@@ -446,7 +453,7 @@
     }
     var cols = [
       ["Buy", ["Ex Stock", "Live auction", "Compare vehicles", "Request a bid"]],
-      ["Learn", ["How to buy", "Reading an auction sheet", "Import vocabulary", "About us", "Contact us"]],
+      ["Learn", ["How to buy", "Reading an auction sheet", "Import vocabulary", "About us", "Contact us"].filter(function (x) { return x !== "About us" || SITE.showAbout === true; })],
       ["Account", ["Sign in", "Create account", "My inquiries", "Auction requests"]]
     ].filter(function (c) { return c[0] !== "Account" || (HOOKS.authOn && HOOKS.authOn()); });
     return h("footer", { className: "ad-footer" },
@@ -474,7 +481,7 @@
         h("div", { className: "ad-footer__makes" }, h("span", { className: "ad-label" }, "Popular makes"),
           Object.keys(MAKES).slice(0, 8).map(function (m) { return h("a", { key: m, href: HREF("stock") + "?make=" + encodeURIComponent(m), onClick: function (e) { e.preventDefault(); p.onNavigate && p.onNavigate("stock", { make: m }); } }, m); })),
         h("div", { className: "ad-footer__bottom" },
-          h("span", null, "© " + new Date().getFullYear() + " AutoDirect (Pvt) Ltd. All rights reserved."),
+          h("span", null, "© " + new Date().getFullYear() + " Direct Auto (Pvt) Ltd. All rights reserved."),
           h("span", null, h("a", { href: SITE.instagram, target: "_blank", rel: "noopener" }, "Instagram"), " · ", h("a", { href: HREF("admin"), onClick: function (e) { e.preventDefault(); p.onNavigate && p.onNavigate("admin"); } }, "Staff admin")))));
   }
 
@@ -539,13 +546,12 @@
     var tabs = h(Tabs, { tabs: [{ id: "stock", label: "In Ex Stock", icon: "car" }, { id: "auction", label: "Japan auctions", icon: "gavel" }], value: f.mode, onChange: function (x) { setF(Object.assign({}, f, { mode: x })); }, label: "Search in", className: "ad-hb__tabs" });
 
     if (!stock) {
+      // Japan auctions: browse the live auction window right here.
       return h("div", { className: "ad-hb" }, tabs,
-        h("form", { className: "ad-hb__bar ad-hb__bar--auction", onSubmit: go },
-          sel("Make", "Make", Object.keys(ALL_MAKES), "make"), sel("Model", f.make ? "Any " + f.make : "Model", models, "model", !f.make),
-          h(TextField, { label: "Chassis code", placeholder: "Chassis code, e.g. NKE165", mono: true, className: "ad-hb__f", value: f.chassis, onChange: function (ev) { set("chassis")(ev.target.value.toUpperCase()); } }),
-          sel("Model year", "Model year", YEARS, "yFrom"),
-          h(Button, { type: "submit", variant: "accent", icon: "search", className: "ad-hb__go" }, "Search auctions")),
-        h("p", { className: "ad-small ad-muted" }, "We search this week’s USS, TAA and JU lots for you and send every auction sheet, translated, before any bid."));
+        SITE.liveAuctionUrl ? h(LiveAuctionFrame, { url: SITE.liveAuctionUrl, hint: SITE.liveAuctionHint })
+          : h(Empty, { icon: "gavel", title: "Live auctions aren’t set up yet", text: "Tell us what you want and we’ll shortlist matching lots from this week’s Japanese auctions." }),
+        h("div", { className: "ad-hb__more" }, h("span", { className: "ad-muted" }, "Found a car you like? Send us the lot and we’ll bid for you."),
+          h(Button, { variant: "accent", icon: "gavel", onClick: p.onRequest }, "Request a bid")));
     }
 
     // Sidebar list (desktop) and brand chips (phone) share the same data.
@@ -609,9 +615,9 @@
     return h("article", { className: cx("ad-vcard", p.layout === "row" && "ad-vcard--row", v.status === "Sold" && "is-sold", p.className) },
       h("div", { className: "ad-vcard__media" },
         v.img ? h("img", { src: v.img, alt: (title(v) + " " + v.grade).trim(), loading: "lazy" }) : h(PhotoPending, null),
-        h("div", { className: "ad-vcard__tags" }, h(StatusBadge, { status: v.status }), v.isNew ? h(Badge, { tone: "highlight" }, "New arrival") : null),
+        vehicleLabel(v) ? h("div", { className: "ad-vcard__bar is-" + vehicleLabel(v).tone }, vehicleLabel(v).text) : null,
         p.onSave ? h("button", { type: "button", className: cx("ad-vcard__save", p.saved && "is-on"), "aria-pressed": !!p.saved, "aria-label": (p.saved ? "Remove " : "Save ") + title(v), onClick: p.onSave }, h(Icon, { name: "heart", size: 18 })) : null,
-        v.auctionGrade ? h(GradeSeal, { grade: v.auctionGrade, interior: v.interior, size: 50, className: "ad-vcard__seal" }) : null),
+        h("button", { type: "button", className: "ad-vcard__ask", "aria-label": "Ask the price of " + title(v), onClick: function (e) { e.stopPropagation(); (p.onPrice || p.onOpen) && (p.onPrice || p.onOpen)(v); } }, "Price", h(Icon, { name: "chevron-right", size: 14 }))),
       h("div", { className: "ad-vcard__body" },
         h("div", { className: "ad-vcard__meta ad-mono" }, v.id, h("span", { "aria-hidden": true }, "·"), v.chassis),
         h("h3", { className: "ad-vcard__title" }, h("a", { href: "/our-stock/" + encodeURIComponent(v.seo || v.id), onClick: function (e) { e.preventDefault(); p.onOpen && p.onOpen(v); } }, title(v)), h("span", null, v.grade)),
@@ -727,7 +733,7 @@
         list.length ? h("div", { className: cx("ad-stock__grid", view === "list" && "is-list") }, list.map(function (v) {
           return h(VehicleCard, { key: v.id, vehicle: v, layout: view === "list" ? "row" : "card", compared: cmp.indexOf(v.id) >= 0, compareDisabled: cmp.length >= 4,
             onCompare: function () { toggleCmp(v.id); }, saved: saved.indexOf(v.id) >= 0,
-            onSave: function () { p.onToggleSave && p.onToggleSave(v.id); }, onOpen: p.onOpen });
+            onSave: function () { p.onToggleSave && p.onToggleSave(v.id); }, onOpen: p.onOpen, onPrice: p.onPrice });
         })) : h(Empty, { title: "Nothing matches those filters", text: "Loosen a filter, or let us bid for the exact car at this week’s Japan auctions." },
           h("div", { className: "ad-row" }, h(Button, { variant: "secondary", onClick: clearAll }, "Clear filters"), h(Button, { variant: "accent", icon: "gavel", onClick: p.onRequest }, "Request from auction"))),
         h(CompareTray, { items: cmpItems, onRemove: toggleCmp, onClear: function () { p.onClearCmp && p.onClearCmp(); }, onCompare: function () { p.onCompare && p.onCompare(cmpItems); } })));
@@ -875,7 +881,7 @@
       ev.preventDefault();
       var x = {};
       if (form.name.trim().length < 2) x.name = "Tell us your name.";
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) x.email = "Enter a valid email, e.g. name@gmail.com.";
+      if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) x.email = "That email looks wrong. Leave it empty if you prefer.";
       if (!/^(\+94|0)\s?7\d[\s-]?\d{3}[\s-]?\d{4}$/.test(form.phone.trim())) x.phone = "Use a Sri Lankan mobile, e.g. 077 123 4567.";
       if (kind === "viewing" && !form.date) x.date = "Pick a day for your visit.";
       setErrs(x);
@@ -896,9 +902,9 @@
       h("div", { className: "ad-form__ctx" }, v.img ? h("img", { src: v.img, alt: "" }) : null, h("div", null, h("strong", null, title(v)), h("span", { className: "ad-mono ad-muted" }, v.id + " · " + lkr(v.price)))),
       errs.form ? h("p", { className: "ad-field__error", role: "alert" }, h(Icon, { name: "info", size: 14 }), errs.form) : null,
       h("div", { className: "ad-form__grid" },
-        h(TextField, { label: "Full name", autoComplete: "name", value: form.name, onChange: set("name"), error: errs.name }),
-        h(TextField, { label: "Mobile", type: "tel", autoComplete: "tel", placeholder: "077 123 4567", value: form.phone, onChange: set("phone"), error: errs.phone }),
-        h(TextField, { label: "Email", type: "email", autoComplete: "email", value: form.email, onChange: set("email"), error: errs.email, className: kind === "viewing" ? "" : "ad-span2" }),
+        h(TextField, { label: "Full name *", autoComplete: "name", required: true, "aria-required": true, value: form.name, onChange: set("name"), error: errs.name }),
+        h(TextField, { label: "Mobile *", type: "tel", autoComplete: "tel", required: true, "aria-required": true, placeholder: "077 123 4567", value: form.phone, onChange: set("phone"), error: errs.phone }),
+        h(TextField, { label: "Email", optional: true, type: "email", autoComplete: "email", value: form.email, onChange: set("email"), error: errs.email, className: kind === "viewing" ? "" : "ad-span2" }),
         kind === "viewing" ? h(TextField, { label: "Preferred day", type: "date", value: form.date, onChange: set("date"), error: errs.date }) : null,
         h("div", { className: "ad-span2" }, h("div", { className: "ad-field__label" }, "Reply on"), h(ChipGroup, { label: "Preferred contact", value: pref, onChange: setPref, options: ["WhatsApp", "Call", "Email"] })),
         h(TextField, { label: "Message", multiline: true, rows: 3, value: form.msg, onChange: set("msg"), className: "ad-span2", optional: true })),
@@ -1040,8 +1046,8 @@
               h("div", null, h("span", { className: "ad-label" }, "Years"), h("b", null, d.yFrom + "–" + d.yTo)),
               h("div", null, h("span", { className: "ad-label" }, "Budget"), h("b", null, "up to " + lkr(d.budget))),
               h("div", null, h("span", { className: "ad-label" }, "Condition"), h("b", null, "Grade " + d.grade + "+ · ≤ " + num(d.km) + " km"))),
-            h(TextField, { label: "Full name", value: d.name, onChange: function (ev) { set("name", ev.target.value); }, error: errs.name }),
-            h(TextField, { label: "Mobile", type: "tel", placeholder: "077 123 4567", value: d.phone, onChange: function (ev) { set("phone", ev.target.value); }, error: errs.phone }),
+            h(TextField, { label: "Full name *", required: true, "aria-required": true, value: d.name, onChange: function (ev) { set("name", ev.target.value); }, error: errs.name }),
+            h(TextField, { label: "Mobile *", type: "tel", required: true, "aria-required": true, placeholder: "077 123 4567", value: d.phone, onChange: function (ev) { set("phone", ev.target.value); }, error: errs.phone }),
             h("div", { className: "ad-span2" }, h(Checkbox, { checked: d.ack, onChange: function (v) { set("ack", v); }, label: "I understand bidding starts after a 100% refundable deposit." }),
               errs.ack ? h("p", { className: "ad-field__error" }, h(Icon, { name: "info", size: 14 }), errs.ack) : null)),
       errs.form ? h("p", { className: "ad-field__error", role: "alert" }, h(Icon, { name: "info", size: 14 }), errs.form) : null,
@@ -1304,8 +1310,8 @@
         : h("form", { className: "ad-form", onSubmit: submit, noValidate: true },
           h(Tabs, { block: true, label: "Topic", tabs: [{ id: "general", label: "General" }, { id: "sell", label: "Sell your car" }, { id: "visit", label: "Visit" }], value: topic, onChange: function (x) { setTopic(x); setErrs({}); } }),
           h("div", { className: "ad-form__grid" },
-            h(TextField, { label: "Name", value: d.name, onChange: set("name"), error: errs.name }),
-            h(TextField, { label: "Mobile", type: "tel", placeholder: "077 123 4567", value: d.phone, onChange: set("phone"), error: errs.phone }),
+            h(TextField, { label: "Name *", required: true, "aria-required": true, value: d.name, onChange: set("name"), error: errs.name }),
+            h(TextField, { label: "Mobile *", type: "tel", required: true, "aria-required": true, placeholder: "077 123 4567", value: d.phone, onChange: set("phone"), error: errs.phone }),
             topic === "sell" ? h(Frag, null,
               h(SelectField, { label: "Make", placeholder: "Choose", options: Object.keys(ALL_MAKES), value: d.make, onChange: set("make"), error: errs.make }),
               h(TextField, { label: "Model", value: d.model, onChange: set("model") }),
@@ -1359,7 +1365,7 @@
   }
 
   var AD = {
-    Logo: Logo, Icon: Icon, Button: Button, Badge: Badge, StatusBadge: StatusBadge, GradeSeal: GradeSeal, LotTag: LotTag,
+    Logo: Logo, Icon: Icon, Button: Button, Badge: Badge, StatusBadge: StatusBadge, vehicleLabel: vehicleLabel, GradeSeal: GradeSeal, LotTag: LotTag,
     TextField: TextField, SelectField: SelectField, RangeSlider: RangeSlider, ChipGroup: ChipGroup, Switch: Switch, Checkbox: Checkbox, Tabs: Tabs,
     SiteHeader: SiteHeader, SiteFooter: SiteFooter, HomeStock: HomeStock, VehicleCard: VehicleCard, StockBrowser: StockBrowser,
     CompareTray: CompareTray, CompareTable: CompareTable, VehicleGallery: VehicleGallery, SpecSheet: SpecSheet, LoanCalculator: LoanCalculator,

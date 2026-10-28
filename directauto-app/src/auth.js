@@ -5,7 +5,6 @@
 // (keyed by Firebase UID) so relational data (inquiries, etc.) can reference the user.
 const { verifyIdToken, isConfigured } = require('./firebase');
 const db = require('../db/pool');
-const adminAuth = require('./adminAuth');
 
 // Emails listed here are granted admin on first login (comma-separated env var).
 const ADMIN_EMAILS = String(process.env.ADMIN_EMAILS || '')
@@ -36,12 +35,6 @@ async function attachUser(req, _res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return next();
-  // Admin session from ADMIN_USERNAME / ADMIN_PASSWORD (works without Firebase).
-  if (token.startsWith('adm.')) {
-    const a = adminAuth.verify(token);
-    if (a) req.admin = a; else req.authError = 'Admin session expired';
-    return next();
-  }
   if (!isConfigured()) return next();
   try {
     const decoded = await verifyIdToken(token);
@@ -61,10 +54,12 @@ function requireAuth(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
-  if (req.admin) return next();
   if (!req.user) return res.status(401).json({ error: 'Please sign in to continue.' });
   if (!req.user.is_admin) return res.status(403).json({ error: 'Admin access required.' });
   next();
 }
 
-module.exports = { attachUser, requireAuth, requireAdmin };
+// True when ADMIN_EMAILS names at least one owner, so the first admin can be created.
+const adminEmailsConfigured = () => ADMIN_EMAILS.length > 0;
+
+module.exports = { attachUser, requireAuth, requireAdmin, adminEmailsConfigured };

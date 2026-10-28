@@ -2,7 +2,7 @@
 // an email goes to NOTIFY_TO. Configure with SMTP_* variables; with none set, alerts are simply off.
 //
 //   SMTP_HOST, SMTP_PORT (587 default), SMTP_SECURE (true for port 465), SMTP_USER, SMTP_PASS
-//   MAIL_FROM   "AutoDirect <alerts@yourdomain.lk>"   (defaults to SMTP_USER)
+//   MAIL_FROM   "Direct Auto <alerts@yourdomain.lk>"   (defaults to SMTP_USER)
 //   NOTIFY_TO   comma separated recipients (required), NOTIFY_CC, NOTIFY_BCC
 //
 // Sending never blocks or fails a customer's request: errors are logged and swallowed.
@@ -41,14 +41,14 @@ async function notify(subject, fields, { replyTo } = {}) {
   <table style="border-collapse:collapse;width:100%">${rows.map((r) =>
     `<tr><td style="padding:6px 12px 6px 0;color:#5a5f66;vertical-align:top;white-space:nowrap">${esc(r[0])}</td><td style="padding:6px 0;white-space:pre-wrap">${esc(r[1])}</td></tr>`).join('')}</table>
   ${adminUrl ? `<p style="margin-top:18px"><a href="${esc(adminUrl)}">Open the admin panel</a></p>` : ''}
-  <p style="color:#857e70;font-size:12px;margin-top:18px">Sent automatically by the AutoDirect website.</p></div>`;
+  <p style="color:#857e70;font-size:12px;margin-top:18px">Sent automatically by the Direct Auto website.</p></div>`;
   const text = rows.map((r) => `${r[0]}: ${r[1]}`).join('\n') + (adminUrl ? `\n\nAdmin: ${adminUrl}` : '');
   try {
     await getTransport().sendMail({
       from: process.env.MAIL_FROM || process.env.SMTP_USER,
       to: to(), cc: list(process.env.NOTIFY_CC), bcc: list(process.env.NOTIFY_BCC),
       replyTo: replyTo && EMAIL_RE.test(replyTo) ? replyTo : undefined,   // staff can just hit Reply
-      subject: `[AutoDirect] ${subject}`.replace(/[\r\n]+/g, ' '), text, html,
+      subject: `[Direct Auto] ${subject}`.replace(/[\r\n]+/g, ' '), text, html,
     });
     return { ok: true };
   } catch (e) {
