@@ -962,19 +962,21 @@
   /* ---------- LiveAuctionFrame: the JPCenter auction viewer, shown inside our page ---------- */
   function LiveAuctionFrame(p) {
     var s = useState(true), loading = s[0], setLoading = s[1];
+    var k = useState(0), tick = k[0], setTick = k[1];
     var url = p.url;
     // Never leave the spinner up if the third-party page is slow to report that it finished loading.
-    useEffect(function () { var t = setTimeout(function () { setLoading(false); }, 8000); return function () { clearTimeout(t); }; }, []);
+    useEffect(function () { setLoading(true); var t = setTimeout(function () { setLoading(false); }, 8000); return function () { clearTimeout(t); }; }, [tick]);
+    // Visitors stay on our site: no "open in a new tab" link, and the embedded page may not open pop-ups or new tabs.
     return h("div", { className: "ad-live" },
       h("div", { className: "ad-live__bar" },
         h("span", { className: "ad-live__src" }, h("span", { className: "ad-pulse", "aria-hidden": true }), "Live Japan auctions"),
-        h("a", { className: "ad-link ad-small", href: url, target: "_blank", rel: "noopener" }, "Open in a new tab")),
+        h("button", { type: "button", className: "ad-link ad-small", onClick: function () { setTick(tick + 1); } }, "Reload")),
       p.hint ? h("p", { className: "ad-live__hint" }, h(Icon, { name: "info", size: 16 }), p.hint) : null,
       h("div", { className: "ad-live__frame" },
         loading ? h("div", { className: "ad-live__loading", role: "status" }, h("span", { className: "ad-spinner", "aria-hidden": true }), "Loading the auction viewer…") : null,
-        h("iframe", { src: url, title: "Live Japan car auctions", loading: "eager", onLoad: function () { setLoading(false); }, referrerPolicy: "no-referrer-when-downgrade",
-          sandbox: "allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads", allow: "fullscreen" })),
-      h("p", { className: "ad-small ad-muted" }, "Nothing showing? Some browsers block sign-in inside embedded pages. ", h("a", { className: "ad-link", href: url, target: "_blank", rel: "noopener" }, "Open the auction in a new tab"), " instead."));
+        h("iframe", { key: tick, src: url, title: "Live Japan car auctions", loading: "eager", onLoad: function () { setLoading(false); }, referrerPolicy: "no-referrer-when-downgrade",
+          sandbox: "allow-scripts allow-forms allow-same-origin allow-downloads", allow: "fullscreen" })),
+      h("p", { className: "ad-small ad-muted" }, "Nothing showing? Press Reload. Still stuck? ", h("a", { className: "ad-link", href: "/contact-us", onClick: function (e) { e.preventDefault(); HOOKS.go && HOOKS.go("contact"); } }, "Tell us"), " and we’ll help you find the car."));
   }
 
   /* ---------- AuctionSheetDecoder ---------- */
