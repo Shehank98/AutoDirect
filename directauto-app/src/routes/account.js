@@ -2,6 +2,7 @@
 const express = require('express');
 const db = require('../../db/pool');
 const { requireAuth, ownerEmails } = require('../auth');
+const authmail = require('../authmail');
 const router = express.Router();
 
 router.use(requireAuth);
@@ -18,6 +19,12 @@ router.get('/me', async (req, res, next) => {
     }
     res.json({ ...req.user, admin_pending: pending });
   } catch (e) { next(e); }
+});
+
+// POST /api/account/send-verification - email a "confirm your email" link from our own address.
+router.post('/send-verification', async (req, res) => {
+  if (req.firebaseUser && req.firebaseUser.email_verified) return res.json({ ok: true, alreadyVerified: true });
+  res.json(await authmail.sendVerification({ email: req.user.email, name: req.user.name }));
 });
 
 // PUT /api/account/me  - update profile details.

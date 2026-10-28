@@ -40,10 +40,10 @@
   /* ------------------------------------------------------------------ routes */
   var PATHS = { home: "/", stock: "/our-stock", compare: "/compare", auction: "/live-auction", request: "/request-a-bid", buy: "/how-to-buy",
     sheet: "/how-to-read-auction-sheet", vocab: "/vocabulary", about: "/about-us", contact: "/contact-us", login: "/login", register: "/register",
-    account: "/my-account", admin: "/admin" };
+    account: "/my-account", admin: "/admin", authaction: "/auth-action" };
   var TITLES = { home: "Japanese auction car imports for Sri Lanka", stock: "Ex Stock", compare: "Compare vehicles", auction: "Live auction", request: "Request a bid",
     buy: "How to buy", sheet: "How to read an auction sheet", vocab: "Import vocabulary", about: "About us", contact: "Contact us", login: "Sign in", register: "Create account",
-    account: "My account", admin: "Admin" };
+    account: "My account", admin: "Admin", authaction: "Your account" };
   var ACCOUNT_TABS = { "live-auction-request": "auction", "profile-settings": "profile", "my-inquiries": "inquiries" };
 
   hooks.href = function (id) { return PATHS[id] || "/"; };
@@ -55,6 +55,7 @@
     if (m) { try { return { page: "vehicle", seo: decodeURIComponent(m[1]), tab: q.get("tab") || "" }; } catch (e) { return { page: "notfound" }; } }
     if (/^\/my-account(\/|$)/.test(path)) return { page: "account", tab: ACCOUNT_TABS[path.split("/")[2]] || q.get("tab") || "overview" };
     if (/^\/admin(\/|$)/.test(path)) return { page: "admin" };
+    if (path === "/auth-action") return { page: "authaction", mode: q.get("mode") || "", code: q.get("oobCode") || "" };
     for (var k in PATHS) if (PATHS[k] === path) {
       if (k === "stock") {
         var f = {};
@@ -103,18 +104,29 @@
   function fbError(e) { return new Error(FRIENDLY[e.code] || e.message || "Something went wrong."); }
   function needFb() { if (!fb) throw new Error("Sign-in isn’t available yet. Please call us instead."); return fb; }
 
+  // "Confirm your email" email from our own address (through the server); Firebase's own email is only the fallback.
+  function sendVerificationMail() {
+    var fu = fb && fb.auth().currentUser;
+    if (!fu) return Promise.reject(new Error("Please sign in first."));
+    function viaFirebase() { return fu.sendEmailVerification().then(function () { return { ok: true }; }); }
+    return api.post("/api/account/send-verification", {}).then(function (r) { return r && (r.ok || r.alreadyVerified) ? r : viaFirebase(); }, function (e) { if (e.status === 429) throw e; return viaFirebase(); });
+  }
+
   hooks.auth = function (mode, d) {
     return Promise.resolve().then(function () {
       var f = needFb(), au = f.auth();
-      if (mode === "forgot") return au.sendPasswordResetEmail(d.email).then(function () { return ""; });
+      if (mode === "forgot") {
+        var viaFirebase = function () { return au.sendPasswordResetEmail(d.email).then(function () { return ""; }); };
+        return api.post("/api/auth/forgot", { email: d.email }).then(function (r) { return r && r.ok ? "" : viaFirebase(); }, function (e) { if (e.status === 429 || e.status === 400) throw e; return viaFirebase(); });
+      }
       if (mode === "login") {
         return au.setPersistence(d.remember ? f.auth.Auth.Persistence.LOCAL : f.auth.Auth.Persistence.SESSION)
           .then(function () { return au.signInWithEmailAndPassword(d.email, d.pw); }).then(function (c) { return c.user.displayName || d.email.split("@")[0]; });
       }
       return au.createUserWithEmailAndPassword(d.email, d.pw).then(function (c) {
-        try { c.user.sendEmailVerification(); } catch (e) { /* best effort */ }
         return c.user.updateProfile({ displayName: d.name }).then(function () { return c.user.getIdToken(true); })
           .then(function () { return api.put("/api/account/me", { name: d.name, phone: d.phone || "", address: "" }).catch(function () {}); })
+          .then(function () { return sendVerificationMail().catch(function () {}); })   // best effort
           .then(function () { return d.name; });
       });
     }).catch(function (e) { throw e.code ? fbError(e) : e; });
@@ -377,11 +389,62 @@
   }
 
   /* Staff sign-in with the ADMIN_USERNAME / ADMIN_PASSWORD server variables. */
+  // The page the emailed links open: confirm the email address, or choose a new password.
+  function AuthAction(p) {
+    var st = useState("working"), state = st[0], setState = st[1];
+    var ms = useState(""), msg = ms[0], setMsg = ms[1];
+    var em = useState(""), email = em[0], setEmail = em[1];
+    var pw = useState({ a: "", b: "" }), f = pw[0], setF = pw[1];
+    var bz = useState(false), busy = bz[0], setBusy = bz[1];
+    var ad = useState(false), isAdmin = ad[0], setIsAdmin = ad[1];
+    function oops(e) { setState("error"); setMsg((e && e.code === "auth/weak-password") ? "Choose a stronger password (at least 8 characters)." : /expired|invalid-action|used/i.test((e && (e.code + e.message)) || "") ? "This link has expired or was already used." : FRIENDLY[e && e.code] || (e && e.message) || "Something went wrong."); }
+    useEffect(function () {
+      authReady.then(function () {
+        if (!fb) { setState("error"); setMsg("Sign-in isn’t available right now. Please try again later."); return; }
+        var au = fb.auth();
+        if (!p.code) { setState("error"); setMsg("This link is incomplete. Open the email again and tap the button."); return; }
+        if (p.mode === "verifyEmail") {
+          au.applyActionCode(p.code).then(function () {
+            setState("verified");
+            var fu = au.currentUser;   // already signed in here: refresh so admin access is picked up
+            if (fu) fu.reload().then(function () { return fu.getIdToken(true); }).then(function () { return api.get("/api/account/me"); }).then(function (row) { me = row; p.onUser(row); setIsAdmin(!!row.is_admin); }).catch(function () {});
+          }, oops);
+        } else if (p.mode === "resetPassword") {
+          au.verifyPasswordResetCode(p.code).then(function (e) { setEmail(e); setState("reset"); }, oops);
+        } else { setState("error"); setMsg("This link isn’t recognised."); }
+      });
+    }, []);
+    function submit(ev) {
+      ev.preventDefault(); setMsg("");
+      if (f.a.length < 8) { setMsg("Use at least 8 characters."); return; }
+      if (f.a !== f.b) { setMsg("The two passwords don’t match."); return; }
+      setBusy(true);
+      fb.auth().confirmPasswordReset(p.code, f.a).then(function () { setBusy(false); setState("done"); }, function (e) { setBusy(false); oops(e); });
+    }
+    var body;
+    if (state === "working") body = [h("h2", { key: "t", className: "ad-h2" }, "One moment…"), h("p", { key: "p", className: "ad-muted" }, "Checking your link.")];
+    else if (state === "verified") body = [h("div", { key: "i", className: "ad-success__icon" }, h(A.Icon, { name: "check", size: 26, stroke: 2.2 })), h("h2", { key: "t", className: "ad-h2" }, "Email confirmed"),
+      h("p", { key: "p", className: "ad-muted" }, p.user ? "Thank you. Your email address is confirmed." : "Thank you. Your email address is confirmed. Sign in to continue."),
+      h("div", { key: "b", className: "ad-row" }, isAdmin ? h(A.Button, { icon: "settings", onClick: function () { p.nav("admin"); } }, "Open the admin") : null,
+        p.user ? h(A.Button, { variant: isAdmin ? "secondary" : "primary", onClick: function () { p.nav(isAdmin ? "home" : "account"); } }, isAdmin ? "Go to the website" : "Go to my account") : h(A.Button, { onClick: function () { p.signin(); } }, "Sign in"))];
+    else if (state === "reset") body = [h("h2", { key: "t", className: "ad-h2" }, "Choose a new password"), h("p", { key: "p", className: "ad-muted ad-small" }, "For " + email),
+      h("form", { key: "f", className: "ad-modal__form", onSubmit: submit, noValidate: true },
+        h(A.TextField, { label: "New password", type: "password", autoComplete: "new-password", value: f.a, onChange: function (e) { setF(Object.assign({}, f, { a: e.target.value })); }, hint: "At least 8 characters." }),
+        h(A.TextField, { label: "Repeat the password", type: "password", autoComplete: "new-password", value: f.b, onChange: function (e) { setF(Object.assign({}, f, { b: e.target.value })); } }),
+        msg ? h("p", { className: "ad-field__error", role: "alert" }, h(A.Icon, { name: "info", size: 14 }), msg) : null,
+        h(A.Button, { type: "submit", block: true, size: "l", loading: busy }, "Save password"))];
+    else if (state === "done") body = [h("div", { key: "i", className: "ad-success__icon" }, h(A.Icon, { name: "check", size: 26, stroke: 2.2 })), h("h2", { key: "t", className: "ad-h2" }, "Password changed"), h("p", { key: "p", className: "ad-muted" }, "You can now sign in with your new password."), h(A.Button, { key: "b", onClick: function () { p.signin(); } }, "Sign in")];
+    else body = [h("h2", { key: "t", className: "ad-h2" }, "This link doesn’t work"), h("p", { key: "p", className: "ad-field__error", role: "alert" }, h(A.Icon, { name: "info", size: 14 }), msg),
+      h("div", { key: "b", className: "ad-row" }, p.user && p.mode === "verifyEmail" ? h(A.Button, { onClick: function () { p.resend().then(function () { setMsg("A new email is on its way."); }, function (e) { setMsg(e.message); }); } }, "Send a new email") : null,
+        h(A.Button, { variant: "secondary", onClick: function () { p.signin(); } }, "Sign in"))];
+    return h("div", { className: "ad-wrap ad-authpage" }, h("div", { className: "ad-auth", style: { textAlign: "left" } }, h(A.Logo, { size: 20 }), body));
+  }
+
   // Shown to someone whose email is on the admin list but not verified yet, so they know exactly what is missing.
   function AdminPendingBar(p) {
     var st = useState(""), msg = st[0], setMsg = st[1], bz = useState(false), busy = bz[0], setBusy = bz[1];
     function check() { setBusy(true); setMsg(""); p.onCheck().then(function (row) { setBusy(false); if (!(row && row.is_admin)) setMsg("Still not verified. Open the link in the email first."); }, function (e) { setBusy(false); setMsg(e.message || "Couldn’t check just now."); }); }
-    function resend() { var fu = fb && fb.auth().currentUser; if (!fu) return; fu.sendEmailVerification().then(function () { setMsg("Verification email sent. Check your inbox and spam folder."); }, function (e) { setMsg(FRIENDLY[e.code] || e.message || "Couldn’t send the email."); }); }
+    function resend() { sendVerificationMail().then(function () { setMsg("Verification email sent. Check your inbox and spam folder."); }, function (e) { setMsg(FRIENDLY[e.code] || e.message || "Couldn’t send the email."); }); }
     return h("div", { className: "ad-pendingbar", role: "status" },
       h("span", { className: "ad-pendingbar__t" }, h(A.Icon, { name: "mail", size: 16 }), h("span", null, h("b", null, "Admin access is waiting for your email to be verified. "), "Open the verification email sent to ", p.email, ", then press Check again.", msg ? h("em", null, " " + msg) : null)),
       h("span", { className: "ad-row" }, h(A.Button, { size: "s", loading: busy, onClick: check }, "Check again"), h(A.Button, { size: "s", variant: "secondary", onClick: resend }, "Send the email again")));
@@ -406,7 +469,7 @@
     var u = p.user, st = useState(""), msg = st[0], setMsg = st[1], bz = useState(false), busy = bz[0], setBusy = bz[1];
     var fu = fb && fb.auth().currentUser, verified = !!(fu && fu.emailVerified);
     function recheck() { setBusy(true); setMsg(""); p.recheck().then(function () { setBusy(false); }, function (e) { setBusy(false); setMsg(e.message || "Couldn’t check just now."); }); }
-    function resend() { if (!fu) return; fu.sendEmailVerification().then(function () { setMsg("Verification email sent. Open it, tap the link, then press “Check again”."); }, function (e) { setMsg(e.message || "Couldn’t send the email."); }); }
+    function resend() { sendVerificationMail().then(function () { setMsg("Verification email sent. Open it, tap the link, then press “Check again”."); }, function (e) { setMsg(e.message || "Couldn’t send the email."); }); }
     return h("div", { className: "ad-wrap ad-authpage" }, h("div", { className: "ad-auth" },
       h(A.Logo, { size: 20 }),
       h("div", null, h("h2", { className: "ad-h2" }, "No admin access yet"), h("p", { className: "ad-muted ad-small" }, "You’re signed in as " + (u.email || "this account") + ", but it isn’t an admin account.")),
@@ -586,6 +649,7 @@
       else if (!user.is_admin) body = h(AdminDenied, { user: user, recheck: recheckAdmin, signOut: signOut });
       else body = h(Admin, Object.assign({ adminName: user.email, adminLabel: user.name }, common));
     }
+    else if (pg === "authaction") body = h(AuthAction, { key: route.code, mode: route.mode, code: route.code, user: user, nav: nav, resend: sendVerificationMail, signin: function () { if (fb) { nav("home"); setSignin(true); } else nav("login"); }, onUser: function (row) { me = row; setUser(row); } });
     else if (pg === "notfound") body = h(NotFound, common);
     else body = h(Home, Object.assign({ onSearch: function (q) {
       if (q.mode === "stock") {

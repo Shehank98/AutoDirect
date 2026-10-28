@@ -56,7 +56,7 @@ function render(req, catalog) {
   }
   if (!title) {
     const p = PAGES[pathname];
-    if (p) { [title, desc] = p; if (pathname === '/') { title = o.seoTitle || title; desc = DEFAULT_DESC; } } else if (pathname === '/login' || pathname === '/register' || pathname.startsWith('/my-account') || pathname.startsWith('/admin')) { title = pathname.startsWith('/admin') ? 'Admin' : 'My account'; desc = DEFAULT_DESC; }
+    if (p) { [title, desc] = p; if (pathname === '/') { title = o.seoTitle || title; desc = DEFAULT_DESC; } } else if (pathname === '/login' || pathname === '/register' || pathname === '/auth-action' || pathname.startsWith('/my-account') || pathname.startsWith('/admin')) { title = pathname.startsWith('/admin') ? 'Admin' : 'My account'; desc = DEFAULT_DESC; }
     else { status = 404; title = 'Page not found'; desc = DEFAULT_DESC; }
   }
   const fullTitle = pathname === '/' ? `${NAME} | ${title}` : `${title} | ${NAME}`;

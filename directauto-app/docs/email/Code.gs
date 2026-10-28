@@ -5,6 +5,8 @@
  *   inquiry, auction_request   -> an email to the team, and a "we received it" email to the customer
  *   newsletter                 -> an email to the team
  *   stage                      -> an email to the customer when their order moves to a new stage
+ *   verify_email               -> "Confirm your email" link, sent from your address (not Firebase's)
+ *   password_reset             -> "Reset your password" link, sent from your address
  *   test                       -> a test email to the team
  *
  * Setup steps are in SETUP.md. Script properties needed (Project settings > Script properties):
@@ -67,6 +69,23 @@ function doPost(e) {
       }));
     } else if (body.event === 'stage') {
       sent = sent.concat(stage_(site, d));
+    } else if (body.event === 'verify_email') {
+      // Account emails are always sent, even when "Emails to customers" is switched off in the admin.
+      sent = sent.concat(account_(site, d, {
+        subject: 'Confirm your email for Direct Auto',
+        title: 'Confirm your email',
+        intro: 'Hi ' + firstName_(d.name) + ', tap the button to confirm your email address. It takes a few seconds.',
+        label: 'Confirm email',
+        footnote: 'If you did not create an account with Direct Auto, you can ignore this email.'
+      }));
+    } else if (body.event === 'password_reset') {
+      sent = sent.concat(account_(site, d, {
+        subject: 'Reset your Direct Auto password',
+        title: 'Reset your password',
+        intro: 'We received a request to reset the password for your Direct Auto account. Tap the button to choose a new one.',
+        label: 'Choose a new password',
+        footnote: 'If you did not ask for this, you can ignore this email. Your password will stay the same.'
+      }));
     } else if (body.event === 'test') {
       sent = sent.concat(toTeam_(team, site, {
         subject: 'Direct Auto email test',
@@ -101,6 +120,18 @@ function receipt_(site, d, o) {
     title: 'We received your ' + (o.subject.indexOf('auction') > -1 ? 'request' : 'message'),
     intro: 'Hi ' + first + ', ' + o.intro.charAt(0).toLowerCase() + o.intro.slice(1),
     rows: o.rows, button: whatsapp_(site), audience: 'customer'
+  }), site.email);
+  return [d.email];
+}
+
+// Confirm-email and password-reset emails: one button, plus the plain link in case the button does not work.
+function account_(site, d, o) {
+  if (!d.email || !d.link) throw new Error('Missing email or link.');
+  if (!/^https?:\/\//.test(d.link)) throw new Error('The link must be a web address.');   // blocks odd schemes such as javascript:
+  send_([d.email], o.subject, page_(site, {
+    title: o.title, intro: o.intro, rows: [], button: { label: o.label, url: d.link },
+    note: 'The link can only be used once. If the button does not work, copy this address into your browser:<br><span style="word-break:break-all;color:#3b4047">' + esc_(d.link) + '</span><br><br>' + esc_(o.footnote),
+    audience: 'customer'
   }), site.email);
   return [d.email];
 }
@@ -154,6 +185,7 @@ function page_(site, o) {
     h += '</table>';
   }
   if (o.button) h += '<a href="' + esc_(o.button.url) + '" style="display:inline-block;background:' + BRAND + ';color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 20px;border-radius:8px">' + esc_(o.button.label) + '</a>';
+  if (o.note) h += '<p style="margin:18px 0 0;font-size:12px;line-height:1.6;color:#6b6f76">' + o.note + '</p>';
   h += '</div>';
   h += '<div style="padding:16px 28px;background:#faf9f6;border-top:1px solid #eeebe3;font-size:12px;line-height:1.6;color:#6b6f76">' +
        (o.audience === 'customer' ? 'Questions? Call ' + esc_(site.phone || '') + (site.whatsapp ? ' or message us on WhatsApp.' : '.') + '<br>' : '') +

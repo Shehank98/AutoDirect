@@ -55,6 +55,14 @@ api.use('/', require('./src/routes/taxonomy'));
 api.use('/', require('./src/routes/catalog'));
 api.use('/vehicles', require('./src/routes/vehicles'));
 api.use('/', require('./src/routes/inquiries'));
+// Password reset ("forgot password") email from our own address. Always answers ok so nobody can probe which emails exist.
+const authLimit = rateLimit({ windowMs: 10 * 60 * 1000, max: 6, message: 'Too many attempts. Please try again in a few minutes.' });
+api.post(['/auth/forgot', '/account/send-verification'], authLimit);
+api.post('/auth/forgot', async (req, res) => {
+  const email = String((req.body && req.body.email) || '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 200) return res.status(400).json({ error: 'Enter a valid email address.' });
+  res.json(await require('./src/authmail').sendReset(email));
+});
 api.use('/account', require('./src/routes/account'));
 api.use('/admin', require('./src/routes/admin'));
 

@@ -7,6 +7,8 @@ The website sends each event to a small Google Apps Script. The script sends the
 | A quote, viewing, contact or "sell my car" message | The team, and a receipt to the customer (if they gave an email) |
 | An auction request | The team, and a receipt to the customer (if they gave an email) |
 | A newsletter sign-up | The team |
+| Someone creates an account | The customer gets a "Confirm your email" link from **your** address |
+| Someone taps "Forgot password" | The customer gets a "Reset your password" link from **your** address |
 | You change the order stage in Admin (Bidding, Won, LC opened, Shipped, Arrived, Delivered) | The customer (if the request has an email) |
 
 ## 1. Create the script
@@ -36,8 +38,21 @@ SITE_URL=https://your-website-address
 
 Redeploy. Open **Admin > Inquiries** and press **Send test email**. The team address should receive "Direct Auto email test".
 
+## Account emails (confirm email and reset password)
+Firebase's own emails come from a generic `firebaseapp.com` address, and Gmail often files them under spam. With this script connected, the website asks Firebase for the secure link and sends the email itself, from your address, with a link on your own website (`/auth-action`).
+
+- Set `SITE_URL` to your real website address (for example `https://www.directautoimport.lk`) so the link shows your own domain.
+- Add that domain under Firebase **Authentication > Settings > Authorized domains**.
+- These two emails are always sent, even if you switch off "Emails to customers".
+- If the script is not connected or fails, the website quietly falls back to Firebase's own email, so sign-up and password reset never stop working.
+
+## Making the emails land in the inbox
+- **Best:** send from a Google Workspace address on your own domain (for example `alerts@directautoimport.lk`). Google signs the mail for your domain automatically. Plain Gmail also works well.
+- Keep the wording plain. The templates already avoid shouting, discount words and image-only layouts.
+- The very first email to a new address can still be doubted by Gmail. If a customer reports it in spam, ask them to press **Not spam** once, and later emails go to the inbox.
+
 ## Good to know
-- **Changing the script later:** after editing the code, click **Deploy > Manage deployments > Edit (pencil) > Version: New version > Deploy**. The URL stays the same.
+- **Changing the script later:** paste the new code over the old, **Save**, then click **Deploy > Manage deployments > Edit (pencil) > Version: New version > Deploy**. The URL stays the same. Forgetting the *New version* step is the usual reason a change does not take effect.
 - **Limits:** a free Gmail account can send about 100 emails a day, Google Workspace about 1,500. That is plenty for inquiries.
 - **Who the email comes from:** the Google account that owns the script. Replies to a customer's email go to the customer when you reply to the team email (the Reply-To is set to them).
 - **Customer emails off:** in **Admin > Site details > Emails to customers** you can switch off receipts and order-stage emails. Team emails always go out.

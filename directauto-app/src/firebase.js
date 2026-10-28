@@ -50,4 +50,19 @@ function bucket() {
   return sdk.storage().bucket();
 }
 
-module.exports = { init, isConfigured, verifyIdToken, bucket };
+// A one-time link for "verify email" or "reset password". We email it ourselves (see authmail.js), so the
+// message comes from the business address instead of Firebase's generic sender.
+async function actionLink(kind, email, continueUrl) {
+  const sdk = init();
+  if (!sdk) throw new Error('Firebase is not configured on the server');
+  const a = sdk.auth();
+  const make = (settings) => (kind === 'verify' ? a.generateEmailVerificationLink(email, settings) : a.generatePasswordResetLink(email, settings));
+  try { return await make(continueUrl ? { url: continueUrl } : undefined); }
+  catch (e) {
+    // The website address is not in Authentication > Settings > Authorized domains yet: still send a working link.
+    if (continueUrl && /domain|continue|allowlist|authorized/i.test(`${e.code} ${e.message}`)) return make(undefined);
+    throw e;
+  }
+}
+
+module.exports = { init, isConfigured, verifyIdToken, bucket, actionLink };
