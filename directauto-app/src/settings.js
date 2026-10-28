@@ -3,10 +3,13 @@
 const db = require('../db/pool');
 
 const THEMES = ['forest', 'ocean', 'crimson', 'royal', 'sunset', 'slate', 'custom'];
+const SEASONS = ['christmas', 'newyear', 'avurudu', 'vesak'];
+const DENSITIES = ['light', 'normal', 'heavy'];
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const URL_RE = /^https?:\/\/[^\s]+$/i;
 const HEX_RE = /^#[0-9a-f]{6}$/i;
 
-// type: s = text (max length), u = web link, p = phone digits, c = hex colour, t = theme id, b = on/off
+// type: s = text (max length), u = web link, p = phone digits, c = hex colour, t = theme id, b = on/off, e = one of a list, d = date
 const FIELDS = {
   phone: ['s', 40], email: ['s', 120], whatsapp: ['p', 20], address: ['s', 200], hours: ['s', 120],
   instagram: ['u', 300], liveAuctionUrl: ['u', 500], liveAuctionHint: ['s', 300],
@@ -17,6 +20,9 @@ const FIELDS = {
   auctionTitle: ['s', 80], auctionLead: ['s', 250],
   reviewsTitle: ['s', 80], ctaTitle: ['s', 100], ctaText: ['s', 250],
   showFeatured: ['b'], showAuction: ['b'], showReviews: ['b'], showCta: ['b'],
+  // Seasons: one festive look at a time (effect, decorations, banner, colours), optionally between two dates.
+  season: ['e', SEASONS], seasonStart: ['d'], seasonEnd: ['d'], seasonIntensity: ['e', DENSITIES],
+  seasonEffect: ['b'], seasonDecor: ['b'], seasonBanner: ['b'], seasonTheme: ['b'], seasonMessage: ['s', 200],
 };
 
 // Returns the cleaned value, null for "clear the override", or undefined when the value is not acceptable.
@@ -28,6 +34,8 @@ function clean(key, v) {
   if (!s) return null;
   if (type === 'p') { const d = s.replace(/[^0-9]/g, ''); return d.length >= 7 && d.length <= max ? d : undefined; }
   if (type === 'u') return URL_RE.test(s) && s.length <= max ? s : undefined;
+  if (type === 'e') return max.includes(s) ? s : undefined;
+  if (type === 'd') return DATE_RE.test(s) && !Number.isNaN(Date.parse(s)) ? s : undefined;
   if (type === 'c') return HEX_RE.test(s) ? s.toLowerCase() : undefined;
   if (type === 't') return THEMES.includes(s) ? s : undefined;
   return s.slice(0, max);
@@ -56,4 +64,4 @@ async function save(body) {
   return bad;
 }
 
-module.exports = { FIELDS, THEMES, overrides, save };
+module.exports = { FIELDS, THEMES, clean, overrides, save };

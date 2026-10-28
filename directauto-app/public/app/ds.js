@@ -68,6 +68,36 @@
     el.textContent = ":root{--brand:" + c.brand + ";--brand-tint:" + c.tint + ";--accent:" + c.accent + ";}" +
       "@media (prefers-color-scheme: dark){:root:not([data-theme=\"light\"]){" + dark + "}}:root[data-theme=\"dark\"]{" + dark + "}";
   }
+  /* Seasons: Admin > Seasons turns on one festive look (falling effect, decorations on buttons, greeting banner,
+     optional colours), optionally only between two dates. */
+  var SEASONS = {
+    christmas: { name: "Christmas", emoji: "🎄", effect: "snow", effectName: "Snowfall", decor: "Santa hats", brand: "#9e1b2b", accent: "#1f7a4a", message: "🎄 Merry Christmas from all of us at AutoDirect! Wishing you and your family a joyful season." },
+    newyear: { name: "New Year", emoji: "🎆", effect: "confetti", effectName: "Confetti", decor: "Gold stars", brand: "#1d2b64", accent: "#b8860b", message: "🎆 Happy New Year from AutoDirect! Here’s to a great year ahead." },
+    avurudu: { name: "Sinhala & Tamil New Year", emoji: "🌼", effect: "petals", effectName: "Falling petals", decor: "Flowers", brand: "#b4440e", accent: "#0f766e", message: "🌼 Subha Aluth Avuruddak Wewa! Happy Sinhala & Tamil New Year from AutoDirect." },
+    vesak: { name: "Vesak", emoji: "🏮", effect: "lights", effectName: "Glowing lights", decor: "Lanterns", brand: "#7a5200", accent: "#0e4f45", message: "🏮 Wishing you a peaceful and blessed Vesak from the AutoDirect team." }
+  };
+  function today() { var n = new Date(); return n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"); }
+  // The season in force right now (or null): chosen in the admin and, if dates are set, inside them.
+  function seasonState(site) {
+    var id = site && site.season, def = SEASONS[id];
+    if (!def) return null;
+    var t = today();
+    if (site.seasonStart && t < site.seasonStart) return null;
+    if (site.seasonEnd && t > site.seasonEnd) return null;
+    var on = function (k) { return site[k] !== false; };
+    return { id: id, def: def, effect: on("seasonEffect"), decor: on("seasonDecor"), banner: on("seasonBanner"), theme: on("seasonTheme"),
+      density: site.seasonIntensity || "normal", message: typeof site.seasonMessage === "string" && site.seasonMessage.trim() ? site.seasonMessage : def.message };
+  }
+  function applySeasonDecor(st) {
+    var el = document.documentElement;
+    if (st && st.decor) el.setAttribute("data-season", st.id); else el.removeAttribute("data-season");
+  }
+  // Colours for the page: the season's own colours when switched on, otherwise the theme chosen in Appearance.
+  function applySiteTheme(site) {
+    var st = seasonState(site || {});
+    if (st && st.theme) applyTheme("custom", st.def.brand, st.def.accent); else applyTheme(site && site.theme, site && site.brandColor, site && site.accentColor);
+    applySeasonDecor(st);
+  }
   // Editable site text: the admin's version when set, otherwise the built-in wording.
   function T(key, fallback) { var v = SITE[key]; return typeof v === "string" && v.trim() ? v : fallback; }
   function on(key) { return SITE[key] !== false; }        // server actions + navigation helpers, provided by app.js
@@ -1259,7 +1289,7 @@
     ProcessSteps: ProcessSteps, Glossary: Glossary, Testimonials: Testimonials, AuthCard: AuthCard, OrderTracker: OrderTracker,
     AccountDashboard: AccountDashboard, ContactPanel: ContactPanel, BrowseSection: BrowseSection, BrowseSide: BrowseSide, Empty: Empty, PhotoPending: PhotoPending, Spec: Spec,
     data: { vehicles: VEHICLES, testimonials: TESTIMONIALS, brands: BRANDS, types: ALL_TYPES, locations: LOCATIONS, features: FEATURES, makes: ALL_MAKES, stockMakes: MAKES, glossary: GLOSSARY, images: IMG, load: loadData },
-    hooks: HOOKS, site: SITE, themes: THEMES, applyTheme: applyTheme, T: T, on: on,
+    hooks: HOOKS, site: SITE, themes: THEMES, applyTheme: applyTheme, seasons: SEASONS, seasonState: seasonState, applySeasonDecor: applySeasonDecor, applySiteTheme: applySiteTheme, T: T, on: on,
     format: { lkr: lkr, lkrFull: lkrFull, yen: yen, num: num, title: title, emi: emi, cx: cx, priceBounds: priceBounds }
   };
   window.AD = Object.assign(window.AD || {}, AD);

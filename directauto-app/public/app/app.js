@@ -2,7 +2,7 @@
    Components live in ds.js (window.AD); this file wires them to the Express API. */
 (function () {
   "use strict";
-  var R = window.React, h = R.createElement, useState = R.useState, useEffect = R.useEffect, Frag = R.Fragment;
+  var R = window.React, h = R.createElement, useState = R.useState, useEffect = R.useEffect, useRef = R.useRef, Frag = R.Fragment;
   var A = window.AD, D = A.data, fmt = A.format, hooks = A.hooks;
 
   /* ------------------------------------------------------------------ API */
@@ -424,6 +424,57 @@
     return h("div", { className: "ad-adminroot" }, h(window.AD_ADMIN.Console, { user: { email: p.adminName }, onSignOut: p.signOut, onExit: function () { p.nav("home"); }, onDataChanged: p.reloadCatalog }));
   }
 
+  /* ------------------------------------------------------------------ seasons: falling effect + greeting banner */
+  // Draws falling snow / confetti / petals / lights on a click-through canvas above the page.
+  function SeasonFX(p) {
+    var ref = useRef(null);
+    useEffect(function () {
+      var cv = ref.current;
+      if (!cv || (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+      var ctx = cv.getContext("2d"), W = 0, H = 0, raf = 0, parts = [], kind = p.kind;
+      var base = { light: 35, normal: 70, heavy: 130 }[p.density] || 70;
+      var COLS = { confetti: ["#f2b729", "#d6336c", "#2f9e44", "#1c7ed6", "#e8590c"], petals: ["#f08c00", "#fcc419", "#e8590c", "#f06595"] };
+      function rnd(a, b) { return a + Math.random() * (b - a); }
+      function make(top) {
+        var s = { x: rnd(0, W), y: top ? rnd(-H, 0) : rnd(-20, -4), r: rnd(1.5, 4.2), v: rnd(0.6, 1.8), ph: rnd(0, 6.28), sw: rnd(0.3, 1.1), rot: rnd(0, 6.28), vr: rnd(-0.04, 0.04) };
+        if (kind === "confetti") { s.v = rnd(1.2, 3); s.w = rnd(5, 9); s.h = rnd(8, 14); s.c = COLS.confetti[(Math.random() * 5) | 0]; }
+        if (kind === "petals") { s.v = rnd(0.7, 1.6); s.w = rnd(5, 9); s.h = rnd(3, 5); s.c = COLS.petals[(Math.random() * 4) | 0]; }
+        if (kind === "lights") { s.v = rnd(0.3, 0.9); s.r = rnd(3, 8); }
+        return s;
+      }
+      function size() {
+        var dpr = Math.min(window.devicePixelRatio || 1, 2); W = window.innerWidth; H = window.innerHeight;
+        cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        var n = Math.round(base * Math.min(1, Math.max(0.4, W / 1100)));
+        while (parts.length < n) parts.push(make(true)); parts.length = Math.min(parts.length, n);
+      }
+      function frame(t) {
+        ctx.clearRect(0, 0, W, H);
+        for (var i = 0; i < parts.length; i++) {
+          var s = parts[i]; s.y += s.v; s.x += Math.sin(t / 1000 * s.sw + s.ph) * 0.6; s.rot += s.vr;
+          if (s.y > H + 20) parts[i] = s = make(false);
+          if (kind === "snow") { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.283); ctx.fillStyle = "#fff"; ctx.fill(); ctx.strokeStyle = "rgba(110,140,180,.55)"; ctx.lineWidth = 1; ctx.stroke(); }
+          else if (kind === "lights") { var g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 3); var a = 0.55 + 0.35 * Math.sin(t / 400 + s.ph); g.addColorStop(0, "rgba(255,214,102," + a + ")"); g.addColorStop(1, "rgba(255,214,102,0)"); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s.x, s.y, s.r * 3, 0, 6.283); ctx.fill(); }
+          else { ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.rot); ctx.fillStyle = s.c; if (kind === "petals") { ctx.beginPath(); ctx.ellipse(0, 0, s.w, s.h, 0, 0, 6.283); ctx.fill(); } else ctx.fillRect(-s.w / 2, -s.h / 2, s.w, s.h); ctx.restore(); }
+        }
+        raf = requestAnimationFrame(frame);
+      }
+      size(); raf = requestAnimationFrame(frame);
+      window.addEventListener("resize", size);
+      return function () { cancelAnimationFrame(raf); window.removeEventListener("resize", size); };
+    }, [p.kind, p.density]);
+    return h("canvas", { ref: ref, className: "ad-fx", "aria-hidden": true });
+  }
+  A.SeasonFX = SeasonFX;
+
+  function SeasonBanner(p) {
+    var s = useState(function () { try { return sessionStorage.getItem("ad-season-x") === p.st.id; } catch (e) { return false; } }), closed = s[0], setClosed = s[1];
+    if (closed) return null;
+    return h("div", { className: "ad-seasonbar", role: "note", style: { background: p.st.def.brand } },
+      h("span", { className: "ad-seasonbar__t" }, p.st.message),
+      h("button", { type: "button", className: "ad-seasonbar__x", "aria-label": "Close greeting", onClick: function () { try { sessionStorage.setItem("ad-season-x", p.st.id); } catch (e) { /* ignore */ } setClosed(true); } }, h(A.Icon, { name: "x", size: 16 })));
+  }
+
   /* ------------------------------------------------------------------ app shell */
   function WhatsAppFab() {
     var num = String(A.site.whatsapp || A.site.phone || "").replace(/[^0-9]/g, "");
@@ -469,7 +520,7 @@
       });
     }, []);
 
-    function reloadCatalog() { return api.get("/api/catalog").then(function (c) { D.load(c); A.applyTheme(c.site && c.site.theme, c.site && c.site.brandColor, c.site && c.site.accentColor); setVer(function (x) { return x + 1; }); }); }
+    function reloadCatalog() { return api.get("/api/catalog").then(function (c) { D.load(c); A.applySiteTheme(c.site); setVer(function (x) { return x + 1; }); }); }
     function nav(page, arg, opts) {
       if (page === "request") setPrefill(arg && typeof arg === "object" ? arg : null);
       var url = urlFor(page, page === "request" ? null : arg);
@@ -530,7 +581,10 @@
     var userName = user ? (user.name || (user.email || "").split("@")[0]) : null;
     // The admin is its own full-screen app: no public header, footer or floating buttons.
     if (pg === "admin") return h("div", { className: "ad-page is-admin" }, h("main", { key: "admin", className: "ad-main ad-main--admin" }, body));
+    var season = A.seasonState(A.site);
     return h("div", { className: "ad-page" },
+      season && season.effect ? h(SeasonFX, { kind: season.def.effect, density: season.density }) : null,
+      season && season.banner ? h(SeasonBanner, { st: season }) : null,
       h(A.SiteHeader, { active: active, onNavigate: function (id, init) { if (id === "logout") signOut(); else nav(id, init); }, compareCount: cmp.length, user: userName, isAdmin: !!(user && user.is_admin) || !!admin }),
       h("main", { key: pg + (route.seo || ""), className: "ad-main" }, body),
       h(A.SiteFooter, { onNavigate: function (id, init) { nav(id, init); } }),
@@ -543,7 +597,7 @@
   var root = document.getElementById("app");
   api.get("/api/catalog").then(function (c) {
     D.load(c);
-    A.applyTheme(c.site && c.site.theme, c.site && c.site.brandColor, c.site && c.site.accentColor);
+    A.applySiteTheme(c.site);
     initThirdParty(c.site || {});
     ReactDOM.createRoot(root).render(h(App));
   }).catch(function (e) {

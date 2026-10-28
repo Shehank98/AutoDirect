@@ -543,6 +543,55 @@
       h(SaveBar, { dirty: dirty, busy: busy, onReset: function () { setF({ theme: cur, brandColor: v.brandColor || "#0e4f45", accentColor: v.accentColor || "#c93a17" }); } }));
   }
 
+  /* ------------------------------------------------------------ seasons (Christmas, New Year ...) */
+  var SEASON_KEYS = ["season", "seasonStart", "seasonEnd", "seasonIntensity", "seasonEffect", "seasonDecor", "seasonBanner", "seasonMessage", "seasonTheme"];
+  // Shows the chosen season on this admin page while editing: falling effect, button decorations, colours.
+  function SeasonPreview(p) {
+    var f = p.f, def = A.seasons[f.season];
+    var effectOn = def && on(f, "seasonEffect"), decorOn = def && on(f, "seasonDecor"), themeOn = def && on(f, "seasonTheme");
+    useEffect(function () {
+      A.applySeasonDecor(decorOn ? { id: f.season, decor: true } : null);
+      if (themeOn) A.applyTheme("custom", def.brand, def.accent); else A.applySiteTheme(A.site);
+    }, [f.season, decorOn, themeOn]);
+    useEffect(function () { return function () { A.applySiteTheme(A.site); }; }, []);
+    return effectOn ? h(A.SeasonFX, { kind: def.effect, density: f.seasonIntensity || "normal" }) : null;
+  }
+  function Seasons(p) {
+    return h(SettingsForm, Object.assign({ keys: SEASON_KEYS, render: function (f, set, tog) {
+      var def = A.seasons[f.season], ids = Object.keys(A.seasons);
+      var st = f.season ? A.seasonState({ season: f.season, seasonStart: f.seasonStart, seasonEnd: f.seasonEnd }) : null;
+      var status = !def ? "No season is active. The website looks normal."
+        : st ? "Live now. Visitors see " + def.name + "." + (f.seasonEnd ? " It switches off after " + f.seasonEnd + "." : " It stays on until you choose “No season”.")
+        : (f.seasonStart && A.format && new Date().toISOString().slice(0, 10) < f.seasonStart ? "Scheduled. It switches on by itself on " + f.seasonStart + "." : "The dates have passed, so the website looks normal now.");
+      function card(id, emoji, name, sub) {
+        return h("button", { key: id || "none", type: "button", role: "radio", "aria-checked": (f.season || "") === id, className: cx("ad-theme", "ad-season", (f.season || "") === id && "is-on"), onClick: function () { set("season")(id); } },
+          h("span", { className: "ad-season__e", "aria-hidden": true }, emoji), h("b", null, name), h("span", { className: "ad-small ad-muted" }, sub), (f.season || "") === id ? h(A.Icon, { name: "check", size: 16, className: "ad-theme__ck" }) : null);
+      }
+      return h(Frag, null,
+        h(SeasonPreview, { f: f }),
+        h("p", { className: "ad-note" }, h(A.Icon, { name: "bell", size: 16 }), "Pick a season to preview it on this page (snow, decorations and colours), then press Save to show it to every visitor."),
+        h(Card, { title: "Choose a season" },
+          h("div", { className: "ad-themes", role: "radiogroup", "aria-label": "Season" },
+            card("", "🚫", "No season", "Normal website"),
+            ids.map(function (id) { var d = A.seasons[id]; return card(id, d.emoji, d.name, d.effectName + " · " + d.decor); })),
+          h("p", { className: cx("ad-small", st ? "ad-live-on" : "ad-muted") }, status)),
+        def ? h(Fragment2, null,
+          h(Card, { title: "What to show", text: "Switch each part on or off." },
+            h(A.Switch, { label: def.effectName + " falling from the top of every page", checked: on(f, "seasonEffect"), onChange: tog("seasonEffect") }),
+            on(f, "seasonEffect") ? h(A.SelectField, { label: "How much", options: [{ value: "light", label: "Light" }, { value: "normal", label: "Normal" }, { value: "heavy", label: "Heavy" }], value: f.seasonIntensity || "normal", onChange: set("seasonIntensity") }) : null,
+            h(A.Switch, { label: def.decor + " on the logo and main buttons (Request a bid, Show vehicles, WhatsApp)", checked: on(f, "seasonDecor"), onChange: tog("seasonDecor") }),
+            h(A.Switch, { label: "Greeting banner at the top of the website", checked: on(f, "seasonBanner"), onChange: tog("seasonBanner") }),
+            on(f, "seasonBanner") ? h(A.TextField, { label: "Greeting message", multiline: true, rows: 2, value: f.seasonMessage, onChange: set("seasonMessage"), placeholder: def.message, hint: "Leave empty to use the standard greeting shown above." }) : null,
+            h(A.Switch, { label: "Use " + def.name + " colours while the season is on (replaces the colour theme)", checked: on(f, "seasonTheme"), onChange: tog("seasonTheme") })),
+          h(Card, { title: "When", text: "Optional. Set dates to switch the season on and off by itself, so you never have to remember." },
+            h("div", { className: "ad-fgrid" }, h(A.TextField, { label: "Starts on", type: "date", value: f.seasonStart, onChange: set("seasonStart") }), h(A.TextField, { label: "Ends on (last day)", type: "date", value: f.seasonEnd, onChange: set("seasonEnd") })),
+            h("p", { className: "ad-small ad-muted" }, "Leave both empty to keep it on until you choose “No season”.")),
+          h(Card, { title: "Preview", text: "How the decorations look on buttons." },
+            h("div", { className: "ad-row ad-themeprev ad-season__prev" }, h(A.Button, { variant: "accent", icon: "gavel", className: "ad-admin-preview-btn" }, "Request a bid"), h(A.Button, { size: "l", icon: "search", className: "ad-admin-preview-btn" }, "Show 6 vehicles")))) : null);
+    } }, p));
+  }
+  var Fragment2 = Frag;
+
   /* ------------------------------------------------------------ overview */
   function Overview(p) {
     var d = useLoad("/api/admin/stats");
@@ -555,7 +604,7 @@
       ["gavel", "Open auction requests", x.open_requests, "of " + x.live_requests + " in total", "requests"],
       ["users", "Customers", x.customers, "registered accounts", "customers"],
       ["mail", "Newsletter", x.subscribers, "subscribers", "newsletters"]] : [];
-    var tasks = [["car", "Add a vehicle", "vehicles"], ["star", "Add a customer review", "testimonials"], ["palette", "Change the colour theme", "appearance"], ["layers", "Edit home page text", "home"], ["settings", "Update phone, WhatsApp, address", "site"]];
+    var tasks = [["car", "Add a vehicle", "vehicles"], ["star", "Add a customer review", "testimonials"], ["bell", "Turn on a festive season", "seasons"], ["palette", "Change the colour theme", "appearance"], ["layers", "Edit home page text", "home"], ["settings", "Update phone, WhatsApp, address", "site"]];
     return h(Frag, null,
       d.error ? h(Err, { text: d.error }) : null,
       h("div", { className: "ad-ovgrid" }, !x && !d.error ? [0, 1, 2, 3].map(function (i) { return h("div", { key: i, className: "ad-ov is-load" }); }) : cards.map(function (c) {
@@ -572,11 +621,11 @@
     ["Start", [["overview", "home", "Overview"]]],
     ["Inventory", [["vehicles", "car", "Vehicles"], ["manufacturers", "tag", "Brands"], ["models", "layers", "Models"], ["types", "grid", "Body types"], ["colours", "palette", "Colours"], ["features", "check", "Features"]]],
     ["Customers", [["inquiries", "doc", "Inquiries"], ["requests", "send", "Auction requests"], ["customers", "users", "Customers"], ["newsletters", "mail", "Newsletter"]]],
-    ["Website", [["home", "layers", "Home page"], ["testimonials", "star", "Testimonials"], ["site", "settings", "Site details"], ["appearance", "palette", "Colour themes"]]]
+    ["Website", [["home", "layers", "Home page"], ["testimonials", "star", "Testimonials"], ["seasons", "bell", "Seasons"], ["site", "settings", "Site details"], ["appearance", "palette", "Colour themes"]]]
   ];
   var BLURB = {
     overview: "A quick look at the business.", home: "Turn home page sections on or off and change their wording.", testimonials: "Customer reviews on the home page.",
-    site: "Phone, WhatsApp, address, links and header/footer text.", appearance: "Choose the colours of the whole website."
+    seasons: "Christmas snow, Santa hats and other festive looks for the whole website.", site: "Phone, WhatsApp, address, links and header/footer text.", appearance: "Choose the colours of the whole website."
   };
   function AdminTheme() {
     var s = useState(document.documentElement.getAttribute("data-theme") || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")), t = s[0], setT = s[1];
@@ -600,7 +649,7 @@
     var label = NAV.reduce(function (a, g) { return a.concat(g[1]); }, []).filter(function (x) { return x[0] === mod; })[0];
     var group = NAV.filter(function (g) { return g[1].some(function (x) { return x[0] === mod; }); })[0][0];
     var common = { say: say, changed: p.onDataChanged || function () {}, L: L, reloadL: function () { setLv(lv + 1); }, refreshStats: l.reload, go: go };
-    var body = mod === "overview" ? h(Overview, common) : mod === "appearance" ? h(Appearance, common) : mod === "site" ? h(SiteDetails, common) : mod === "home" ? h(HomeContent, common) : mod === "testimonials" ? h(Testimonials, common) :
+    var body = mod === "overview" ? h(Overview, common) : mod === "appearance" ? h(Appearance, common) : mod === "site" ? h(SiteDetails, common) : mod === "home" ? h(HomeContent, common) : mod === "seasons" ? h(Seasons, common) : mod === "testimonials" ? h(Testimonials, common) :
       !L ? h("p", { className: "ad-muted" }, "Loading…") :
       mod === "vehicles" ? h(Vehicles, common) : TAX[mod] ? h(Taxonomy, Object.assign({ mod: mod, key: mod }, common)) :
       mod === "inquiries" || mod === "requests" ? h(Tracking, Object.assign({ mod: mod, key: mod }, common)) :
