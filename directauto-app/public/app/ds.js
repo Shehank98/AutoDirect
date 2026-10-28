@@ -123,7 +123,7 @@
     el.textContent = ":root{--font-display:\"" + f.display + "\",system-ui,sans-serif;--font-sans:\"" + f.body + "\",system-ui,-apple-system,\"Segoe UI\",sans-serif;}";
   }
   // Editable lists (steps, glossary ...): the admin's version when there is one, otherwise the built-in rows.
-  function list(key, fallback) { var v = SITE[key]; return Array.isArray(v) && v.length ? v : fallback; }
+  function siteList(key, fallback) { var v = SITE[key]; return Array.isArray(v) && v.length ? v : fallback; }
   // Built-in wording for every editable list; the admin starts from these and the site falls back to them.
   var DEFAULTS = {
     aboutValues: [
@@ -134,7 +134,7 @@
     locationsList: [{ name: "Malabe showroom", text: "Visit and inspect stock" }, { name: "Colombo 07 office", text: "LC & documentation desk" }],
     auctionPoints: [{ title: "Live lots", text: "Search thousands of cars crossing the block this week." }, { title: "Sheet first", text: "We translate the original auction sheet before any bid." }, { title: "Refundable deposit", text: "Bidding starts after a 100% refundable deposit." }]
   };
-  function locationsList() { return list("locationsList", DEFAULTS.locationsList); }
+  function locationsList() { return siteList("locationsList", DEFAULTS.locationsList); }
   // Editable site text: the admin's version when set, otherwise the built-in wording.
   function T(key, fallback) { var v = SITE[key]; return typeof v === "string" && v.trim() ? v : fallback; }
   function on(key) { return SITE[key] !== false; }        // server actions + navigation helpers, provided by app.js
@@ -1066,7 +1066,7 @@
   ];
   var STEP_ICONS = ["search", "gavel", "doc", "ship", "car"];
   function steps() {
-    return list("buySteps", STEPS).map(function (x, k) { return { t: x.t, d: x.d, body: x.body, icon: x.icon || STEP_ICONS[Math.min(k, STEP_ICONS.length - 1)] }; });
+    return siteList("buySteps", STEPS).map(function (x, k) { return { t: x.t, d: x.d, body: x.body, icon: x.icon || STEP_ICONS[Math.min(k, STEP_ICONS.length - 1)] }; });
   }
   function ProcessSteps(p) {
     var STEPS = steps();
@@ -1090,7 +1090,7 @@
 
   /* ---------- Glossary ---------- */
   function Glossary(p) {
-    var terms = p.terms || list("glossaryItems", GLOSSARY);
+    var terms = p.terms || siteList("glossaryItems", GLOSSARY);
     var s = useState(""), q = s[0], setQ = s[1];
     var c = useState("All"), cat = c[0], setCat = c[1];
     var o = useState("Proxy bidding"), open = o[0], setOpen = o[1];
@@ -1373,7 +1373,7 @@
     ProcessSteps: ProcessSteps, Glossary: Glossary, Testimonials: Testimonials, AuthCard: AuthCard, OrderTracker: OrderTracker,
     AccountDashboard: AccountDashboard, ContactPanel: ContactPanel, BrowseSection: BrowseSection, Empty: Empty, PhotoPending: PhotoPending, Spec: Spec,
     data: { vehicles: VEHICLES, testimonials: TESTIMONIALS, brands: BRANDS, types: ALL_TYPES, locations: LOCATIONS, features: FEATURES, makes: ALL_MAKES, stockMakes: MAKES, glossary: GLOSSARY, images: IMG, load: loadData },
-    hooks: HOOKS, site: SITE, themes: THEMES, applyTheme: applyTheme, fonts: FONTS, applyFont: applyFont, loadFont: loadFont, list: list, defaults: Object.assign(DEFAULTS, { buySteps: STEPS, glossaryItems: GLOSSARY }), seasons: SEASONS, seasonState: seasonState, applySeasonDecor: applySeasonDecor, applySiteTheme: applySiteTheme, T: T, on: on,
+    hooks: HOOKS, site: SITE, themes: THEMES, applyTheme: applyTheme, fonts: FONTS, applyFont: applyFont, loadFont: loadFont, list: siteList, defaults: Object.assign(DEFAULTS, { buySteps: STEPS, glossaryItems: GLOSSARY }), seasons: SEASONS, seasonState: seasonState, applySeasonDecor: applySeasonDecor, applySiteTheme: applySiteTheme, T: T, on: on,
     format: { lkr: lkr, lkrFull: lkrFull, yen: yen, num: num, title: title, emi: emi, cx: cx, priceBounds: priceBounds }
   };
   window.AD = Object.assign(window.AD || {}, AD);
