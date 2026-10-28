@@ -60,3 +60,4 @@ Redeploy. Then:
 | "No admin access yet" | The email is not in `ADMIN_EMAILS`, or it is not verified yet. Verify it and press **Check again** |
 | "Firebase Storage is not configured" | `FIREBASE_SERVICE_ACCOUNT` and `FIREBASE_STORAGE_BUCKET` are set correctly |
 | Upload says permission denied | The service account JSON belongs to a different project than the bucket |
+| Signed in, but only a normal account | The email must be on the admin list (`ADMIN_EMAILS` or **Admin > Admins**) **and verified**. An account created by hand in the Firebase console is **not verified**: press **Send the email again** in the yellow bar at the top of the site, open the link, then press **Check again**. If the yellow bar does not appear either, look in the server logs for a line starting `[auth]` |

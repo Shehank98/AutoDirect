@@ -310,12 +310,13 @@ router.get('/admins', async (_req, res, next) => {
   try {
     const owners = ownerEmails();
     const { rows } = await db.query(
-      `SELECT a.email, a.added_by, a.created_at, p.uid, COALESCE(p.is_admin, false) AS is_admin, p.name
-         FROM admin_emails a LEFT JOIN profiles p ON lower(p.email) = a.email ORDER BY a.created_at`);
-    const ownerRows = (await db.query('SELECT lower(email) AS email, name, is_admin FROM profiles WHERE lower(email) = ANY($1)', [owners])).rows;
+      `SELECT a.email, a.added_by, a.created_at, COUNT(p.uid) > 0 AS signed_up, COALESCE(bool_or(p.is_admin), false) AS is_admin, COALESCE(MAX(p.name), '') AS name
+         FROM admin_emails a LEFT JOIN profiles p ON lower(p.email) = a.email
+        GROUP BY a.email, a.added_by, a.created_at ORDER BY a.created_at`);
+    const ownerRows = (await db.query('SELECT lower(email) AS email, MAX(name) AS name, bool_or(is_admin) AS is_admin FROM profiles WHERE lower(email) = ANY($1) GROUP BY lower(email)', [owners])).rows;
     res.json({
       owners: owners.map((e) => { const p = ownerRows.find((x) => x.email === e); return { email: e, name: p ? p.name : '', is_admin: !!(p && p.is_admin), signed_up: !!p }; }),
-      added: rows.map((r) => ({ email: r.email, added_by: r.added_by, created_at: r.created_at, name: r.name || '', signed_up: !!r.uid, is_admin: r.is_admin })),
+      added: rows.map((r) => ({ email: r.email, added_by: r.added_by, created_at: r.created_at, name: r.name || '', signed_up: r.signed_up, is_admin: r.is_admin })),
     });
   } catch (e) { next(e); }
 });

@@ -1,13 +1,24 @@
 // Logged-in customer account endpoints (Firebase Auth required).
 const express = require('express');
 const db = require('../../db/pool');
-const { requireAuth } = require('../auth');
+const { requireAuth, ownerEmails } = require('../auth');
 const router = express.Router();
 
 router.use(requireAuth);
 
 // GET /api/account/me  - current profile.
-router.get('/me', (req, res) => res.json(req.user));
+router.get('/me', async (req, res, next) => {
+  try {
+    // admin_pending: this email is on the admin list but has not been verified yet (so it is not an admin yet).
+    let pending = false;
+    if (!req.user.is_admin) {
+      const email = String(req.user.email || '').toLowerCase();
+      const listed = ownerEmails().includes(email) || (email && (await db.query('SELECT 1 FROM admin_emails WHERE email = $1', [email])).rowCount > 0);
+      pending = !!listed && !(req.firebaseUser && req.firebaseUser.email_verified);
+    }
+    res.json({ ...req.user, admin_pending: pending });
+  } catch (e) { next(e); }
+});
 
 // PUT /api/account/me  - update profile details.
 router.put('/me', async (req, res, next) => {

@@ -20,7 +20,7 @@ async function upsertProfile(decoded) {
   const verified = decoded.email_verified === true;
   const { rows } = await db.query(
     `INSERT INTO profiles (uid, email, name, is_admin)
-       VALUES ($1, $2, $3, ($4 OR ($5 AND EXISTS (SELECT 1 FROM admin_emails a WHERE a.email = $2))))
+       VALUES ($1::varchar, $2::varchar, $3::varchar, ($4::boolean OR ($5::boolean AND EXISTS (SELECT 1 FROM admin_emails a WHERE a.email = $2::varchar))))
      ON CONFLICT (uid) DO UPDATE
        SET email = EXCLUDED.email,
            is_admin = profiles.is_admin OR EXCLUDED.is_admin,
@@ -42,8 +42,9 @@ async function attachUser(req, _res, next) {
     req.firebaseUser = decoded;
     req.user = await upsertProfile(decoded);
   } catch (err) {
-    // Invalid/expired token - treat as anonymous.
+    // Invalid/expired token - treat as anonymous. A database failure is logged so it shows up in the server logs.
     req.authError = err.message;
+    if (!/token|id-token|auth\//i.test(String(err.code || '') + ' ' + err.message)) console.error('[auth] could not load the signed-in user:', err.message);
   }
   next();
 }

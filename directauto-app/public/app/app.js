@@ -377,6 +377,16 @@
   }
 
   /* Staff sign-in with the ADMIN_USERNAME / ADMIN_PASSWORD server variables. */
+  // Shown to someone whose email is on the admin list but not verified yet, so they know exactly what is missing.
+  function AdminPendingBar(p) {
+    var st = useState(""), msg = st[0], setMsg = st[1], bz = useState(false), busy = bz[0], setBusy = bz[1];
+    function check() { setBusy(true); setMsg(""); p.onCheck().then(function (row) { setBusy(false); if (!(row && row.is_admin)) setMsg("Still not verified. Open the link in the email first."); }, function (e) { setBusy(false); setMsg(e.message || "Couldn’t check just now."); }); }
+    function resend() { var fu = fb && fb.auth().currentUser; if (!fu) return; fu.sendEmailVerification().then(function () { setMsg("Verification email sent. Check your inbox and spam folder."); }, function (e) { setMsg(FRIENDLY[e.code] || e.message || "Couldn’t send the email."); }); }
+    return h("div", { className: "ad-pendingbar", role: "status" },
+      h("span", { className: "ad-pendingbar__t" }, h(A.Icon, { name: "mail", size: 16 }), h("span", null, h("b", null, "Admin access is waiting for your email to be verified. "), "Open the verification email sent to ", p.email, ", then press Check again.", msg ? h("em", null, " " + msg) : null)),
+      h("span", { className: "ad-row" }, h(A.Button, { size: "s", loading: busy, onClick: check }, "Check again"), h(A.Button, { size: "s", variant: "secondary", onClick: resend }, "Send the email again")));
+  }
+
   // Sign-in pop-up opened from "Sign in" in the header. Customers and staff use the same one.
   function SignInDialog(p) {
     useEffect(function () {
@@ -519,6 +529,13 @@
       });
     }, []);
 
+    useEffect(function () {
+      if (!(user && user.admin_pending)) return;
+      function back() { recheckAdmin().then(function (row) { if (row && row.is_admin) nav("admin"); }, function () {}); }
+      window.addEventListener("focus", back);
+      return function () { window.removeEventListener("focus", back); };
+    }, [user && user.admin_pending]);
+
     function reloadCatalog() { return api.get("/api/catalog").then(function (c) { D.load(c); A.applySiteTheme(c.site); setVer(function (x) { return x + 1; }); }); }
     function nav(page, arg, opts) {
       if (page === "request") setPrefill(arg && typeof arg === "object" ? arg : null);
@@ -536,7 +553,7 @@
     function recheckAdmin() {
       var fu = fb && fb.auth().currentUser;
       if (!fu) return Promise.resolve();
-      return fu.reload().then(function () { return fu.getIdToken(true); }).then(function () { return api.get("/api/account/me"); }).then(function (row) { me = row; setUser(row); });
+      return fu.reload().then(function () { return fu.getIdToken(true); }).then(function () { return api.get("/api/account/me"); }).then(function (row) { me = row; setUser(row); return row; });
     }
 
     var common = { nav: nav, cmp: cmp, saved: saved, clearCmp: function () { setCmp([]); },
@@ -590,6 +607,7 @@
     return h("div", { className: "ad-page" },
       season && season.effect ? h(SeasonFX, { kind: season.def.effect, density: season.density }) : null,
       season && season.banner ? h(SeasonBanner, { st: season }) : null,
+      user && user.admin_pending ? h(AdminPendingBar, { email: user.email, onCheck: function () { return recheckAdmin().then(function (row) { if (row && row.is_admin) nav("admin"); return row; }); } }) : null,
       h(A.SiteHeader, { active: active, onNavigate: function (id, init) { if (id === "logout") signOut(); else if (id === "login" && fb && !user) setSignin(true); else nav(id, init); }, compareCount: cmp.length, user: userName, isAdmin: !!(user && user.is_admin) }),
       h("main", { key: pg + (route.seo || ""), className: "ad-main" }, body),
       h(A.SiteFooter, { onNavigate: function (id, init) { nav(id, init); } }),
