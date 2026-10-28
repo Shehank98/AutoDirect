@@ -50,7 +50,6 @@
     crimson: { name: "Crimson", brand: "#8f1d2c", tint: "#f8e6e8", accent: "#b8741a", dBrand: "#ff8a96", dOn: "#2a0a0e", dTint: "#2b1a1c", dAccent: "#f2b729" },
     royal: { name: "Royal", brand: "#4b2e83", tint: "#ece6f7", accent: "#d6336c", dBrand: "#b79cf0", dOn: "#1a1030", dTint: "#231c33", dAccent: "#ff7aa8" },
     sunset: { name: "Sunset", brand: "#b4440e", tint: "#fbe9de", accent: "#0f766e", dBrand: "#ff9a62", dOn: "#2a1204", dTint: "#2d2018", dAccent: "#4fd1c5" },
-    directauto: { name: "Direct Auto logo", brand: "#233f85", tint: "#e4e9f5", accent: "#c2610a", dBrand: "#9bb2ec", dOn: "#0b1430", dTint: "#1a2236", dAccent: "#ffa733" },
     slate: { name: "Slate", brand: "#1f2933", tint: "#e6e9ec", accent: "#c93a17", dBrand: "#cbd5df", dOn: "#11161b", dTint: "#1f262c", dAccent: "#ff6a42" }
   };
   var HEX = /^#[0-9a-f]{6}$/i;
@@ -97,10 +96,47 @@
   }
   // Colours for the page: the season's own colours when switched on, otherwise the theme chosen in Appearance.
   function applySiteTheme(site) {
+    applyStyle(site && site.siteStyle);
     var st = seasonState(site || {});
     if (st && st.theme) applyTheme("custom", st.def.brand, st.def.accent); else applyTheme(site && site.theme, site && site.brandColor, site && site.accentColor);
     applySeasonDecor(st);
     applyFont(site && site.fontTheme);
+  }
+  /* Complete website styles: page and card colours, text colours, corner roundness and font, light and dark together.
+     Chosen in Admin > Colours & fonts. A colour theme or font picked there still overrides the style's brand / accent / font. */
+  var STYLES = {
+    standard: { name: "Standard", note: "Forest green, warm paper", light: { s1: "#f4f1ea", s2: "#ffffff", s3: "#e9e4d8", brand: "#0e4f45", acc: "#c93a17", ink: "#14171a", line: "#d6d0c2" }, font: "default", r: [6, 10, 18] },
+    directauto: { name: "Direct Auto", note: "The logo’s navy and orange, cool grey pages", font: "montserrat", r: [6, 10, 18],
+      light: { s1: "#f4f6fb", s2: "#ffffff", s3: "#e6ebf5", inv: "#0f1b45", ink: "#101a38", muted: "#566079", inkInv: "#eef2ff", line: "#dce2ef", lineS: "#8a94b0", brand: "#233f85", onBrand: "#ffffff", tint: "#e4e9f5", acc: "#c55f00", onAcc: "#ffffff", hl: "#ffb020", onHl: "#14171a" },
+      dark: { s1: "#0c1226", s2: "#141c36", s3: "#1d2748", inv: "#070b19", ink: "#eef2ff", muted: "#a6b0cf", inkInv: "#eef2ff", line: "#28325a", lineS: "#6b77a3", brand: "#9bb2ec", onBrand: "#0b1430", tint: "#1a2442", acc: "#ffa233", onAcc: "#1a0e00", hl: "#ffb020", onHl: "#14171a" } },
+    classifieds: { name: "Classifieds", note: "Busy marketplace: grey page, white cards, blue and orange, sharp corners", font: "inter", r: [4, 6, 10],
+      light: { s1: "#eef0f3", s2: "#ffffff", s3: "#e2e6eb", inv: "#17202e", ink: "#18202b", muted: "#5b6573", inkInv: "#eef2f7", line: "#d5dae1", lineS: "#8a94a3", brand: "#0b5bd3", onBrand: "#ffffff", tint: "#e3edfb", acc: "#d9480f", onAcc: "#ffffff", hl: "#ffc21a", onHl: "#14171a" },
+      dark: { s1: "#10151c", s2: "#181f29", s3: "#212a37", inv: "#090c11", ink: "#eef2f7", muted: "#a2adbb", inkInv: "#eef2f7", line: "#2c3645", lineS: "#6d7a8c", brand: "#7db0ff", onBrand: "#06152e", tint: "#162338", acc: "#ff8a5c", onAcc: "#240b02", hl: "#ffc21a", onHl: "#14171a" } },
+    showroom: { name: "Showroom", note: "Premium dealership: black and gold, serif headings, soft corners", font: "playfair", r: [8, 14, 26],
+      light: { s1: "#faf8f4", s2: "#ffffff", s3: "#efebe3", inv: "#0e0e10", ink: "#151412", muted: "#67625a", inkInv: "#f5f1e8", line: "#e3ddd0", lineS: "#8d8576", brand: "#1b1b1f", onBrand: "#ffffff", tint: "#eceae4", acc: "#a8741a", onAcc: "#ffffff", hl: "#e0b35a", onHl: "#1b1305" },
+      dark: { s1: "#0d0d0f", s2: "#17171a", s3: "#212125", inv: "#060607", ink: "#f5f1e8", muted: "#aaa496", inkInv: "#f5f1e8", line: "#2f2f34", lineS: "#77746c", brand: "#e6c27a", onBrand: "#17120a", tint: "#25221b", acc: "#d9a441", onAcc: "#1a1205", hl: "#e6c27a", onHl: "#1b1305" } }
+  };
+  function styleVars(c, r) {
+    var m = { "--surface-100": c.s1, "--surface-200": c.s2, "--surface-300": c.s3, "--surface-inverse": c.inv, "--ink": c.ink, "--ink-muted": c.muted, "--ink-inverse": c.inkInv, "--line": c.line, "--line-strong": c.lineS,
+      "--brand": c.brand, "--on-brand": c.onBrand, "--brand-tint": c.tint, "--accent": c.acc, "--on-accent": c.onAcc, "--highlight": c.hl, "--ink-on-highlight": c.onHl };
+    var out = "";
+    Object.keys(m).forEach(function (k) { if (m[k]) out += k + ":" + m[k] + ";"; });
+    if (r) out += "--radius-s:" + r[0] + "px;--radius-m:" + r[1] + "px;--radius-l:" + r[2] + "px;";
+    return out;
+  }
+  function applyStyle(id) {
+    var st = STYLES[id], el = document.getElementById("ad-style");
+    if (!st || id === "standard" || !st.dark) { if (el) el.remove(); return; }
+    if (st.font && st.font !== "default") loadFont(st.font);
+    var f = FONTS[st.font];
+    var fontCss = f && f.display ? "--font-display:\"" + f.display + "\",system-ui,sans-serif;--font-sans:\"" + f.body + "\",system-ui,-apple-system,\"Segoe UI\",sans-serif;" : "";
+    var dark = styleVars(st.dark);
+    if (!el) { el = document.createElement("style"); el.id = "ad-style"; }
+    // Must sit before the colour-theme and font overrides so those still win.
+    var later = document.getElementById("ad-theme") || document.getElementById("ad-font");
+    if (later) later.parentNode.insertBefore(el, later); else if (!el.parentNode) document.head.appendChild(el);
+    el.textContent = ":root{" + styleVars(st.light, st.r) + fontCss + "}" +
+      "@media (prefers-color-scheme: dark){:root:not([data-theme=\"light\"]){" + dark + "color-scheme:dark;}}:root[data-theme=\"dark\"]{" + dark + "color-scheme:dark;}";
   }
   /* Fonts. "default" is what the stylesheet already loads; the others are fetched from Google Fonts on demand. */
   var FONTS = {
@@ -1383,7 +1419,7 @@
     ProcessSteps: ProcessSteps, Glossary: Glossary, Testimonials: Testimonials, AuthCard: AuthCard, OrderTracker: OrderTracker,
     AccountDashboard: AccountDashboard, ContactPanel: ContactPanel, BrowseSection: BrowseSection, Empty: Empty, PhotoPending: PhotoPending, Spec: Spec,
     data: { vehicles: VEHICLES, testimonials: TESTIMONIALS, brands: BRANDS, types: ALL_TYPES, locations: LOCATIONS, features: FEATURES, makes: ALL_MAKES, stockMakes: MAKES, glossary: GLOSSARY, images: IMG, load: loadData },
-    hooks: HOOKS, site: SITE, themes: THEMES, applyTheme: applyTheme, fonts: FONTS, applyFont: applyFont, loadFont: loadFont, list: siteList, defaults: Object.assign(DEFAULTS, { buySteps: STEPS, glossaryItems: GLOSSARY }), seasons: SEASONS, seasonState: seasonState, applySeasonDecor: applySeasonDecor, applySiteTheme: applySiteTheme, T: T, on: on,
+    hooks: HOOKS, site: SITE, themes: THEMES, applyTheme: applyTheme, fonts: FONTS, applyFont: applyFont, loadFont: loadFont, styles: STYLES, applyStyle: applyStyle, list: siteList, defaults: Object.assign(DEFAULTS, { buySteps: STEPS, glossaryItems: GLOSSARY }), seasons: SEASONS, seasonState: seasonState, applySeasonDecor: applySeasonDecor, applySiteTheme: applySiteTheme, T: T, on: on,
     format: { lkr: lkr, lkrFull: lkrFull, yen: yen, num: num, title: title, emi: emi, cx: cx, priceBounds: priceBounds }
   };
   window.AD = Object.assign(window.AD || {}, AD);

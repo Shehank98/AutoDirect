@@ -528,26 +528,39 @@
     var d = useSettings();
     var s = useState(null), f = s[0], setF = s[1], b = useState(false), busy = b[0], setBusy = b[1];
     var themes = A.themes;
-    useEffect(function () { if (d.data) setF({ theme: d.data.values.theme || "forest", brandColor: d.data.values.brandColor || "#0e4f45", accentColor: d.data.values.accentColor || "#c93a17", font: d.data.values.fontTheme || "default" }); }, [d.data]);
+    useEffect(function () { if (d.data) setF({ theme: d.data.values.theme || "forest", brandColor: d.data.values.brandColor || "#0e4f45", accentColor: d.data.values.accentColor || "#c93a17", font: d.data.values.fontTheme || "default", style: d.data.values.siteStyle || "standard" }); }, [d.data]);
     useEffect(function () { Object.keys(A.fonts).forEach(A.loadFont); }, []);
     // Preview while choosing; when leaving the page without saving, go back to what is saved.
-    useEffect(function () { if (f) { A.applyTheme(f.theme, f.brandColor, f.accentColor); A.applyFont(f.font); } }, [f]);
+    useEffect(function () { if (f) { A.applyStyle(f.style); A.applyTheme(f.theme, f.brandColor, f.accentColor); A.applyFont(f.font); } }, [f]);
     useEffect(function () { return function () { A.applySiteTheme(A.site); }; }, []);
     if (d.error) return h(Err, { text: d.error });
     if (!d.data || !f) return h("p", { className: "ad-muted" }, "Loading…");
     var v = d.data.values, cur = v.theme || "forest";
-    var curFont = v.fontTheme || "default";
-    var dirty = f.theme !== cur || f.font !== curFont || (f.theme === "custom" && (f.brandColor !== (v.brandColor || "#0e4f45") || f.accentColor !== (v.accentColor || "#c93a17")));
+    var curFont = v.fontTheme || "default", curStyle = v.siteStyle || "standard";
+    var dirty = f.style !== curStyle || f.theme !== cur || f.font !== curFont || (f.theme === "custom" && (f.brandColor !== (v.brandColor || "#0e4f45") || f.accentColor !== (v.accentColor || "#c93a17")));
     var tooLight = f.theme === "custom" && lum(f.brandColor) > 0.3;
     function pick(id) { setF(Object.assign({}, f, { theme: id })); }
     function save(e) {
       e.preventDefault(); setBusy(true);
-      var body = { fontTheme: f.font === "default" ? "" : f.font, theme: f.theme === "forest" ? "" : f.theme, brandColor: f.theme === "custom" ? f.brandColor : "", accentColor: f.theme === "custom" ? f.accentColor : "" };
-      api.put("/api/admin/settings", body).then(function (r) { d.set(r); setBusy(false); p.say("Saved. The whole website now uses your colours and font."); p.changed(); }, function (x) { setBusy(false); p.say(x.message, "danger"); });
+      var body = { siteStyle: f.style === "standard" ? "" : f.style, fontTheme: f.font === "default" ? "" : f.font, theme: f.theme === "forest" ? "" : f.theme, brandColor: f.theme === "custom" ? f.brandColor : "", accentColor: f.theme === "custom" ? f.accentColor : "" };
+      api.put("/api/admin/settings", body).then(function (r) { d.set(r); setBusy(false); p.say("Saved. The whole website now uses your choices."); p.changed(); }, function (x) { setBusy(false); p.say(x.message, "danger"); });
     }
     return h("form", { className: "ad-settings", onSubmit: save },
-      h("p", { className: "ad-note" }, h(A.Icon, { name: "palette", size: 16 }), "Pick colours and a font to preview them right here, then press Save to publish them to the whole website and this admin. Light and dark mode both follow the theme."),
-      h(Card, { title: "Colour themes" },
+      h("p", { className: "ad-note" }, h(A.Icon, { name: "palette", size: 16 }), "Pick a complete theme, colours or a font to preview them right here, then press Save to publish them to the whole website and this admin. Light and dark mode both follow the theme."),
+      h(Card, { title: "Complete themes", text: "A full look for the whole website: page and card colours, text, corner shapes and font, in light and dark mode. Colours or a font chosen below still override the theme." },
+        h("div", { className: "ad-styles", role: "radiogroup", "aria-label": "Complete theme" },
+          Object.keys(A.styles).map(function (id) {
+            var st = A.styles[id], c = st.light, fontName = A.fonts[st.font] ? A.fonts[st.font].display : null;
+            return h("button", { key: id, type: "button", role: "radio", "aria-checked": f.style === id, className: cx("ad-stylecard", f.style === id && "is-on"), onClick: function () { setF(Object.assign({}, f, { style: id })); } },
+              h("span", { className: "ad-stylecard__pv", "aria-hidden": true, style: { background: c.s1, borderColor: c.line } },
+                h("span", { className: "ad-stylecard__bar", style: { background: c.s2, borderColor: c.line } }, h("i", { style: { background: c.brand } }), h("i", { style: { background: c.line, width: 26 } }), h("i", { style: { background: c.line, width: 18 } })),
+                h("span", { className: "ad-stylecard__card", style: { background: c.s2, borderColor: c.line, borderRadius: Math.round(st.r[2] / 2.2) } },
+                  h("b", { style: { color: c.ink, fontFamily: fontName ? '"' + fontName + '", system-ui' : undefined } }, "Aa"),
+                  h("span", { className: "ad-stylecard__btns" }, h("i", { style: { background: c.brand, borderRadius: Math.round(st.r[1] / 2) } }), h("i", { style: { background: c.acc, borderRadius: Math.round(st.r[1] / 2) } })))),
+              h("b", null, st.name), h("span", { className: "ad-small ad-muted" }, st.note), id === curStyle ? h("span", { className: "ad-small ad-muted" }, "In use") : null,
+              f.style === id ? h(A.Icon, { name: "check", size: 16, className: "ad-theme__ck" }) : null);
+          }))),
+      h(Card, { title: "Colour themes", text: f.style !== "standard" ? "Optional. “Forest” here means: use the complete theme’s own colours." : undefined },
         h("div", { className: "ad-themes", role: "radiogroup", "aria-label": "Colour theme" },
           Object.keys(themes).map(function (id) {
             var t = themes[id];
@@ -573,7 +586,7 @@
       h(Card, { title: "Preview", text: "These samples use the colours and font you picked." },
         h("div", { className: "ad-row ad-themeprev" }, h(A.Button, null, "Show 6 vehicles"), h(A.Button, { variant: "accent", icon: "gavel" }, "Request a bid"), h(A.Button, { variant: "secondary" }, "Secondary"), h(A.Badge, { tone: "success" }, "Available"),
           h("a", { href: "#", className: "ad-link", onClick: function (e) { e.preventDefault(); } }, "A text link"))),
-      h(SaveBar, { dirty: dirty, busy: busy, onReset: function () { setF({ theme: cur, brandColor: v.brandColor || "#0e4f45", accentColor: v.accentColor || "#c93a17", font: curFont }); } }));
+      h(SaveBar, { dirty: dirty, busy: busy, onReset: function () { setF({ theme: cur, brandColor: v.brandColor || "#0e4f45", accentColor: v.accentColor || "#c93a17", font: curFont, style: curStyle }); } }));
   }
 
   /* ------------------------------------------------------------ editable lists and pages */
