@@ -1311,3 +1311,16 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
   .ad-bk__pts li { flex-direction: column; align-items: stretch; }
   .ad-bk__pts li .ad-btn { width: 100%; }
 }
+
+/* search results with content */
+.ad-find__list { min-width: 340px; max-height: 70vh; overflow: auto; right: 0; left: auto; }
+.ad-find__h { padding: 8px 10px 4px; }
+.ad-find__hit { flex-direction: column; align-items: flex-start !important; gap: 2px; }
+.ad-find__hit--p { flex-direction: row; align-items: center !important; }
+.ad-find__t { font-weight: 700; }
+.ad-find__s { color: var(--ink); font-size: 13px; overflow-wrap: anywhere; }
+.ad-find__s mark, .ad-find__list mark { background: #ffe38a; color: #1c2b26; border-radius: 3px; padding: 0 2px; }
+.ad-find__w { color: var(--brand); font-size: 12px; font-weight: 600; }
+.ad-flash { animation: ad-flash 3.2s ease-out; border-radius: 10px; }
+@keyframes ad-flash { 0%, 70% { box-shadow: 0 0 0 4px #ffb347; background: #fff3d6; } 100% { box-shadow: 0 0 0 4px transparent; } }
+@media (max-width: 760px) { .ad-find__list { left: 0; right: 0; min-width: 0; } }

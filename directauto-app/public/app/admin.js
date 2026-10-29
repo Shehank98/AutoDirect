@@ -971,16 +971,96 @@
     ["seasons", "Seasons", "season christmas easter deepavali snow santa hat"], ["site", "Site details", "phone whatsapp address footer header seo social instagram facebook hours logo"],
     ["backup", "Backup & restore", "backup restore download data safe"]
   ];
+  // Every editable text on the website: [key, label, page, section, built-in wording].
+  var SET_TEXT = [
+    ["phone", "Phone", "site", "Contact details"], ["email", "Email", "site", "Contact details"], ["whatsapp", "WhatsApp number", "site", "Contact details"],
+    ["hours", "Opening hours", "site", "Contact details"], ["address", "Address / locations (top bar)", "site", "Contact details"], ["instagram", "Instagram link", "site", "Contact details"],
+    ["whatsappMessage", "WhatsApp first message", "site", "WhatsApp button", "Hi Direct Auto, I have a question about importing a car."],
+    ["liveAuctionUrl", "Auction viewer link", "site", "Live auction", "https://jpcenter.ru/on?classic"], ["liveAuctionHint", "Notice above the auction viewer", "site", "Live auction"],
+    ["seoTitle", "Google title", "site", "Google and link previews", "Japanese auction car imports for Sri Lanka"], ["seoDescription", "Google description", "site", "Google and link previews", "Browse imported cars in stock or let Direct Auto bid for your exact car at Japanese auctions"],
+    ["topbarText", "Top bar message", "site", "Header and footer text", "Japan auction imports for Sri Lanka"], ["footerText", "Footer description", "site", "Header and footer text", "Japanese auction imports for Sri Lanka"],
+    ["auctionTitle", "Live auction heading", "home", "Live auction section", "Watch Japan auctions live"], ["auctionLead", "Live auction sub-heading", "home", "Live auction section", "Browse live lots from Japanese auction houses without leaving Direct Auto."],
+    ["reviewsTitle", "Reviews heading", "home", "Reviews section", "What our customers say"], ["ctaTitle", "Banner heading", "home", "Bottom banner", "Looking for one exact car?"],
+    ["ctaText", "Banner text", "home", "Bottom banner", "Tell us the model, year and budget. We shortlist lots and send every sheet before bidding."],
+    ["depositFaq", "Deposit answer", "buy", "Deposit", "Deposits are 100% refundable."], ["aboutCtaTitle", "About banner heading", "about", "Bottom banner", "Visit us in Malabe or Colombo 07"], ["aboutCtaText", "About banner text", "about", "Bottom banner", "See landed stock in person, or sit down with our LC desk."]
+  ];
+  var SET_LISTS = [
+    ["buySteps", "buy", "Buying steps", [["t", "Title"], ["d", "Time"], ["body", "Text"]], "t"], ["aboutValues", "about", "Our values", [["title", "Title"], ["text", "Text"]], "title"],
+    ["locationsList", "contact", "Showrooms and offices", [["name", "Name"], ["text", "Text"]], "name"], ["glossaryItems", "glossary", "Vocabulary", [["term", "Term"], ["def", "Meaning"], ["example", "Example"]], "term"],
+    ["auctionPoints", "home", "Live auction points", [["title", "Title"], ["text", "Text"]], "title"]
+  ];
+  var PAGE_NAME = {}; FIND.forEach(function (x) { PAGE_NAME[x[0]] = x[1]; });
+  function textIndex() {
+    var site = A.site || {}, out = [];
+    SET_TEXT.forEach(function (x) {
+      var v = typeof site[x[0]] === "string" && site[x[0]].trim() ? site[x[0]] : (x[4] || "");
+      out.push({ mod: x[2], label: x[1], where: PAGE_NAME[x[2]] + " › " + x[3], text: v, need: v });
+    });
+    SET_LISTS.forEach(function (l) {
+      var rows = Array.isArray(site[l[0]]) && site[l[0]].length ? site[l[0]] : ((A.defaults || {})[l[0]] || []);
+      rows.forEach(function (r) { l[3].forEach(function (f) { if (r[f[0]]) out.push({ mod: l[1], label: l[2] + " › " + (r[l[4]] || "") + " › " + f[1], where: PAGE_NAME[l[1]] + " › " + l[2], text: String(r[f[0]]), need: String(r[f[0]]) }); }); });
+    });
+    return out;
+  }
+  function recordIndex(rec, L) {
+    var out = [];
+    (L ? rec.vehicles || [] : []).forEach(function (v) { var t = vtitle(v, L); out.push({ mod: "vehicles", label: t, where: "Vehicles › " + "AD-" + String(v.id).padStart(4, "0"), text: [t, v.chassi_id, v.location, v.badge].filter(Boolean).join(" · "), need: t }); });
+    (rec.reviews || []).forEach(function (r) { out.push({ mod: "testimonials", label: r.name, where: "Testimonials", text: [r.name, r.role, r.quote].filter(Boolean).join(" · "), need: r.name }); });
+    [["manufacturers", "Brands"], ["models", "Models"], ["types", "Body types"], ["colours", "Colours list"], ["features", "Features"]].forEach(function (g) {
+      var list = L ? (L[g[0] === "colours" ? "colors" : g[0]] || []) : [];
+      list.forEach(function (x) { if (x.name) out.push({ mod: g[0], label: x.name, where: g[1], text: x.name, need: x.name }); });
+    });
+    return out;
+  }
+  function markIt(text, q) {
+    var i = text.toLowerCase().indexOf(q);
+    if (i < 0) return text.slice(0, 90);
+    var from = Math.max(0, i - 30), to = Math.min(text.length, i + q.length + 50);
+    return [from > 0 ? "…" : "", text.slice(from, i), h("mark", { key: "m" }, text.slice(i, i + q.length)), text.slice(i + q.length, to), to < text.length ? "…" : ""];
+  }
+  // After the page opens, scroll to the field that holds this text and flash it.
+  function locate(need) {
+    var n = String(need || "").trim().toLowerCase().slice(0, 80), tries = 0;
+    if (!n) return;
+    (function look() {
+      var root = document.querySelector(".ad-admin__body"), el = null;
+      if (root) {
+        var fields = root.querySelectorAll("input:not([type=file]):not([type=checkbox]):not([type=search]), textarea");
+        for (var i = 0; i < fields.length && !el; i++) { if ((fields[i].value || "").toLowerCase().indexOf(n) >= 0 || (!fields[i].value && (fields[i].placeholder || "").toLowerCase().indexOf(n) >= 0)) el = fields[i]; }
+        if (!el) { var cells = root.querySelectorAll("td b, td, li b, h3, h4, p, .ad-vcard__t"); for (var j = 0; j < cells.length && !el; j++) { if (cells[j].children.length < 3 && (cells[j].textContent || "").toLowerCase().indexOf(n) >= 0) el = cells[j]; } }
+      }
+      if (el) {
+        var box = el.closest(".ad-field, tr, li, section") || el;
+        el.scrollIntoView({ block: "center", behavior: "smooth" }); box.classList.add("ad-flash");
+        if (/INPUT|TEXTAREA/.test(el.tagName)) { try { el.focus({ preventScroll: true }); } catch (e) {} }
+        setTimeout(function () { box.classList.remove("ad-flash"); }, 3200);
+      } else if (++tries < 14) setTimeout(look, 250);
+    })();
+  }
   function FindBox(p) {
-    var s = useState(""), q = s[0], setQ = s[1];
+    var s = useState(""), q = s[0], setQ = s[1], r = useState(null), rec = r[0], setRec = r[1];
     var t = q.trim().toLowerCase();
-    var hits = !t ? [] : FIND.filter(function (x) { return (x[1] + " " + x[2]).toLowerCase().indexOf(t) >= 0; }).slice(0, 6);
-    function pick(x) { setQ(""); p.go(x[0]); }
+    useEffect(function () {
+      if (!t || rec) return;
+      Promise.all([api.get("/api/admin/vehicles").catch(function () { return []; }), api.get("/api/admin/testimonials").catch(function () { return []; })]).then(function (x) { setRec({ vehicles: x[0], reviews: x[1] }); });
+    }, [!!t]);
+    var content = [], pages = [];
+    if (t) {
+      content = textIndex().concat(recordIndex(rec || {}, p.L)).filter(function (x) { return (x.label + " " + x.text).toLowerCase().indexOf(t) >= 0; }).slice(0, 8);
+      pages = FIND.filter(function (x) { return (x[1] + " " + x[2]).toLowerCase().indexOf(t) >= 0; }).slice(0, 4);
+    }
+    function open(x, need) { setQ(""); p.go(x.mod || x[0]); if (need) locate(need); }
+    var first = content[0] ? function () { open(content[0], content[0].need); } : pages[0] ? function () { open(pages[0]); } : null;
     return h("div", { className: "ad-find" },
       h("span", { className: "ad-find__ic", "aria-hidden": true }, h(A.Icon, { name: "search", size: 16 })),
       h("input", { type: "search", className: "ad-find__in", placeholder: "Find what to edit…", "aria-label": "Find what to edit", value: q, onChange: function (e) { setQ(e.target.value); },
-        onKeyDown: function (e) { if (e.key === "Enter" && hits[0]) pick(hits[0]); if (e.key === "Escape") setQ(""); } }),
-      t ? h("ul", { className: "ad-find__list", role: "listbox" }, hits.length ? hits.map(function (x) { return h("li", { key: x[0] }, h("button", { type: "button", onClick: function () { pick(x); } }, h("b", null, x[1]), h(A.Icon, { name: "chevron-right", size: 14 }))); }) : h("li", { className: "ad-small ad-muted ad-find__none" }, "Nothing found. Try another word.")) : null);
+        onKeyDown: function (e) { if (e.key === "Enter" && first) first(); if (e.key === "Escape") setQ(""); } }),
+      t ? h("div", { className: "ad-find__list", role: "listbox" },
+        content.length ? h("div", { className: "ad-label ad-find__h" }, "Found on your website") : null,
+        content.map(function (x, i) { return h("button", { key: "c" + i, type: "button", className: "ad-find__hit", onClick: function () { open(x, x.need); } }, h("span", { className: "ad-find__t" }, x.label), h("span", { className: "ad-find__s" }, markIt(x.text, t)), h("span", { className: "ad-find__w" }, "Edit in: " + x.where)); }),
+        pages.length ? h("div", { className: "ad-label ad-find__h" }, "Pages") : null,
+        pages.map(function (x) { return h("button", { key: "p" + x[0], type: "button", className: "ad-find__hit ad-find__hit--p", onClick: function () { open(x); } }, h("span", { className: "ad-find__t" }, x[1]), h(A.Icon, { name: "chevron-right", size: 14 })); }),
+        !content.length && !pages.length ? h("p", { className: "ad-small ad-muted ad-find__none" }, rec ? "Nothing found. Try another word." : "Searching…") : null) : null);
   }
 
   /* ------------------------------------------------------------ console shell */
@@ -1042,7 +1122,7 @@
         h("header", { className: "ad-admin__bar" },
           h("button", { type: "button", className: "ad-admin__burger", "aria-label": "Open menu", "aria-expanded": navOpen, onClick: function () { setNavOpen(!navOpen); } }, h(A.Icon, { name: "menu", size: 22 })),
           h("div", { className: "ad-admin__title" }, h("div", { className: "ad-label" }, group), h("h2", { className: "ad-h1" }, label[2])),
-          h("div", { className: "ad-row ad-admin__tools" }, h(FindBox, { go: go }), h(AdminTheme, null), h(A.Button, { variant: "secondary", size: "s", icon: "globe", onClick: p.onExit, className: "ad-hide-sm" }, "View website"),
+          h("div", { className: "ad-row ad-admin__tools" }, h(FindBox, { go: go, L: L }), h(AdminTheme, null), h(A.Button, { variant: "secondary", size: "s", icon: "globe", onClick: p.onExit, className: "ad-hide-sm" }, "View website"),
             h("span", { className: "ad-avatar", title: p.user && p.user.email }, ((p.user && (p.user.name || p.user.email)) || "A").slice(0, 2)))),
         h("div", { className: "ad-admin__body" },
           BLURB[mod] ? h("p", { className: "ad-muted ad-admin__blurb" }, BLURB[mod]) : null,
