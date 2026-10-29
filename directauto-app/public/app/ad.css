@@ -1269,3 +1269,11 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
 .ad-crop__zoom input { flex: 1; accent-color: var(--brand); height: 32px; }
 .ad-modal__box--wide .ad-crop .ad-row--between { gap: 8px; }
 @media (max-width: 640px) { .ad-crop .ad-row--between { flex-direction: column; align-items: stretch; } .ad-crop .ad-row { flex-wrap: wrap; } }
+
+/* backup page */
+.ad-bk__counts { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.ad-bk__n { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.ad-bk__n b { font-size: 1.25rem; }
+.ad-bk__mail { align-items: flex-end; flex-wrap: wrap; }
+.ad-bk__pts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ad-bk__pts li { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }

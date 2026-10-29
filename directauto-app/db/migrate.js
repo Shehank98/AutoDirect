@@ -72,14 +72,24 @@ async function migrate() {
     console.log('[migrate] applying schema...');
     await client.query(schema);
 
+    // Demo cars are only ever loaded ONCE, into a brand-new empty database, and never in production unless
+    // SEED_DEMO_DATA=true is set on purpose. Deleting every car later must never bring the demo data back.
     const { rows } = await client.query('SELECT COUNT(*)::int AS n FROM vehicle');
-    const seedDemo = String(process.env.SEED_DEMO_DATA || 'true').toLowerCase() !== 'false';
-    if (rows[0].n === 0 && seedDemo) {
-      console.log('[migrate] empty database - loading sample data...');
+    const SEED_KEY = 'demo_seed_v1';
+    const alreadyHandled = (await client.query('SELECT 1 FROM app_meta WHERE key = $1', [SEED_KEY])).rowCount > 0;
+    const flag = String(process.env.SEED_DEMO_DATA || '').toLowerCase();
+    const wantDemo = flag === 'true' || (flag === '' && process.env.NODE_ENV !== 'production');
+    if (alreadyHandled) {
+      console.log(`[migrate] data kept as it is (${rows[0].n} vehicles); demo data is never loaded again.`);
+    } else if (rows[0].n === 0 && wantDemo) {
+      console.log('[migrate] new empty database - loading sample data once...');
       await client.query(seed);
+      await client.query('INSERT INTO app_meta (key) VALUES ($1)', [SEED_KEY]);
       console.log('[migrate] sample data loaded.');
     } else {
-      console.log(rows[0].n ? `[migrate] database already has ${rows[0].n} vehicles - skipping seed.` : '[migrate] SEED_DEMO_DATA=false - skipping sample data.');
+      // An existing site (it has cars), or a new one that should start empty: lock the demo seed for good.
+      if (rows[0].n > 0) await client.query('INSERT INTO app_meta (key) VALUES ($1) ON CONFLICT DO NOTHING', [SEED_KEY]);
+      console.log(rows[0].n ? `[migrate] database already has ${rows[0].n} vehicles - nothing is changed or deleted.` : '[migrate] starting with an empty catalogue (no demo data).');
     }
     await ensureBrowseDefaults(client);
     await ensureTestimonials(client);

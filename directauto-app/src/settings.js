@@ -31,7 +31,7 @@ const FIELDS = {
   reviewsTitle: ['s', 80], ctaTitle: ['s', 100], ctaText: ['s', 250],
   notifyCustomers: ['b'], showAbout: ['b'], showFeatured: ['b'], showAuction: ['b'], showReviews: ['b'], showCta: ['b'],
   // Seasons: one festive look at a time (effect, decorations, banner, colours), optionally between two dates.
-  siteStyle: ['e', STYLES], fontTheme: ['e', FONTS],
+  backupEvery: ['e', ['daily', 'weekly']], siteStyle: ['e', STYLES], fontTheme: ['e', FONTS],
   seoTitle: ['s', 120], seoDescription: ['s', 300],
   depositFaq: ['s', 700], aboutCtaTitle: ['s', 100], aboutCtaText: ['s', 250],
   buySteps: ['j', LISTS.buySteps], aboutValues: ['j', LISTS.aboutValues], locationsList: ['j', LISTS.locationsList],

@@ -67,7 +67,8 @@ npm start                # http://localhost:3000, creates the schema and loads s
 2. **New, Database, PostgreSQL**; on the app service add `DATABASE_URL = ${{Postgres.DATABASE_URL}}`.
 3. In **Variables** add `ADMIN_EMAILS` and the Firebase variables (below). Redeploy.
 4. Open `https://<your-domain>/admin` and sign in with Firebase. Health check: `/api/health`.
-5. Optional: `SEED_DEMO_DATA=false` before the first boot to skip the 7 sample cars; `SITE_*` variables for contact details.
+5. Sample cars are loaded only once, on the very first boot of an empty database (and never in production unless `SEED_DEMO_DATA=true`). After that a redeploy never adds, changes or deletes your data.
+6. Backups: Admin › Backup & restore lets you download everything, email it daily/weekly, and restore (a restore point is saved first). Photos live in Firebase Storage and are not part of the file.
 
 ### Firebase (required for the admin)
 Step-by-step: `docs/FIREBASE_SETUP.md`.

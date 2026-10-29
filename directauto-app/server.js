@@ -131,6 +131,7 @@ async function start() {
     console.error('[start] migration failed (continuing to boot):', err.message);
   }
   const server = app.listen(PORT, () => console.log(`Direct Auto listening on :${PORT}`));
+  if (process.env.DATABASE_URL) require('./src/backup').startSchedule();   // optional emailed backups (Admin > Backup)
 
   // Railway stops containers with SIGTERM: finish in-flight requests, then close the DB pool.
   const stop = () => {

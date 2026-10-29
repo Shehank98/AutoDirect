@@ -7,6 +7,7 @@
  *   stage                      -> an email to the customer when their order moves to a new stage
  *   verify_email               -> "Confirm your email" link, sent from your address (not Firebase's)
  *   password_reset             -> "Reset your password" link, sent from your address
+ *   backup                     -> the website backup file, attached, to the team
  *   test                       -> a test email to the team
  *
  * Setup steps are in SETUP.md. Script properties needed (Project settings > Script properties):
@@ -86,6 +87,8 @@ function doPost(e) {
         label: 'Choose a new password',
         footnote: 'If you did not ask for this, you can ignore this email. Your password will stay the same.'
       }));
+    } else if (body.event === 'backup') {
+      sent = sent.concat(backup_(team, site, d));
     } else if (body.event === 'test') {
       sent = sent.concat(toTeam_(team, site, {
         subject: 'Direct Auto email test',
@@ -134,6 +137,25 @@ function account_(site, d, o) {
     audience: 'customer'
   }), site.email);
   return [d.email];
+}
+
+// The website backup, attached as a file. It holds customer details, so it only goes to the team addresses.
+function backup_(team, site, d) {
+  if (!team.length) throw new Error('ADMIN_EMAILS is empty in the script properties.');
+  var rows = (d.summary || []).map(function (r) { return [r[0].charAt(0).toUpperCase() + r[0].slice(1), r[1]]; });
+  rows.push(['File size', (d.sizeMb || 0) + ' MB']);
+  var attach = d.base64 ? [Utilities.newBlob(Utilities.base64Decode(d.base64), 'application/json', d.filename || 'backup.json')] : [];
+  var html = page_(site, {
+    title: 'Your website backup',
+    intro: (d.kind === 'automatic' ? 'Here is your automatic backup. ' : 'Here is the backup you asked for. ') +
+      (attach.length ? 'The file is attached.' : 'It is too big to attach, so please download it from Admin > Backup.') + ' Keep it somewhere safe, because it contains customer details.',
+    rows: rows,
+    button: site.url ? { label: 'Open Backup in the admin', url: site.url + '/admin' } : null,
+    note: 'To restore: Admin > Backup > Restore from a file. Car photos are stored separately in Firebase Storage; this file keeps their links.',
+    audience: 'team'
+  });
+  send_(team, 'Direct Auto backup ' + new Date().toISOString().slice(0, 10), html, null, attach);
+  return team;
 }
 
 // Order moved to a new stage.
@@ -205,8 +227,9 @@ function tracker_(i) {
 
 /* ------------------------------------------------------------------ helpers */
 
-function send_(to, subject, html, replyTo) {
+function send_(to, subject, html, replyTo, attachments) {
   var opts = { to: to.join(','), subject: subject, htmlBody: html, body: stripHtml_(html), name: 'Direct Auto' };
+  if (attachments && attachments.length) opts.attachments = attachments;
   if (replyTo && /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(replyTo)) opts.replyTo = replyTo;
   MailApp.sendEmail(opts);
 }

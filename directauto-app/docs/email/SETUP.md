@@ -57,3 +57,8 @@ Firebase's own emails come from a generic `firebaseapp.com` address, and Gmail o
 - **Who the email comes from:** the Google account that owns the script. Replies to a customer's email go to the customer when you reply to the team email (the Reply-To is set to them).
 - **Customer emails off:** in **Admin > Site details > Emails to customers** you can switch off receipts and order-stage emails. Team emails always go out.
 - **Nothing arrives?** Check spam. In the script, open **Executions** to see errors. A "Wrong secret" error means `SECRET` and `APPS_SCRIPT_SECRET` differ.
+
+## Backup emails
+
+The same script also sends the website backup (Admin › Backup & restore › Automatic backup by email) as a file attachment.
+After updating `Code.gs`, paste the new code and choose **Deploy › Manage deployments › Edit › New version**, so the `backup` event works.

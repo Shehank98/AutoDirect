@@ -195,3 +195,13 @@ CREATE TABLE IF NOT EXISTS admin_emails (
     added_by    VARCHAR(200) DEFAULT '',
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Restore points: full copies of the data kept inside the database (made before a restore and by the automatic
+-- backup), so a restore can be undone. Managed in Admin > Backup.
+CREATE TABLE IF NOT EXISTS backups (
+    id          SERIAL PRIMARY KEY,
+    kind        VARCHAR(20) NOT NULL,           -- auto | before-restore
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    counts      JSONB NOT NULL DEFAULT '{}',
+    data        JSONB NOT NULL
+);

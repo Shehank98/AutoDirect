@@ -30,6 +30,8 @@ router.post('/email-test', async (req, res) => {
   res.status(r.ok ? 200 : 502).json(r.ok ? { ok: true, to: r.to || [] } : { error: r.error });
 });
 
+router.use('/backup', require('./backup'));
+
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
 
 const slugify = (s) => String(s || '')

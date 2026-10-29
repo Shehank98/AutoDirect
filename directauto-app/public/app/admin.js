@@ -831,6 +831,63 @@
         onOk: function () { api.del("/api/admin/admins/" + encodeURIComponent(del.email)).then(function () { setDel(null); d.reload(); p.say("Removed"); }, function (e) { setDel(null); p.say(e.message, "danger"); }); } }) : null);
   }
 
+  /* ------------------------------------------------------------ backup: download, email, restore */
+  function ago(ms) { return ms ? new Date(ms).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""; }
+  function Backup(p) {
+    var d = useLoad("/api/admin/backup/summary"), st = useLoad("/api/admin/settings");
+    var s1 = useState(false), dl = s1[0], setDl = s1[1], s2 = useState(false), em = s2[0], setEm = s2[1], s3 = useState(null), file = s3[0], setFile = s3[1];
+    var s4 = useState(""), word = s4[0], setWord = s4[1], s5 = useState(false), rb = s5[0], setRb = s5[1], s6 = useState(null), pt = s6[0], setPt = s6[1];
+    var every = st.data && st.data.values ? (st.data.values.backupEvery || "") : "";
+    function download() {
+      setDl(true);
+      api.authFor("/api/admin/backup/download").then(function (t) { return fetch("/api/admin/backup/download", { headers: { Authorization: "Bearer " + t } }); })
+        .then(function (r) { if (!r.ok) throw new Error("Could not make the backup (" + r.status + ")"); var name = (/filename="([^"]+)"/.exec(r.headers.get("Content-Disposition") || "") || [])[1] || "direct-auto-backup.json"; return r.blob().then(function (b) { return [b, name]; }); })
+        .then(function (x) { var a = document.createElement("a"); a.href = URL.createObjectURL(x[0]); a.download = x[1]; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); setDl(false); p.say("Backup saved to your device."); },
+          function (e) { setDl(false); p.say(e.message, "danger"); });
+    }
+    function setEvery(e) { var v = e.target.value; api.put("/api/admin/settings", { backupEvery: v }).then(function (r) { st.set(r); p.say(v ? "Automatic backup is on." : "Automatic backup is off."); }, function (x) { p.say(x.message, "danger"); }); }
+    function mailNow() { setEm(true); api.post("/api/admin/backup/email-now", {}).then(function (r) { setEm(false); d.reload(); p.say(r.tooBig ? "Sent, but the file was too big to attach. Use Download instead." : "Backup emailed to " + (r.to || []).join(", ")); }, function (x) { setEm(false); p.say(x.message, "danger"); }); }
+    function done(r) { setRb(false); setPt(null); setFile(null); setWord(""); d.reload(); p.reloadL(); p.changed(); p.say("Restored. A restore point of the data before this was saved, so you can undo."); }
+    function restoreFile() {
+      setRb(true); var fd = new FormData(); fd.append("confirm", word.trim()); fd.append("file", file);
+      api.authFor("/api/admin/backup/restore").then(function (t) { return fetch("/api/admin/backup/restore", { method: "POST", headers: { Authorization: "Bearer " + t }, body: fd }); })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || "Restore failed"); return j; }); })
+        .then(done, function (e) { setRb(false); p.say(e.message, "danger"); });
+    }
+    function restorePoint() {
+      setRb(true);
+      api.post("/api/admin/backup/points/" + pt.id + "/restore", { confirm: word.trim() }).then(done, function (e) { setRb(false); p.say(e.message, "danger"); });
+    }
+    var x = d.data;
+    return h(Frag, null,
+      d.error ? h(Err, { text: d.error }) : null,
+      h(Card, { title: "Your data is safe when the site is updated", text: "Updating or redeploying the website never deletes anything. Everything below is stored in the database, and photos are stored in Firebase." },
+        !x ? h("p", { className: "ad-muted ad-small" }, "Loading…") :
+          h("div", { className: "ad-bk__counts" }, x.tables.map(function (t) { return h("div", { key: t, className: "ad-bk__n" }, h("b", null, x.counts[t] == null ? 0 : x.counts[t]), h("span", { className: "ad-small ad-muted" }, x.labels[t] || t)); }))),
+      h(Card, { title: "Download a backup", text: "One file with the vehicles, brands, reviews, settings, customers, inquiries and admins. Keep it somewhere safe, like Google Drive." },
+        h("div", { className: "ad-row" }, h(A.Button, { icon: "download", loading: dl, onClick: download }, "Download backup"))),
+      h(Card, { title: "Automatic backup by email", text: "We email the backup file to the owner addresses so you always have a recent copy." },
+        x && !x.emailReady ? h("p", { className: "ad-small ad-muted" }, "Email is not connected yet, so this is switched off. See docs/email/SETUP.md.") : null,
+        h("div", { className: "ad-row ad-bk__mail" },
+          h(A.SelectField, { label: "How often", options: [{ value: "", label: "Off" }, { value: "daily", label: "Every day" }, { value: "weekly", label: "Every week" }], value: every, disabled: !(x && x.emailReady), onChange: setEvery }),
+          h(A.Button, { variant: "secondary", icon: "mail", loading: em, disabled: !(x && x.emailReady), onClick: mailNow }, "Email me a backup now")),
+        x && x.lastEmailed ? h("p", { className: "ad-small ad-muted" }, "Last emailed: " + ago(x.lastEmailed)) : null),
+      h(Card, { title: "Restore from a file", text: "Replaces everything on the website with the contents of a backup file. Your current data is saved as a restore point first." },
+        h("input", { type: "file", accept: "application/json,.json", "aria-label": "Backup file", onChange: function (e) { setFile(e.target.files[0] || null); } }),
+        file ? h("div", { className: "ad-row ad-bk__mail" }, h(A.TextField, { label: "Type RESTORE to confirm", value: word, onChange: function (e) { setWord(e.target.value); } }),
+          h(A.Button, { variant: "danger", icon: "upload", loading: rb, disabled: word.trim() !== "RESTORE", onClick: restoreFile }, "Restore")) : null),
+      h(Card, { title: "Restore points", text: "Safety copies made automatically before a restore, and by the schedule. The newest " + (x ? x.keep : 7) + " are kept. Use one to go back." },
+        !x ? null : !x.points.length ? h("p", { className: "ad-small ad-muted" }, "None yet.") :
+          h("ul", { className: "ad-bk__pts" }, x.points.map(function (r) {
+            return h("li", { key: r.id }, h("span", null, h("b", null, r.kind === "auto" ? "Scheduled backup" : "Before a restore"), h("span", { className: "ad-small ad-muted" }, " · " + new Date(r.created_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) + " · " + ((r.counts && r.counts.vehicle) || 0) + " vehicles")),
+              h(A.Button, { variant: "ghost", size: "s", icon: "clock", onClick: function () { setWord(""); setPt(r); } }, "Go back to this"));
+          }))),
+      pt ? h(Modal, { title: "Go back to this restore point?", onClose: function () { setPt(null); } },
+        h("p", { className: "ad-muted" }, "This replaces the current data. The current data is saved as a new restore point first. Type RESTORE to continue."),
+        h(A.TextField, { label: "Type RESTORE", value: word, onChange: function (e) { setWord(e.target.value); } }),
+        h("div", { className: "ad-row ad-row--end" }, h(A.Button, { variant: "ghost", onClick: function () { setPt(null); } }, "Cancel"), h(A.Button, { variant: "danger", loading: rb, disabled: word.trim() !== "RESTORE", onClick: restorePoint }, "Restore"))) : null);
+  }
+
   /* ------------------------------------------------------------ overview */
   function greet() { var h = new Date().getHours(); return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; }
   function Chip(p) { return h("button", { type: "button", className: cx("ad-ovchip", p.on && "is-on"), onClick: p.onClick }, h("span", { className: "ad-ovchip__dot", "aria-hidden": true }), h("span", null, h("small", null, p.label), p.value)); }
@@ -851,7 +908,8 @@
     ["Cars and catalogue", "car", [["vehicles", "Vehicles", "Add, edit, price, photos, status"], ["manufacturers", "Brands", "Names and logos"], ["models", "Models", "Models for each brand"], ["types", "Body types", "Sedan, SUV, van…"], ["colours", "Colours", "Colour list"], ["features", "Features", "Options such as sunroof"]]],
     ["Customers", "users", [["inquiries", "Inquiries", "Messages and stock quotes"], ["requests", "Auction requests", "Track each import"], ["customers", "Customers", "Accounts"], ["admins", "Admins", "Who can open the admin"], ["newsletters", "Newsletter", "Subscribers"]]],
     ["Website content", "layers", [["home", "Home page", "Sections and wording"], ["testimonials", "Testimonials", "Customer reviews"], ["buy", "How to buy", "Steps and deposit answer"], ["about", "About us", "Values and banner"], ["contact", "Contact & locations", "Showrooms and offices"], ["glossary", "Vocabulary", "Import terms"]]],
-    ["Look and feel", "palette", [["appearance", "Colours & fonts", "Themes, own colours, font"], ["seasons", "Seasons", "Christmas, Easter, Deepavali…"], ["site", "Site details", "Phone, WhatsApp, address, SEO"]]]
+    ["Look and feel", "palette", [["appearance", "Colours & fonts", "Themes, own colours, font"], ["seasons", "Seasons", "Christmas, Easter, Deepavali…"], ["site", "Site details", "Phone, WhatsApp, address, SEO"]]],
+    ["Safety", "lock", [["backup", "Backup & restore", "Download, email, restore"]]]
   ];
   function Overview(p) {
     var d = useLoad("/api/admin/stats");
@@ -899,10 +957,11 @@
     ["Inventory", [["vehicles", "car", "Vehicles"], ["manufacturers", "tag", "Brands"], ["models", "layers", "Models"], ["types", "grid", "Body types"], ["colours", "palette", "Colours"], ["features", "check", "Features"]]],
     ["Customers", [["inquiries", "doc", "Inquiries"], ["requests", "send", "Auction requests"], ["customers", "users", "Customers"], ["admins", "lock", "Admins"], ["newsletters", "mail", "Newsletter"]]],
     ["Pages", [["buy", "ship", "How to buy"], ["about", "users", "About us"], ["contact", "pin", "Contact & locations"], ["glossary", "list", "Vocabulary"]]],
-    ["Website", [["home", "layers", "Home page"], ["testimonials", "star", "Testimonials"], ["seasons", "bell", "Seasons"], ["site", "settings", "Site details"], ["appearance", "palette", "Colours & fonts"]]]
+    ["Website", [["home", "layers", "Home page"], ["testimonials", "star", "Testimonials"], ["seasons", "bell", "Seasons"], ["site", "settings", "Site details"], ["appearance", "palette", "Colours & fonts"]]],
+    ["Safety", [["backup", "lock", "Backup & restore"]]]
   ];
   var BLURB = {
-    overview: "A quick look at the business.", home: "Turn home page sections on or off and change their wording.", testimonials: "Customer reviews on the home page.",
+    overview: "A quick look at the business.", backup: "Download everything, get backups by email, or restore. Updates to the site never delete your data.", home: "Turn home page sections on or off and change their wording.", testimonials: "Customer reviews on the home page.",
     admins: "Who can open this admin. Add an email here, no Firebase needed.", buy: "The five buying steps and the deposit answer.", about: "The About us page.", contact: "Showrooms and offices on the Contact page.", glossary: "The import terms explained on the Vocabulary page.",
     seasons: "Christmas snow, Santa hats and other festive looks for the whole website.", site: "Phone, WhatsApp, address, links and header/footer text.", appearance: "Choose the colours and font of the whole website."
   };
@@ -928,7 +987,7 @@
     var label = NAV.reduce(function (a, g) { return a.concat(g[1]); }, []).filter(function (x) { return x[0] === mod; })[0];
     var group = NAV.filter(function (g) { return g[1].some(function (x) { return x[0] === mod; }); })[0][0];
     var common = { user: p.user, exit: p.onExit, say: say, changed: p.onDataChanged || function () {}, L: L, reloadL: function () { setLv(lv + 1); }, refreshStats: l.reload, go: go };
-    var body = mod === "overview" ? h(Overview, common) : mod === "appearance" ? h(Appearance, common) : mod === "site" ? h(SiteDetails, common) : mod === "home" ? h(HomeContent, common) : mod === "seasons" ? h(Seasons, common) : mod === "admins" ? h(Admins, common) : mod === "buy" ? h(BuyPage, common) : mod === "about" ? h(AboutPage, common) : mod === "contact" ? h(ContactPage, common) : mod === "glossary" ? h(GlossaryPage, common) : mod === "testimonials" ? h(Testimonials, common) :
+    var body = mod === "overview" ? h(Overview, common) : mod === "appearance" ? h(Appearance, common) : mod === "site" ? h(SiteDetails, common) : mod === "home" ? h(HomeContent, common) : mod === "seasons" ? h(Seasons, common) : mod === "admins" ? h(Admins, common) : mod === "backup" ? h(Backup, common) : mod === "buy" ? h(BuyPage, common) : mod === "about" ? h(AboutPage, common) : mod === "contact" ? h(ContactPage, common) : mod === "glossary" ? h(GlossaryPage, common) : mod === "testimonials" ? h(Testimonials, common) :
       !L ? h("p", { className: "ad-muted" }, "Loading…") :
       mod === "vehicles" ? h(Vehicles, common) : TAX[mod] ? h(Taxonomy, Object.assign({ mod: mod, key: mod }, common)) :
       mod === "inquiries" || mod === "requests" ? h(Tracking, Object.assign({ mod: mod, key: mod }, common)) :
