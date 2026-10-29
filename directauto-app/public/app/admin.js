@@ -951,6 +951,31 @@
         }))));
   }
 
+  /* ------------------------------------------------------------ "find what to edit" search */
+  var FIND = [
+    ["vehicles", "Vehicles", "car cars price photo photos sales status label badge ex stock new arrival mileage year sold"],
+    ["manufacturers", "Brands", "brand brands logo toyota honda make left bar"], ["models", "Models", "model models"], ["types", "Body types", "body type sedan suv van hatchback"],
+    ["colours", "Colours list", "car colour color list"], ["features", "Features", "feature options sunroof"],
+    ["inquiries", "Inquiries", "inquiry inquiries messages quote email alerts"], ["requests", "Auction requests", "auction request bid track stage"],
+    ["customers", "Customers", "customer accounts users"], ["admins", "Admins", "admin admins add email access sign in"], ["newsletters", "Newsletter", "newsletter subscribers"],
+    ["home", "Home page", "home hero search bar section heading text wording show hide live auction ready to drive cta banner"], ["testimonials", "Testimonials", "review reviews testimonial customer says"],
+    ["buy", "How to buy", "how to buy steps deposit"], ["about", "About us", "about us values banner"], ["contact", "Contact & locations", "contact showroom office location map"],
+    ["glossary", "Vocabulary", "vocabulary glossary terms"], ["appearance", "Colours & fonts", "colour color theme font logo style dark light"],
+    ["seasons", "Seasons", "season christmas easter deepavali snow santa hat"], ["site", "Site details", "phone whatsapp address footer header seo social instagram facebook hours logo"],
+    ["backup", "Backup & restore", "backup restore download data safe"]
+  ];
+  function FindBox(p) {
+    var s = useState(""), q = s[0], setQ = s[1];
+    var t = q.trim().toLowerCase();
+    var hits = !t ? [] : FIND.filter(function (x) { return (x[1] + " " + x[2]).toLowerCase().indexOf(t) >= 0; }).slice(0, 6);
+    function pick(x) { setQ(""); p.go(x[0]); }
+    return h("div", { className: "ad-find" },
+      h("span", { className: "ad-find__ic", "aria-hidden": true }, h(A.Icon, { name: "search", size: 16 })),
+      h("input", { type: "search", className: "ad-find__in", placeholder: "Find what to edit… (try “whatsapp”)", "aria-label": "Find what to edit", value: q, onChange: function (e) { setQ(e.target.value); },
+        onKeyDown: function (e) { if (e.key === "Enter" && hits[0]) pick(hits[0]); if (e.key === "Escape") setQ(""); } }),
+      t ? h("ul", { className: "ad-find__list", role: "listbox" }, hits.length ? hits.map(function (x) { return h("li", { key: x[0] }, h("button", { type: "button", onClick: function () { pick(x); } }, h("b", null, x[1]), h(A.Icon, { name: "chevron-right", size: 14 }))); }) : h("li", { className: "ad-small ad-muted ad-find__none" }, "Nothing found. Try another word.")) : null);
+  }
+
   /* ------------------------------------------------------------ console shell */
   var NAV = [
     ["Start", [["overview", "home", "Overview"]]],
@@ -1010,7 +1035,7 @@
         h("header", { className: "ad-admin__bar" },
           h("button", { type: "button", className: "ad-admin__burger", "aria-label": "Open menu", "aria-expanded": navOpen, onClick: function () { setNavOpen(!navOpen); } }, h(A.Icon, { name: "menu", size: 22 })),
           h("div", { className: "ad-admin__title" }, h("div", { className: "ad-label" }, group), h("h2", { className: "ad-h1" }, label[2])),
-          h("div", { className: "ad-row ad-admin__tools" }, h(AdminTheme, null), h(A.Button, { variant: "secondary", size: "s", icon: "globe", onClick: p.onExit, className: "ad-hide-sm" }, "View website"),
+          h("div", { className: "ad-row ad-admin__tools" }, h(FindBox, { go: go }), h(AdminTheme, null), h(A.Button, { variant: "secondary", size: "s", icon: "globe", onClick: p.onExit, className: "ad-hide-sm" }, "View website"),
             h("span", { className: "ad-avatar", title: p.user && p.user.email }, ((p.user && (p.user.name || p.user.email)) || "A").slice(0, 2)))),
         h("div", { className: "ad-admin__body" },
           BLURB[mod] ? h("p", { className: "ad-muted ad-admin__blurb" }, BLURB[mod]) : null,

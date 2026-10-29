@@ -1277,3 +1277,19 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
 .ad-bk__mail { align-items: flex-end; flex-wrap: wrap; }
 .ad-bk__pts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .ad-bk__pts li { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+
+/* admin find box */
+.ad-find { position: relative; display: flex; align-items: center; }
+.ad-find__ic { position: absolute; left: 10px; color: var(--muted, #6b7a74); display: flex; pointer-events: none; }
+.ad-find__in { width: 260px; max-width: 100%; padding: 8px 10px 8px 32px; border: 1px solid var(--line-strong, #ccc); border-radius: 10px; background: var(--surface-200, #fff); color: inherit; font: inherit; min-height: 40px; }
+.ad-find__list { position: absolute; top: calc(100% + 6px); left: 0; right: 0; min-width: 240px; z-index: 60; margin: 0; padding: 6px; list-style: none; background: var(--surface-200, #fff); border: 1px solid var(--line-strong, #ccc); border-radius: 12px; box-shadow: var(--shadow-2); }
+.ad-find__list button { display: flex; width: 100%; justify-content: space-between; align-items: center; padding: 10px; border: 0; background: none; border-radius: 8px; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+.ad-find__list button:hover, .ad-find__list button:focus-visible { background: var(--line, #eee); }
+.ad-find__none { padding: 10px; }
+@media (max-width: 760px) {
+  .ad-admin__bar { flex-wrap: wrap; }
+  .ad-admin__tools { flex: 1 1 100%; order: 3; flex-wrap: nowrap; }
+  .ad-find { flex: 1; min-width: 0; }
+  .ad-find__in { width: 100%; }
+  .ad-find__list { right: 0; width: auto; }
+}
