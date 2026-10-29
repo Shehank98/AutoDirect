@@ -833,6 +833,13 @@
 
   /* ------------------------------------------------------------ backup: download, email, restore */
   function ago(ms) { return ms ? new Date(ms).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""; }
+  var LOOKUPS = ["vehicle_type", "vehicle_model", "vehicle_color", "vehicle_feature"];
+  function tiles(x) {
+    var c = x.counts, out = [];
+    x.tables.forEach(function (t) { if (LOOKUPS.indexOf(t) < 0) out.push([x.labels[t] || t, c[t] == null ? 0 : c[t]]); });
+    out.push(["Models, types, colours & features", LOOKUPS.reduce(function (a, t) { return a + (c[t] || 0); }, 0)]);
+    return out;
+  }
   function Backup(p) {
     var d = useLoad("/api/admin/backup/summary"), st = useLoad("/api/admin/settings");
     var s1 = useState(false), dl = s1[0], setDl = s1[1], s2 = useState(false), em = s2[0], setEm = s2[1], s3 = useState(null), file = s3[0], setFile = s3[1];
@@ -863,7 +870,7 @@
       d.error ? h(Err, { text: d.error }) : null,
       h(Card, { title: "Your data is safe when the site is updated", text: "Updating or redeploying the website never deletes anything. Everything below is stored in the database, and photos are stored in Firebase." },
         !x ? h("p", { className: "ad-muted ad-small" }, "Loading…") :
-          h("div", { className: "ad-bk__counts" }, x.tables.map(function (t) { return h("div", { key: t, className: "ad-bk__n" }, h("b", null, x.counts[t] == null ? 0 : x.counts[t]), h("span", { className: "ad-small ad-muted" }, x.labels[t] || t)); }))),
+          h("div", { className: "ad-bk__counts" }, tiles(x).map(function (t) { return h("div", { key: t[0], className: "ad-bk__n" }, h("b", null, t[1]), h("span", { className: "ad-small ad-muted" }, t[0])); }))),
       h(Card, { title: "Download a backup", text: "One file with the vehicles, brands, reviews, settings, customers, inquiries and admins. Keep it somewhere safe, like Google Drive." },
         h("div", { className: "ad-row" }, h(A.Button, { icon: "download", loading: dl, onClick: download }, "Download backup"))),
       h(Card, { title: "Automatic backup by email", text: "We email the backup file to the owner addresses so you always have a recent copy." },
@@ -873,14 +880,14 @@
           h(A.Button, { variant: "secondary", icon: "mail", loading: em, disabled: !(x && x.emailReady), onClick: mailNow }, "Email me a backup now")),
         x && x.lastEmailed ? h("p", { className: "ad-small ad-muted" }, "Last emailed: " + ago(x.lastEmailed)) : null),
       h(Card, { title: "Restore from a file", text: "Replaces everything on the website with the contents of a backup file. Your current data is saved as a restore point first." },
-        h("input", { type: "file", accept: "application/json,.json", "aria-label": "Backup file", onChange: function (e) { setFile(e.target.files[0] || null); } }),
+        h("label", { className: "ad-bk__file" }, h(A.Icon, { name: "upload", size: 18 }), h("span", null, file ? file.name : "Choose a backup file (.json)"), h("input", { type: "file", accept: "application/json,.json", "aria-label": "Backup file", onChange: function (e) { setFile(e.target.files[0] || null); } })),
         file ? h("div", { className: "ad-row ad-bk__mail" }, h(A.TextField, { label: "Type RESTORE to confirm", value: word, onChange: function (e) { setWord(e.target.value); } }),
           h(A.Button, { variant: "danger", icon: "upload", loading: rb, disabled: word.trim() !== "RESTORE", onClick: restoreFile }, "Restore")) : null),
       h(Card, { title: "Restore points", text: "Safety copies made automatically before a restore, and by the schedule. The newest " + (x ? x.keep : 7) + " are kept. Use one to go back." },
         !x ? null : !x.points.length ? h("p", { className: "ad-small ad-muted" }, "None yet.") :
           h("ul", { className: "ad-bk__pts" }, x.points.map(function (r) {
             return h("li", { key: r.id }, h("span", null, h("b", null, r.kind === "auto" ? "Scheduled backup" : "Before a restore"), h("span", { className: "ad-small ad-muted" }, " · " + new Date(r.created_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) + " · " + ((r.counts && r.counts.vehicle) || 0) + " vehicles")),
-              h(A.Button, { variant: "ghost", size: "s", icon: "clock", onClick: function () { setWord(""); setPt(r); } }, "Go back to this"));
+              h(A.Button, { variant: "secondary", size: "s", icon: "clock", onClick: function () { setWord(""); setPt(r); } }, "Go back to this"));
           }))),
       pt ? h(Modal, { title: "Go back to this restore point?", onClose: function () { setPt(null); } },
         h("p", { className: "ad-muted" }, "This replaces the current data. The current data is saved as a new restore point first. Type RESTORE to continue."),
@@ -971,7 +978,7 @@
     function pick(x) { setQ(""); p.go(x[0]); }
     return h("div", { className: "ad-find" },
       h("span", { className: "ad-find__ic", "aria-hidden": true }, h(A.Icon, { name: "search", size: 16 })),
-      h("input", { type: "search", className: "ad-find__in", placeholder: "Find what to edit… (try “whatsapp”)", "aria-label": "Find what to edit", value: q, onChange: function (e) { setQ(e.target.value); },
+      h("input", { type: "search", className: "ad-find__in", placeholder: "Find what to edit…", "aria-label": "Find what to edit", value: q, onChange: function (e) { setQ(e.target.value); },
         onKeyDown: function (e) { if (e.key === "Enter" && hits[0]) pick(hits[0]); if (e.key === "Escape") setQ(""); } }),
       t ? h("ul", { className: "ad-find__list", role: "listbox" }, hits.length ? hits.map(function (x) { return h("li", { key: x[0] }, h("button", { type: "button", onClick: function () { pick(x); } }, h("b", null, x[1]), h(A.Icon, { name: "chevron-right", size: 14 }))); }) : h("li", { className: "ad-small ad-muted ad-find__none" }, "Nothing found. Try another word.")) : null);
   }

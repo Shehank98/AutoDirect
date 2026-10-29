@@ -1293,3 +1293,21 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
   .ad-find__in { width: 100%; }
   .ad-find__list { right: 0; width: auto; }
 }
+
+/* backup page polish */
+.ad-bk__counts { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.ad-bk__n { padding: 10px 12px; }
+.ad-bk__n b { line-height: 1.1; }
+.ad-bk__file { position: relative; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 10px 14px; border: 1.5px dashed var(--line-strong); border-radius: var(--radius-m, 12px); background: var(--surface-100); cursor: pointer; overflow: hidden; word-break: break-all; }
+.ad-bk__file:hover, .ad-bk__file:focus-within { border-color: var(--brand); }
+.ad-bk__file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.ad-bk__mail > .ad-field, .ad-bk__mail > div:first-child { min-width: 180px; }
+.ad-card > p { margin: 0; }
+.ad-bk__pts li > span { min-width: 0; }
+@media (max-width: 760px) {
+  .ad-bk__counts { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ad-bk__mail { align-items: stretch; flex-direction: column; }
+  .ad-bk__mail > *, .ad-bk__mail .ad-btn { width: 100%; }
+  .ad-bk__pts li { flex-direction: column; align-items: stretch; }
+  .ad-bk__pts li .ad-btn { width: 100%; }
+}
