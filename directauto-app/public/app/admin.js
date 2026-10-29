@@ -834,9 +834,10 @@
   /* ------------------------------------------------------------ backup: download, email, restore */
   function ago(ms) { return ms ? new Date(ms).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""; }
   var LOOKUPS = ["vehicle_type", "vehicle_model", "vehicle_color", "vehicle_feature"];
+  function cap(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
   function tiles(x) {
     var c = x.counts, out = [];
-    x.tables.forEach(function (t) { if (LOOKUPS.indexOf(t) < 0) out.push([x.labels[t] || t, c[t] == null ? 0 : c[t]]); });
+    x.tables.forEach(function (t) { if (LOOKUPS.indexOf(t) < 0) out.push([cap(x.labels[t] || t), c[t] == null ? 0 : c[t]]); });
     out.push(["Models, types, colours & features", LOOKUPS.reduce(function (a, t) { return a + (c[t] || 0); }, 0)]);
     return out;
   }
@@ -868,7 +869,7 @@
     var x = d.data;
     return h(Frag, null,
       d.error ? h(Err, { text: d.error }) : null,
-      h(Card, { title: "Your data is safe when the site is updated", text: "Updating or redeploying the website never deletes anything. Everything below is stored in the database, and photos are stored in Firebase." },
+      h(Card, { title: "Your data is safe when the site is updated", text: "Updating or redeploying the website never deletes anything. The numbers below are counted live from your database. Photos are stored in Firebase." },
         !x ? h("p", { className: "ad-muted ad-small" }, "Loading…") :
           h("div", { className: "ad-bk__counts" }, tiles(x).map(function (t) { return h("div", { key: t[0], className: "ad-bk__n" }, h("b", null, t[1]), h("span", { className: "ad-small ad-muted" }, t[0])); }))),
       h(Card, { title: "Download a backup", text: "One file with the vehicles, brands, reviews, settings, customers, inquiries and admins. Keep it somewhere safe, like Google Drive." },
