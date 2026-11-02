@@ -144,14 +144,16 @@ function backup_(team, site, d) {
   if (!team.length) throw new Error('ADMIN_EMAILS is empty in the script properties.');
   var rows = (d.summary || []).map(function (r) { return [r[0].charAt(0).toUpperCase() + r[0].slice(1), r[1]]; });
   rows.push(['File size', (d.sizeMb || 0) + ' MB']);
-  var attach = d.base64 ? [Utilities.newBlob(Utilities.base64Decode(d.base64), 'application/json', d.filename || 'backup.json')] : [];
+  var fileName = d.filename || 'backup.zip';
+  var mime = /\.zip$/i.test(fileName) ? 'application/zip' : 'application/json';
+  var attach = d.base64 ? [Utilities.newBlob(Utilities.base64Decode(d.base64), mime, fileName)] : [];
   var html = page_(site, {
     title: 'Your website backup',
     intro: (d.kind === 'automatic' ? 'Here is your automatic backup. ' : 'Here is the backup you asked for. ') +
       (attach.length ? 'The file is attached.' : 'It is too big to attach, so please download it from Admin > Backup.') + ' Keep it somewhere safe, because it contains customer details.',
     rows: rows,
     button: site.url ? { label: 'Open Backup in the admin', url: site.url + '/admin' } : null,
-    note: 'To restore: Admin > Backup > Restore from a file. Car photos are stored separately in Firebase Storage; this file keeps their links.',
+    note: 'To restore: Admin > Backup > Restore from a file. A .zip holds the data and all the photos; an older .json holds the data and only the photo links.',
     audience: 'team'
   });
   send_(team, 'Direct Auto backup ' + new Date().toISOString().slice(0, 10), html, null, attach);

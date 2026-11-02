@@ -839,6 +839,7 @@
     var c = x.counts, out = [];
     x.tables.forEach(function (t) { if (LOOKUPS.indexOf(t) < 0) out.push([cap(x.labels[t] || t), c[t] == null ? 0 : c[t]]); });
     out.push(["Models, types, colours & features", LOOKUPS.reduce(function (a, t) { return a + (c[t] || 0); }, 0)]);
+    if (x.photos != null) out.push(["Photos", x.photos]);
     return out;
   }
   function Backup(p) {
@@ -846,16 +847,30 @@
     var s1 = useState(false), dl = s1[0], setDl = s1[1], s2 = useState(false), em = s2[0], setEm = s2[1], s3 = useState(null), file = s3[0], setFile = s3[1];
     var s4 = useState(""), word = s4[0], setWord = s4[1], s5 = useState(false), rb = s5[0], setRb = s5[1], s6 = useState(null), pt = s6[0], setPt = s6[1];
     var every = st.data && st.data.values ? (st.data.values.backupEvery || "") : "";
-    function download() {
+    function saveBlob(url, fallbackName) {
       setDl(true);
-      api.authFor("/api/admin/backup/download").then(function (t) { return fetch("/api/admin/backup/download", { headers: { Authorization: "Bearer " + t } }); })
-        .then(function (r) { if (!r.ok) throw new Error("Could not make the backup (" + r.status + ")"); var name = (/filename="([^"]+)"/.exec(r.headers.get("Content-Disposition") || "") || [])[1] || "direct-auto-backup.json"; return r.blob().then(function (b) { return [b, name]; }); })
-        .then(function (x) { var a = document.createElement("a"); a.href = URL.createObjectURL(x[0]); a.download = x[1]; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); setDl(false); p.say("Backup saved to your device."); },
-          function (e) { setDl(false); p.say(e.message, "danger"); });
+      return api.authFor("/api/admin/backup/download").then(function (t) { return fetch(url, { headers: { Authorization: "Bearer " + t } }); })
+        .then(function (r) {
+          if (!r.ok) throw new Error("Could not make the backup (" + r.status + ")");
+          var name = (/filename="([^"]+)"/.exec(r.headers.get("Content-Disposition") || "") || [])[1] || fallbackName;
+          return r.blob().then(function (b) { return [b, name]; });
+        })
+        .then(function (x) {
+          var a = document.createElement("a"); a.href = URL.createObjectURL(x[0]); a.download = x[1]; document.body.appendChild(a); a.click();
+          setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); setDl(false); p.say("Backup downloaded: " + x[1] + " (" + (x[0].size / 1048576).toFixed(1) + " MB)");
+        }, function (e) { setDl(false); p.say(e.message, "danger"); });
     }
+    function download() { saveBlob("/api/admin/backup/download", "direct-auto-backup.zip"); }
+    function downloadData() { saveBlob("/api/admin/backup/download?format=json", "direct-auto-backup.json"); }
     function setEvery(e) { var v = e.target.value; api.put("/api/admin/settings", { backupEvery: v }).then(function (r) { st.set(r); p.say(v ? "Automatic backup is on." : "Automatic backup is off."); }, function (x) { p.say(x.message, "danger"); }); }
-    function mailNow() { setEm(true); api.post("/api/admin/backup/email-now", {}).then(function (r) { setEm(false); d.reload(); p.say(r.tooBig ? "Sent, but the file was too big to attach. Use Download instead." : "Backup emailed to " + (r.to || []).join(", ")); }, function (x) { setEm(false); p.say(x.message, "danger"); }); }
-    function done(r) { setRb(false); setPt(null); setFile(null); setWord(""); d.reload(); p.reloadL(); p.changed(); p.say("Restored. A restore point of the data before this was saved, so you can undo."); }
+    function mailNow() { setEm(true); api.post("/api/admin/backup/email-now", {}).then(function (r) { setEm(false); d.reload(); p.say(r.tooBig ? "Sent the data, but the photos did not fit in an email (15 MB limit). Use Download to get everything." : "Backup" + (r.withPhotos ? " with photos" : "") + " emailed to " + (r.to || []).join(", ")); }, function (x) { setEm(false); p.say(x.message, "danger"); }); }
+    function done(r) {
+      setRb(false); setPt(null); setFile(null); setWord(""); d.reload(); p.reloadL(); p.changed();
+      var ph = r && r.photos, msg = "Restored. A restore point of the data before this was saved, so you can undo.";
+      if (ph && ph.found) msg += ph.restored ? " " + ph.restored + " photo" + (ph.restored === 1 ? "" : "s") + " put back into Firebase Storage." : (r.storageReady === false ? " Photos were not re-uploaded because Firebase Storage is not set up, so their old links were kept." : "");
+      if (ph && ph.failed) msg += " " + ph.failed + " photo" + (ph.failed === 1 ? "" : "s") + " could not be re-uploaded and keep the old link.";
+      p.say(msg, ph && ph.failed ? "danger" : undefined);
+    }
     function restoreFile() {
       setRb(true); var fd = new FormData(); fd.append("confirm", word.trim()); fd.append("file", file);
       api.authFor("/api/admin/backup/restore").then(function (t) { return fetch("/api/admin/backup/restore", { method: "POST", headers: { Authorization: "Bearer " + t }, body: fd }); })
@@ -869,21 +884,24 @@
     var x = d.data;
     return h(Frag, null,
       d.error ? h(Err, { text: d.error }) : null,
-      h(Card, { title: "Your data is safe when the site is updated", text: "Updating or redeploying the website never deletes anything. The numbers below are counted live from your database. Photos are stored in Firebase." },
+      h(Card, { title: "Your data is safe when the site is updated", text: "Updating or redeploying the website never deletes anything. The numbers below are counted live from your database." },
         !x ? h("p", { className: "ad-muted ad-small" }, "Loading…") :
           h("div", { className: "ad-bk__counts" }, tiles(x).map(function (t) { return h("div", { key: t[0], className: "ad-bk__n" }, h("b", null, t[1]), h("span", { className: "ad-small ad-muted" }, t[0])); }))),
-      h(Card, { title: "Download a backup", text: "One file with the vehicles, brands, reviews, settings, customers, inquiries and admins. Keep it somewhere safe, like Google Drive." },
-        h("div", { className: "ad-row" }, h(A.Button, { icon: "download", loading: dl, onClick: download }, "Download backup"))),
-      h(Card, { title: "Automatic backup by email", text: "We email the backup file to the owner addresses so you always have a recent copy." },
+      h(Card, { title: "Download a backup", text: "One .zip with everything: the vehicles, brands, reviews, settings, customers, inquiries and admins, plus every photo. Keep it somewhere safe, like Google Drive." },
+        h("div", { className: "ad-row" }, h(A.Button, { icon: "download", loading: dl, onClick: download }, "Download backup with photos"),
+          h(A.Button, { variant: "ghost", size: "s", disabled: dl, onClick: downloadData }, "Data only (.json, no photos)")),
+        dl ? h("p", { className: "ad-small ad-muted", role: "status" }, "Preparing your backup. With many photos this can take a minute. Please keep this page open.") : null),
+      h(Card, { title: "Automatic backup by email", text: "We email a recent copy to the owner addresses: a .zip with the photos when it fits in an email (15 MB), otherwise the data only." },
         x && !x.emailReady ? h("p", { className: "ad-small ad-muted" }, "Email is not connected yet, so this is switched off. See docs/email/SETUP.md.") : null,
         h("div", { className: "ad-row ad-bk__mail" },
           h(A.SelectField, { label: "How often", options: [{ value: "", label: "Off" }, { value: "daily", label: "Every day" }, { value: "weekly", label: "Every week" }], value: every, disabled: !(x && x.emailReady), onChange: setEvery }),
           h(A.Button, { variant: "secondary", icon: "mail", loading: em, disabled: !(x && x.emailReady), onClick: mailNow }, "Email me a backup now")),
         x && x.lastEmailed ? h("p", { className: "ad-small ad-muted" }, "Last emailed: " + ago(x.lastEmailed)) : null),
-      h(Card, { title: "Restore from a file", text: "Replaces everything on the website with the contents of a backup file. Your current data is saved as a restore point first." },
-        h("label", { className: "ad-bk__file" }, h(A.Icon, { name: "upload", size: 18 }), h("span", null, file ? file.name : "Choose a backup file (.json)"), h("input", { type: "file", accept: "application/json,.json", "aria-label": "Backup file", onChange: function (e) { setFile(e.target.files[0] || null); } })),
+      h(Card, { title: "Restore from a file", text: "Replaces everything on the website with the contents of a backup file. Photos in a .zip are put back into Firebase Storage. Your current data is saved as a restore point first." },
+        h("label", { className: "ad-bk__file" }, h(A.Icon, { name: "upload", size: 18 }), h("span", null, file ? file.name : "Choose a backup file (.zip or .json)"), h("input", { type: "file", accept: ".zip,.json,application/zip,application/json", "aria-label": "Backup file", onChange: function (e) { setFile(e.target.files[0] || null); } })),
         file ? h("div", { className: "ad-row ad-bk__mail" }, h(A.TextField, { label: "Type RESTORE to confirm", value: word, onChange: function (e) { setWord(e.target.value); } }),
-          h(A.Button, { variant: "danger", icon: "upload", loading: rb, disabled: word.trim() !== "RESTORE", onClick: restoreFile }, "Restore")) : null),
+          h(A.Button, { variant: "danger", icon: "upload", loading: rb, disabled: word.trim() !== "RESTORE", onClick: restoreFile }, "Restore")) : null,
+        rb ? h("p", { className: "ad-small ad-muted", role: "status" }, "Restoring. If the file has photos they are being uploaded, which can take a minute. Please keep this page open.") : null),
       h(Card, { title: "Restore points", text: "Safety copies made automatically before a restore, and by the schedule. The newest " + (x ? x.keep : 7) + " are kept. Use one to go back." },
         !x ? null : !x.points.length ? h("p", { className: "ad-small ad-muted" }, "None yet.") :
           h("ul", { className: "ad-bk__pts" }, x.points.map(function (r) {

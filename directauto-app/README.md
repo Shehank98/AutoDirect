@@ -68,7 +68,10 @@ npm start                # http://localhost:3000, creates the schema and loads s
 3. In **Variables** add `ADMIN_EMAILS` and the Firebase variables (below). Redeploy.
 4. Open `https://<your-domain>/admin` and sign in with Firebase. Health check: `/api/health`.
 5. Sample cars are loaded only once, on the very first boot of an empty database (and never in production unless `SEED_DEMO_DATA=true`). After that a redeploy never adds, changes or deletes your data.
-6. Backups: Admin › Backup & restore lets you download everything, email it daily/weekly, and restore (a restore point is saved first). Photos live in Firebase Storage and are not part of the file.
+6. Backups: Admin › Backup & restore downloads **one .zip with all the data and every photo** (cars, brand logos, review photos), can email it daily/weekly (as a .zip when it fits in 15 MB, otherwise the data only), and restores from a .zip or an older .json (a restore point is saved first). On restore the photos are re-uploaded to Firebase Storage and their links fixed; without Storage the old links are kept. The backup also covers the settings, reviews, customers, inquiries and admins. Photo links must be public `https` links or site files; private and internal addresses are never fetched.
+
+### Home page order
+Admin › Website › Home page order: pin cars to the top of the home grid and arrange them by dragging or with the arrows (the first 9 are what visitors see first). Unpinned cars follow in the automatic order (featured, then newest).
 
 ### Firebase (required for the admin)
 Step-by-step: `docs/FIREBASE_SETUP.md`.

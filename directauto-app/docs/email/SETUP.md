@@ -60,5 +60,5 @@ Firebase's own emails come from a generic `firebaseapp.com` address, and Gmail o
 
 ## Backup emails
 
-The same script also sends the website backup (Admin › Backup & restore › Automatic backup by email) as a file attachment.
+The same script also sends the website backup (Admin › Backup & restore › Automatic backup by email) as a file attachment: a `.zip` with the data and photos, or the data only when the photos are too big for an email.
 After updating `Code.gs`, paste the new code and choose **Deploy › Manage deployments › Edit › New version**, so the `backup` event works.

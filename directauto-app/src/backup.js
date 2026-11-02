@@ -2,8 +2,11 @@
 // features, reviews, settings (texts, colours, fonts, seasons), inquiries, auction requests, customers,
 // newsletter, the admin list. Car PHOTOS live in Firebase Storage (separate from the database and never touched
 // by a deployment); the backup keeps each photo's link.
+const fs = require('fs');
 const db = require('../db/pool');
 const mailer = require('./mailer');
+const photos = require('./backupPhotos');
+const storage = require('./storage');
 
 // Order matters for restore (a table comes after the tables it points to).
 const TABLES = ['vehicle_type', 'vehicle_manufacturer', 'vehicle_model', 'vehicle_color', 'vehicle_feature', 'vehicle',
@@ -64,6 +67,48 @@ async function restoreAll(backup) {
   return { ok: true, restorePoint: point };
 }
 
+// Restores from an uploaded backup file on disk: a .zip (data + photos) or an older .json (data only).
+const userError = (msg) => Object.assign(new Error(msg), { status: 400 });
+async function restoreFromFile(filePath) {
+  const fd = fs.openSync(filePath, 'r'); const head = Buffer.alloc(4);
+  try { fs.readSync(fd, head, 0, 4, 0); } finally { fs.closeSync(fd); }
+  if (head.toString('latin1') === 'PK\u0003\u0004') return restoreFromZip(filePath);
+
+  let data;
+  try { data = JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch (_e) { throw userError('That file is not a valid backup (it could not be read).'); }
+  try { validate(data); } catch (e) { throw userError(e.message); }
+  const r = await restoreAll(data);
+  return { ...r, counts: data.counts, photos: { found: 0, restored: 0, kept: photos.collectUrls(data.tables).length, failed: 0 }, format: 'json' };
+}
+
+async function restoreFromZip(filePath) {
+  let zip;
+  try { zip = await photos.openZip(filePath); } catch (e) { throw userError(e.message); }
+  try {
+    if (!zip.has('data.json')) throw userError('This .zip is not a Direct Auto backup (data.json is missing).');
+    let data;
+    try { data = JSON.parse((await zip.read('data.json', photos.MAX_DATA)).toString('utf8')); } catch (_e) { throw userError('The data inside this backup could not be read.'); }
+    try { validate(data); } catch (e) { throw userError(e.message); }
+
+    // Photos: put each back into Firebase Storage and remember the new link. Without Storage the old links stay.
+    const files = (data.images && Array.isArray(data.images.files)) ? data.images.files : [];
+    const report = { found: files.length, restored: 0, kept: 0, failed: 0 };
+    const map = new Map(), canUpload = storage.configured();
+    for (const f of files) {
+      const okPath = f && typeof f.url === 'string' && /^images\/[A-Za-z0-9._-]+$/.test(String(f.path));
+      if (!okPath || !photos.isRemote(f.url) || !canUpload) { report.kept++; continue; }   // site files (/assets/...) never need re-uploading
+      try {
+        const buf = await zip.read(f.path, photos.MAX_PHOTO);
+        map.set(f.url, await storage.uploadBuffer(buf, storage.EXT[f.type] ? f.type : 'image/jpeg', 'restored', f.path.split('/').pop()));
+        report.restored++;
+      } catch (e) { report.failed++; console.error('[restore] photo %s not re-uploaded: %s', f.path, e.message); }
+    }
+    if (map.size) photos.rewriteUrls(data.tables, map);
+    const r = await restoreAll(data);
+    return { ...r, counts: data.counts, photos: report, storageReady: canUpload, format: 'zip' };
+  } finally { zip.close(); }
+}
+
 async function savePoint(kind) {
   const data = await exportAll();
   const { rows } = await db.query('INSERT INTO backups (kind, counts, data) VALUES ($1, $2, $3) RETURNING id, created_at', [kind, JSON.stringify(data.counts), JSON.stringify(data)]);
@@ -73,18 +118,43 @@ async function savePoint(kind) {
 }
 
 const stamp = () => new Date().toISOString().slice(0, 16).replace('T', '-').replace(':', '');
-const fileName = () => `direct-auto-backup-${stamp()}.json`;
+const fileName = () => `direct-auto-backup-${stamp()}.json`;      // data only (older format, still downloadable)
+const zipName = () => `direct-auto-backup-${stamp()}.zip`;        // data + every photo
 
-// Emails the backup file through the Google mail script.
+// How many different photos the data points at (shown on the Backup page).
+async function photoCount() {
+  const tables = {};
+  for (const [t, col] of photos.IMAGE_COLUMNS) {
+    const { rows } = await db.query(`SELECT ${quote(col)} AS v FROM ${quote(t)}`);   // table and column come from the fixed list
+    tables[t] = rows.map((r) => ({ [col]: r.v }));
+  }
+  return photos.collectUrls(tables).length;
+}
+
+// Streams the full backup (data + photos) as a ZIP.
+async function writeZip(out) { return photos.writeZip(out, await exportAll()); }
+
+// Emails the backup through the Google mail script: a ZIP with the photos when it fits (15 MB), otherwise the data file alone.
+const EMAIL_LIMIT = 15 * 1048576;
 async function emailBackup(kind) {
   const data = await exportAll();
-  const json = JSON.stringify(data);
-  const mb = Buffer.byteLength(json) / 1048576;
   const summary = TABLES.filter((t) => t !== 'app_meta' && t !== 'settings').map((t) => [LABELS[t], data.counts[t]]);
-  const payload = { kind, filename: fileName(), summary, sizeMb: Math.round(mb * 10) / 10 };
-  if (mb <= 15) payload.base64 = Buffer.from(json).toString('base64');   // bigger than 15 MB: send the summary only
+  let zip = null;
+  try { zip = await photos.zipToBuffer(data, EMAIL_LIMIT); } catch (e) { console.error('[backup] could not prepare the photos for the email:', e.message); }
+  const payload = { kind, summary };
+  let tooBig = false;
+  if (zip) {
+    payload.filename = zipName(); payload.base64 = zip.buffer.toString('base64'); payload.sizeMb = Math.round(zip.buffer.length / 104857.6) / 10;
+    summary.push(['photos included', zip.photos]); if (zip.missing) summary.push(['photos that could not be saved', zip.missing]);
+  } else {
+    const json = JSON.stringify(data); const mb = Buffer.byteLength(json) / 1048576;
+    payload.filename = fileName(); payload.sizeMb = Math.round(mb * 10) / 10;
+    if (mb <= 15) payload.base64 = Buffer.from(json).toString('base64');   // bigger than 15 MB: send the summary only
+    tooBig = true;                                                          // the photos did not fit; download from Admin to get them
+    summary.push(['photos included', 0]);
+  }
   const r = await mailer.send('backup', payload);
-  return { ...r, tooBig: mb > 15 };
+  return { ...r, tooBig, withPhotos: !!zip };
 }
 
 // "Email me a backup every day / week": checked every hour while the server runs.
@@ -107,4 +177,4 @@ function startSchedule() {
   setInterval(runSchedule, 60 * 60 * 1000).unref();
 }
 
-module.exports = { TABLES, LABELS, exportAll, counts, restoreAll, savePoint, emailBackup, startSchedule, runSchedule, fileName, validate, KEEP_POINTS };
+module.exports = { TABLES, LABELS, exportAll, counts, restoreAll, restoreFromFile, savePoint, emailBackup, startSchedule, runSchedule, fileName, zipName, writeZip, photoCount, validate, KEEP_POINTS };
