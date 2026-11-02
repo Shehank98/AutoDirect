@@ -1362,8 +1362,12 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
 .ad-ho__t.is-pinned { border-color: var(--brand); }
 .ad-ho__t.is-over { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
 .ad-ho__t.is-cut .ad-ho__img img { opacity: .55; }
-.ad-ho__img { position: relative; aspect-ratio: 4 / 3; background: var(--surface-300); display: grid; place-items: center; }
-.ad-ho__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* The photo is taken out of the layout flow (absolute) so a very tall or very wide picture can never stretch the tile
+   and push the Pin / arrow buttons out of view. The box is always 4:3 and the photo is cropped to fill it. */
+.ad-ho__img { position: relative; aspect-ratio: 4 / 3; overflow: hidden; min-height: 0; background: var(--surface-300); display: grid; place-items: center; }
+.ad-ho__img img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; display: block; }
+.ad-ho__img .ad-dt__ph { width: 100%; height: 100%; border-radius: 0; }
+.ad-ho__t { min-width: 0; }
 .ad-ho__n { position: absolute; left: 8px; top: 8px; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 14px; background: var(--ink); color: var(--surface-100); font: 700 13px/28px var(--font-mono); text-align: center; }
 .is-pinned .ad-ho__n { background: var(--accent); color: var(--on-accent); }
 .ad-ho__cut { position: absolute; right: 8px; bottom: 8px; padding: 3px 8px; border-radius: 6px; background: rgba(20, 23, 26, .78); color: #fff; font: 600 11px/16px var(--font-sans); }
