@@ -1348,3 +1348,36 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
   .is-collapsed .ad-admin__lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .is-collapsed .ad-admin__n { position: absolute; top: 3px; right: 8px; min-width: 16px; height: 16px; padding: 0 4px; margin: 0; font-size: 10px; line-height: 16px; }
 }
+
+/* ============ Admin > Home page order ============ */
+.ad-ho__strip { list-style: none; margin: 0; padding: 0 0 4px; display: flex; gap: 8px; overflow-x: auto; }
+.ad-ho__strip li { position: relative; flex: none; width: 104px; height: 76px; border-radius: 10px; overflow: hidden; background: var(--surface-300); border: 1.5px solid var(--line); }
+.ad-ho__strip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ad-ho__sn { position: absolute; left: 5px; top: 5px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--accent); color: var(--on-accent); font: 700 11px/20px var(--font-mono); text-align: center; }
+.ad-ho__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.ad-ho__grid.is-empty { display: block; }
+.ad-ho__none { padding: 22px; text-align: center; border: 1.5px dashed var(--line-strong); border-radius: 14px; color: var(--ink-muted); }
+.ad-ho__t { display: grid; grid-template-rows: auto 1fr auto; border: 1.5px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface-200); cursor: grab; transition: border-color 120ms, box-shadow 120ms, opacity 120ms; }
+.ad-ho__t:active { cursor: grabbing; }
+.ad-ho__t.is-pinned { border-color: var(--brand); }
+.ad-ho__t.is-over { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+.ad-ho__t.is-cut .ad-ho__img img { opacity: .55; }
+.ad-ho__img { position: relative; aspect-ratio: 4 / 3; background: var(--surface-300); display: grid; place-items: center; }
+.ad-ho__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ad-ho__n { position: absolute; left: 8px; top: 8px; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 14px; background: var(--ink); color: var(--surface-100); font: 700 13px/28px var(--font-mono); text-align: center; }
+.is-pinned .ad-ho__n { background: var(--accent); color: var(--on-accent); }
+.ad-ho__cut { position: absolute; right: 8px; bottom: 8px; padding: 3px 8px; border-radius: 6px; background: rgba(20, 23, 26, .78); color: #fff; font: 600 11px/16px var(--font-sans); }
+.ad-ho__b { display: grid; gap: 2px; padding: 10px 12px 4px; align-content: start; min-width: 0; }
+.ad-ho__b b { font-size: 14px; line-height: 19px; }
+.ad-ho__acts { display: flex; gap: 6px; padding: 8px 10px 12px; flex-wrap: wrap; }
+.ad-ho__btn { height: 34px; min-width: 34px; padding: 0 8px; border: 1.5px solid var(--line-strong); border-radius: 9px; background: var(--surface-200); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: 600 13px var(--font-sans); cursor: pointer; }
+.ad-ho__btn:hover:not(:disabled) { border-color: var(--ink); background: var(--surface-300); }
+.ad-ho__btn:disabled { opacity: .4; cursor: not-allowed; }
+.ad-ho__btn--text { padding: 0 12px; margin-left: auto; }
+.ad-ho__btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ad-ho__bar { position: sticky; bottom: 12px; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border-radius: 14px;
+  border: 1.5px solid var(--line); background: color-mix(in srgb, var(--surface-200) 94%, transparent); backdrop-filter: blur(8px); box-shadow: var(--shadow-2); }
+.ad-ho__bar.is-dirty { border-color: var(--accent); }
+.ad-ho__state { font-weight: 600; }
+.ad-ho__bar.is-dirty .ad-ho__state { color: var(--accent); }
+@media (max-width: 640px) { .ad-ho__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .ad-ho__btn--text { margin-left: 0; } .ad-ho__bar { bottom: 8px; } }

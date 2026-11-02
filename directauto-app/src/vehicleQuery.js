@@ -59,6 +59,7 @@ function toVehicle(r) {
     conditions: r.conditions || '',
     seats: r.seats, doors: r.doors,
     added: r.created_at,
+    homePos: r.home_order == null ? null : Number(r.home_order),   // position on the home page when pinned
   };
 }
 

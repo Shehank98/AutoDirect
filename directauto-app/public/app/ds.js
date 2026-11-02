@@ -578,7 +578,12 @@
     var list = vehicles.filter(function (v) {
       return v.status !== "Sold" && (!f.make || v.make === f.make) && (!f.model || v.model === f.model) && (!f.type || v.type === f.type) &&
         inPrice(v, range) && (!f.yFrom || v.year >= Number(f.yFrom));
-    }).sort(function (a, b) { return (b.featured - a.featured) || (new Date(b.added) - new Date(a.added)); });
+    }).sort(function (a, b) {
+      // Cars pinned in Admin > Home page order come first, in that order; the rest: featured, then newest.
+      var pa = a.homePos == null ? Infinity : a.homePos, pb2 = b.homePos == null ? Infinity : b.homePos;
+      if (pa !== pb2) return pa < pb2 ? -1 : 1;
+      return (b.featured - a.featured) || (new Date(b.added) - new Date(a.added));
+    });
     var shown = list.slice(0, 9);
     var models = f.make ? (stock ? MAKES : ALL_MAKES)[f.make] || [] : [];
     var extra = (f.model ? 1 : 0) + (f.type ? 1 : 0) + (f.yFrom ? 1 : 0) + (f.budget ? 1 : 0);

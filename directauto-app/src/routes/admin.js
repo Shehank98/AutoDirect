@@ -201,6 +201,25 @@ router.delete('/vehicles/:id', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ---------- Home page order ----------
+// The cars pinned to the top of the home page grid, first to last. Unpinned cars keep the automatic order
+// (featured first, then newest). Saving replaces the whole pinned list, so unpinning is just leaving a car out.
+router.put('/home-order', async (req, res, next) => {
+  const raw = req.body && req.body.ids;
+  if (!Array.isArray(raw)) return res.status(400).json({ error: 'Send the cars in the order you want.' });
+  const ids = [];
+  for (const x of raw) { const n = parseInt(x, 10); if (Number.isInteger(n) && n > 0 && n < 2147483647 && !ids.includes(n)) ids.push(n); }
+  if (ids.length > 200) return res.status(400).json({ error: 'You can pin up to 200 cars.' });
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('UPDATE vehicle SET home_order = NULL WHERE home_order IS NOT NULL');
+    if (ids.length) await client.query('UPDATE vehicle v SET home_order = t.pos FROM unnest($1::int[]) WITH ORDINALITY AS t(id, pos) WHERE v.id = t.id', [ids]);
+    await client.query('COMMIT');
+    res.json({ ok: true, pinned: ids.length });
+  } catch (e) { await client.query('ROLLBACK').catch(() => {}); next(e); } finally { client.release(); }
+});
+
 // ---------- Inquiries (read + mark handled) ----------
 router.get('/inquiries', async (_req, res, next) => {
   try {

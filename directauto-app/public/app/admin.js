@@ -915,7 +915,7 @@
   var DIRECTORY = [
     ["Cars and catalogue", "car", [["vehicles", "Vehicles", "Add, edit, price, photos, status"], ["manufacturers", "Brands", "Names and logos"], ["models", "Models", "Models for each brand"], ["types", "Body types", "Sedan, SUV, van…"], ["colours", "Colours", "Colour list"], ["features", "Features", "Options such as sunroof"]]],
     ["Customers", "users", [["inquiries", "Inquiries", "Messages and stock quotes"], ["requests", "Auction requests", "Track each import"], ["customers", "Customers", "Accounts"], ["admins", "Admins", "Who can open the admin"], ["newsletters", "Newsletter", "Subscribers"]]],
-    ["Website content", "layers", [["home", "Home page", "Sections and wording"], ["testimonials", "Testimonials", "Customer reviews"], ["buy", "How to buy", "Steps and deposit answer"], ["about", "About us", "Values and banner"], ["contact", "Contact & locations", "Showrooms and offices"], ["glossary", "Vocabulary", "Import terms"]]],
+    ["Website content", "layers", [["home", "Home page", "Sections and wording"], ["homeorder", "Home page order", "Choose which cars show first"], ["testimonials", "Testimonials", "Customer reviews"], ["buy", "How to buy", "Steps and deposit answer"], ["about", "About us", "Values and banner"], ["contact", "Contact & locations", "Showrooms and offices"], ["glossary", "Vocabulary", "Import terms"]]],
     ["Look and feel", "palette", [["appearance", "Colours & fonts", "Themes, own colours, font"], ["seasons", "Seasons", "Christmas, Easter, Deepavali…"], ["site", "Site details", "Phone, WhatsApp, address, SEO"]]],
     ["Safety", "lock", [["backup", "Backup & restore", "Download, email, restore"]]]
   ];
@@ -966,7 +966,7 @@
     ["colours", "Colours list", "car colour color list"], ["features", "Features", "feature options sunroof"],
     ["inquiries", "Inquiries", "inquiry inquiries messages quote email alerts"], ["requests", "Auction requests", "auction request bid track stage"],
     ["customers", "Customers", "customer accounts users"], ["admins", "Admins", "admin admins add email access sign in"], ["newsletters", "Newsletter", "newsletter subscribers"],
-    ["home", "Home page", "home hero search bar section heading text wording show hide live auction ready to drive cta banner"], ["testimonials", "Testimonials", "review reviews testimonial customer says"],
+    ["home", "Home page", "home hero search bar section heading text wording show hide live auction ready to drive cta banner"], ["homeorder", "Home page order", "home page order arrange sort pin first top cars photos images grid position"], ["testimonials", "Testimonials", "review reviews testimonial customer says"],
     ["buy", "How to buy", "how to buy steps deposit"], ["about", "About us", "about us values banner"], ["contact", "Contact & locations", "contact showroom office location map"],
     ["glossary", "Vocabulary", "vocabulary glossary terms"], ["appearance", "Colours & fonts", "colour color theme font logo style dark light"],
     ["seasons", "Seasons", "season christmas easter deepavali snow santa hat"], ["site", "Site details", "phone whatsapp address footer header seo social instagram facebook hours logo"],
@@ -1064,17 +1064,91 @@
         !content.length && !pages.length ? h("p", { className: "ad-small ad-muted ad-find__none" }, rec ? "Nothing found. Try another word." : "Searching…") : null) : null);
   }
 
+  /* ------------------------------------------------------------ home page order: pin and arrange the cars (photos) the home grid shows first */
+  var HOME_SHOWS = 9;   // the home page grid shows this many cars; the rest are under "See all in Ex Stock"
+  function HomeOrder(p) {
+    var d = useLoad("/api/admin/vehicles");
+    var s1 = useState(null), pinned = s1[0], setPinned = s1[1];     // pinned car ids, first to last
+    var s2 = useState(null), saved = s2[0], setSaved = s2[1];       // what is saved on the server (to know about unsaved changes)
+    var s3 = useState(false), busy = s3[0], setBusy = s3[1];
+    var s4 = useState(null), over = s4[0], setOver = s4[1];         // pinned tile currently under a dragged car
+    var drag = useRef(null), rows = d.data;
+    function shown(v) { return v.status === 1 && v.stock_status !== "Sold"; }   // the home page hides hidden and sold cars
+    useEffect(function () {
+      if (!rows || pinned) return;
+      var ids = rows.filter(shown).filter(function (v) { return v.home_order != null; }).sort(function (a, b) { return a.home_order - b.home_order; }).map(function (v) { return v.id; });
+      setPinned(ids); setSaved(ids);
+    }, [rows]);
+    if (d.error) return h(Err, { text: d.error });
+    if (!rows || !pinned) return h("p", { className: "ad-muted" }, "Loading…");
+
+    var byId = {}; rows.forEach(function (v) { byId[v.id] = v; });
+    // The rest keep the automatic order the website uses: featured first, then newest.
+    var rest = rows.filter(shown).filter(function (v) { return pinned.indexOf(v.id) < 0; })
+      .sort(function (a, b) { return (b.is_featured - a.is_featured) || (new Date(b.created_at) - new Date(a.created_at)); });
+    var order = pinned.map(function (id) { return byId[id]; }).filter(Boolean).concat(rest);
+    var dirty = pinned.join(",") !== saved.join(",");
+    var title = function (v) { return [v.year, v.manufacturer_name, v.model_name, v.trim].filter(Boolean).join(" ") || "Vehicle " + v.id; };
+
+    function move(from, to) { if (to < 0 || to >= pinned.length || from === to) return; var a = pinned.slice(); a.splice(to, 0, a.splice(from, 1)[0]); setPinned(a); }
+    function pinAt(id, index) { var a = pinned.filter(function (x) { return x !== id; }); a.splice(index, 0, id); setPinned(a); }
+    function unpin(id) { setPinned(pinned.filter(function (x) { return x !== id; })); }
+    function save() {
+      setBusy(true);
+      api.put("/api/admin/home-order", { ids: pinned }).then(function () { setBusy(false); setSaved(pinned.slice()); p.say(pinned.length ? "Home page order saved" : "Home page is back to the automatic order"); p.changed(); },
+        function (e) { setBusy(false); p.say(e.message, "danger"); });
+    }
+
+    function tile(v, i, isPinned) {
+      var cut = i >= HOME_SHOWS;
+      return h("li", { key: v.id, className: cx("ad-ho__t", isPinned && "is-pinned", cut && "is-cut", isPinned && over === i && "is-over"), draggable: true,
+        onDragStart: function (e) { drag.current = { id: v.id, from: isPinned ? i : -1 }; e.dataTransfer.effectAllowed = "move"; try { e.dataTransfer.setData("text/plain", String(v.id)); } catch (x) { /* some browsers */ } },
+        onDragEnd: function () { drag.current = null; setOver(null); },
+        onDragOver: isPinned ? function (e) { if (drag.current) { e.preventDefault(); setOver(i); } } : undefined,
+        onDrop: isPinned ? function (e) { e.preventDefault(); e.stopPropagation(); var dr = drag.current; drag.current = null; setOver(null); if (!dr) return; if (dr.from >= 0) move(dr.from, i); else pinAt(dr.id, i); } : undefined },
+        h("div", { className: "ad-ho__img" }, v.thumb ? h("img", { src: v.thumb, alt: "", draggable: false }) : h("span", { className: "ad-dt__ph" }, h(A.Icon, { name: "image", size: 22 })),
+          h("span", { className: "ad-ho__n", title: "Position on the home page" }, i + 1),
+          cut ? h("span", { className: "ad-ho__cut" }, "Not on the first screen") : null),
+        h("div", { className: "ad-ho__b" }, h("b", null, title(v)), h("span", { className: "ad-small ad-muted" }, (v.price ? fmt.lkr(Number(v.price)) : "Price on request") + " · " + v.stock_status)),
+        h("div", { className: "ad-ho__acts" }, isPinned ? [
+          h("button", { key: "l", type: "button", className: "ad-ho__btn", disabled: i === 0, "aria-label": "Move " + title(v) + " earlier", title: "Move earlier", onClick: function () { move(i, i - 1); } }, h(A.Icon, { name: "chevron-left", size: 16 })),
+          h("button", { key: "r", type: "button", className: "ad-ho__btn", disabled: i === pinned.length - 1, "aria-label": "Move " + title(v) + " later", title: "Move later", onClick: function () { move(i, i + 1); } }, h(A.Icon, { name: "chevron-right", size: 16 })),
+          h("button", { key: "u", type: "button", className: "ad-ho__btn ad-ho__btn--text", "aria-label": "Unpin " + title(v), onClick: function () { unpin(v.id); } }, h(A.Icon, { name: "x", size: 14 }), "Unpin")
+        ] : h("button", { type: "button", className: "ad-ho__btn ad-ho__btn--text", "aria-label": "Pin " + title(v) + " to the top", onClick: function () { pinAt(v.id, 0); } }, h(A.Icon, { name: "star", size: 14 }), "Pin to top")));
+    }
+
+    return h(Frag, null,
+      h(Card, { title: "What visitors see first", text: "The home page shows the first " + HOME_SHOWS + " cars; the rest are under “See all in Ex Stock”. Sold and hidden cars are never shown." },
+        order.length ? h("ol", { className: "ad-ho__strip" }, order.slice(0, HOME_SHOWS).map(function (v, i) {
+          return h("li", { key: v.id, title: title(v) }, v.thumb ? h("img", { src: v.thumb, alt: title(v) }) : h("span", { className: "ad-dt__ph" }, h(A.Icon, { name: "image", size: 16 })), h("span", { className: "ad-ho__sn" }, i + 1));
+        })) : h("p", { className: "ad-muted" }, "No cars to show yet. Add a vehicle first.")),
+      h(Card, { title: "Pinned cars", text: "These come first, in this order. Drag a car to a new place, or use the arrows. Cars you don’t pin follow in the automatic order." },
+        h("ul", { className: cx("ad-ho__grid", !pinned.length && "is-empty"), "aria-label": "Pinned cars",
+          onDragOver: function (e) { if (drag.current) e.preventDefault(); },
+          onDrop: function (e) { e.preventDefault(); var dr = drag.current; drag.current = null; setOver(null); if (!dr) return; if (dr.from >= 0) move(dr.from, pinned.length - 1); else pinAt(dr.id, pinned.length); } },
+          pinned.length ? pinned.map(function (id, i) { return byId[id] ? tile(byId[id], i, true) : null; })
+            : h("li", { className: "ad-ho__none" }, "Nothing pinned. The home page uses the automatic order. Drag a car here, or press “Pin to top” on a car below."))),
+      h(Card, { title: "Other cars", text: "Automatic order: featured first, then newest. Press “Pin to top” (or drag a car into the pinned area above)." },
+        rest.length ? h("ul", { className: "ad-ho__grid" }, rest.map(function (v, i) { return tile(v, pinned.length + i, false); })) : h("p", { className: "ad-muted" }, "Every car is pinned.")),
+      h("div", { className: cx("ad-ho__bar", dirty && "is-dirty"), role: "region", "aria-label": "Save the home page order" },
+        h("span", { className: "ad-ho__state", role: "status" }, dirty ? "You have unsaved changes" : (pinned.length ? pinned.length + " car" + (pinned.length === 1 ? "" : "s") + " pinned" : "Automatic order")),
+        h("div", { className: "ad-row" },
+          h(A.Button, { variant: "ghost", size: "s", disabled: !pinned.length, onClick: function () { setPinned([]); } }, "Unpin all"),
+          h(A.Button, { variant: "secondary", size: "s", disabled: !dirty, onClick: function () { setPinned(saved.slice()); } }, "Undo changes"),
+          h(A.Button, { icon: "check", loading: busy, disabled: !dirty, onClick: save }, "Save order"))));
+  }
+
   /* ------------------------------------------------------------ console shell */
   var NAV = [
     ["Start", [["overview", "home", "Overview"]]],
     ["Inventory", [["vehicles", "car", "Vehicles"], ["manufacturers", "tag", "Brands"], ["models", "layers", "Models"], ["types", "grid", "Body types"], ["colours", "palette", "Colours"], ["features", "check", "Features"]]],
     ["Customers", [["inquiries", "doc", "Inquiries"], ["requests", "send", "Auction requests"], ["customers", "users", "Customers"], ["admins", "lock", "Admins"], ["newsletters", "mail", "Newsletter"]]],
     ["Pages", [["buy", "ship", "How to buy"], ["about", "users", "About us"], ["contact", "pin", "Contact & locations"], ["glossary", "list", "Vocabulary"]]],
-    ["Website", [["home", "layers", "Home page"], ["testimonials", "star", "Testimonials"], ["seasons", "bell", "Seasons"], ["site", "settings", "Site details"], ["appearance", "palette", "Colours & fonts"]]],
+    ["Website", [["home", "layers", "Home page"], ["homeorder", "grid", "Home page order"], ["testimonials", "star", "Testimonials"], ["seasons", "bell", "Seasons"], ["site", "settings", "Site details"], ["appearance", "palette", "Colours & fonts"]]],
     ["Safety", [["backup", "lock", "Backup & restore"]]]
   ];
   var BLURB = {
-    overview: "A quick look at the business.", backup: "Download everything, get backups by email, or restore. Updates to the site never delete your data.", home: "Turn home page sections on or off and change their wording.", testimonials: "Customer reviews on the home page.",
+    homeorder: "Choose which cars (and photos) come first on the home page, and in what order.", overview: "A quick look at the business.", backup: "Download everything, get backups by email, or restore. Updates to the site never delete your data.", home: "Turn home page sections on or off and change their wording.", testimonials: "Customer reviews on the home page.",
     admins: "Who can open this admin. Add an email here, no Firebase needed.", buy: "The five buying steps and the deposit answer.", about: "The About us page.", contact: "Showrooms and offices on the Contact page.", glossary: "The import terms explained on the Vocabulary page.",
     seasons: "Christmas snow, Santa hats and other festive looks for the whole website.", site: "Phone, WhatsApp, address, links and header/footer text.", appearance: "Choose the colours and font of the whole website."
   };
@@ -1100,7 +1174,7 @@
     var label = NAV.reduce(function (a, g) { return a.concat(g[1]); }, []).filter(function (x) { return x[0] === mod; })[0];
     var group = NAV.filter(function (g) { return g[1].some(function (x) { return x[0] === mod; }); })[0][0];
     var common = { user: p.user, exit: p.onExit, say: say, changed: p.onDataChanged || function () {}, L: L, reloadL: function () { setLv(lv + 1); }, refreshStats: l.reload, go: go };
-    var body = mod === "overview" ? h(Overview, common) : mod === "appearance" ? h(Appearance, common) : mod === "site" ? h(SiteDetails, common) : mod === "home" ? h(HomeContent, common) : mod === "seasons" ? h(Seasons, common) : mod === "admins" ? h(Admins, common) : mod === "backup" ? h(Backup, common) : mod === "buy" ? h(BuyPage, common) : mod === "about" ? h(AboutPage, common) : mod === "contact" ? h(ContactPage, common) : mod === "glossary" ? h(GlossaryPage, common) : mod === "testimonials" ? h(Testimonials, common) :
+    var body = mod === "overview" ? h(Overview, common) : mod === "appearance" ? h(Appearance, common) : mod === "site" ? h(SiteDetails, common) : mod === "home" ? h(HomeContent, common) : mod === "homeorder" ? h(HomeOrder, common) : mod === "seasons" ? h(Seasons, common) : mod === "admins" ? h(Admins, common) : mod === "backup" ? h(Backup, common) : mod === "buy" ? h(BuyPage, common) : mod === "about" ? h(AboutPage, common) : mod === "contact" ? h(ContactPage, common) : mod === "glossary" ? h(GlossaryPage, common) : mod === "testimonials" ? h(Testimonials, common) :
       !L ? h("p", { className: "ad-muted" }, "Loading…") :
       mod === "vehicles" ? h(Vehicles, common) : TAX[mod] ? h(Taxonomy, Object.assign({ mod: mod, key: mod }, common)) :
       mod === "inquiries" || mod === "requests" ? h(Tracking, Object.assign({ mod: mod, key: mod }, common)) :
