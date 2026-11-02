@@ -1106,18 +1106,23 @@
       mod === "inquiries" || mod === "requests" ? h(Tracking, Object.assign({ mod: mod, key: mod }, common)) :
       mod === "customers" ? h(Customers, common) : h(Newsletters, common);
     var newInq = l.data ? l.data.new_inquiries : 0;
-    return h("div", { className: cx("ad-admin", navOpen && "is-navopen") },
-      h("aside", { className: "ad-admin__nav", "aria-label": "Admin menu" }, h("div", { className: "ad-admin__navin" },
-        h("div", { className: "ad-admin__brand" }, h(A.Logo, { size: 18, inverse: true }), h("span", { className: "ad-admin__tag" }, "Admin")),
+    // Desktop: the sidebar can shrink to an icon rail (remembered). Phones use the slide-out drawer instead.
+    var cl = useState(function () { try { return localStorage.getItem("ad-admin-nav") === "collapsed"; } catch (e) { return false; } }), collapsed = cl[0], setCollapsed = cl[1];
+    function toggleNav() { var n = !collapsed; setCollapsed(n); try { localStorage.setItem("ad-admin-nav", n ? "collapsed" : "open"); } catch (e) { /* storage blocked */ } }
+    return h("div", { className: cx("ad-admin", navOpen && "is-navopen", collapsed && "is-collapsed") },
+      h("aside", { className: "ad-admin__nav", id: "admin-nav", "aria-label": "Admin menu" }, h("div", { className: "ad-admin__navin" },
+        h("div", { className: "ad-admin__brand" }, h("span", { className: "ad-admin__mark", "aria-hidden": true }, "DA"), h(A.Logo, { size: 18, inverse: true }), h("span", { className: "ad-admin__tag" }, "Admin"),
+          h("button", { type: "button", className: "ad-admin__toggle", onClick: toggleNav, "aria-expanded": !collapsed, "aria-controls": "admin-nav",
+            "aria-label": collapsed ? "Expand sidebar" : "Collapse sidebar", title: collapsed ? "Expand sidebar" : "Collapse sidebar" }, h(A.Icon, { name: collapsed ? "chevron-right" : "chevron-left", size: 16 }))),
         NAV.map(function (g) {
           return h("div", { key: g[0], className: "ad-admin__group" }, h("div", { className: "ad-label" }, g[0]), g[1].map(function (x) {
-            return h("button", { key: x[0], type: "button", className: cx("ad-admin__link", mod === x[0] && "is-on"), "aria-current": mod === x[0] ? "page" : undefined, onClick: function () { go(x[0]); } },
-              h(A.Icon, { name: x[1], size: 18 }), x[2], x[0] === "inquiries" && newInq ? h("span", { className: "ad-admin__n" }, newInq) : null);
+            return h("button", { key: x[0], type: "button", title: x[2], className: cx("ad-admin__link", mod === x[0] && "is-on"), "aria-current": mod === x[0] ? "page" : undefined, onClick: function () { go(x[0]); } },
+              h(A.Icon, { name: x[1], size: 18 }), h("span", { className: "ad-admin__lbl" }, x[2]), x[0] === "inquiries" && newInq ? h("span", { className: "ad-admin__n" }, newInq) : null);
           }));
         }),
         h("div", { className: "ad-admin__group ad-admin__foot" },
-          h("button", { type: "button", className: "ad-admin__link", onClick: p.onExit }, h(A.Icon, { name: "globe", size: 18 }), "View website"),
-          h("button", { type: "button", className: "ad-admin__link", onClick: p.onSignOut }, h(A.Icon, { name: "logout", size: 18 }), "Sign out")))),
+          h("button", { type: "button", title: "View website", className: "ad-admin__link", onClick: p.onExit }, h(A.Icon, { name: "globe", size: 18 }), h("span", { className: "ad-admin__lbl" }, "View website")),
+          h("button", { type: "button", title: "Sign out", className: "ad-admin__link", onClick: p.onSignOut }, h(A.Icon, { name: "logout", size: 18 }), h("span", { className: "ad-admin__lbl" }, "Sign out"))))),
       navOpen ? h("div", { className: "ad-admin__scrim", onClick: function () { setNavOpen(false); } }) : null,
       h("div", { className: "ad-admin__main" },
         h("header", { className: "ad-admin__bar" },

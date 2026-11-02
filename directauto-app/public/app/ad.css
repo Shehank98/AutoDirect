@@ -1324,3 +1324,27 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
 .ad-flash { animation: ad-flash 3.2s ease-out; border-radius: 10px; }
 @keyframes ad-flash { 0%, 70% { box-shadow: 0 0 0 4px #ffb347; background: #fff3d6; } 100% { box-shadow: 0 0 0 4px transparent; } }
 @media (max-width: 760px) { .ad-find__list { left: 0; right: 0; min-width: 0; } }
+
+/* ============ Admin sidebar: collapse to an icon rail / expand (desktop) ============ */
+.ad-admin__mark { display: none; }
+.ad-admin__toggle { flex: none; width: 30px; height: 30px; border: 0; border-radius: 8px; display: grid; place-items: center; cursor: pointer; margin-left: 8px;
+  background: rgba(128, 128, 128, .22); color: var(--ink-inverse); }
+.ad-admin__toggle:hover { background: rgba(128, 128, 128, .38); }
+.ad-admin__toggle:focus-visible { outline: 2px solid var(--highlight); outline-offset: 2px; }
+.ad-admin__brand .ad-admin__tag { margin-left: auto; }
+@media (max-width: 860px) { .ad-admin__toggle { display: none; } }
+@media (min-width: 861px) {
+  .ad-admin { transition: grid-template-columns .18s ease; }
+  .ad-admin.is-collapsed { grid-template-columns: 76px minmax(0, 1fr); }
+  .is-collapsed .ad-admin__navin { padding: 18px 10px 16px; overflow-x: hidden; }
+  .is-collapsed .ad-admin__brand { flex-direction: column; align-items: center; gap: 10px; padding: 4px 0 12px; }
+  .is-collapsed .ad-admin__brand .ad-logo, .is-collapsed .ad-admin__tag { display: none; }
+  .is-collapsed .ad-admin__mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--highlight); color: var(--ink-on-highlight); font: 800 15px/1 var(--font-display); letter-spacing: -.02em; }
+  .is-collapsed .ad-admin__toggle { margin-left: 0; }
+  /* group titles become thin divider lines */
+  .is-collapsed .ad-admin__group > .ad-label { height: 1px; margin: 4px 10px 6px; padding: 0; overflow: hidden; font-size: 0; opacity: 1; background: rgba(128, 128, 128, .35); }
+  .is-collapsed .ad-admin__link { justify-content: center; width: 100%; padding: 0; }
+  /* labels stay readable by screen readers, just not visible */
+  .is-collapsed .ad-admin__lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .is-collapsed .ad-admin__n { position: absolute; top: 3px; right: 8px; min-width: 16px; height: 16px; padding: 0 4px; margin: 0; font-size: 10px; line-height: 16px; }
+}
