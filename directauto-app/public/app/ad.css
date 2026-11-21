@@ -309,7 +309,7 @@ textarea.ad-input { height: auto; padding: 10px 12px; resize: vertical; min-heig
 .ad-stock__main { min-width: 0; display: grid; gap: 16px; }
 .ad-stock__bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .ad-stock__bar p { margin: 2px 0 0; }
-.ad-stock__tools { display: flex; gap: 10px; align-items: center; }
+.ad-stock__tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; max-width: 100%; }
 .ad-stock__sort .ad-input { height: 36px; font-size: 14px; border-radius: 8px; }
 .ad-seg { display: inline-flex; border: 1.5px solid var(--line-strong); border-radius: 8px; overflow: hidden; }
 .ad-seg button { width: 36px; height: 33px; display: grid; place-items: center; border: 0; background: var(--surface-200); color: var(--ink-muted); cursor: pointer; }
@@ -1358,7 +1358,8 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
   .is-collapsed .ad-admin__navin { padding: 18px 10px 16px; overflow-x: hidden; }
   .is-collapsed .ad-admin__brand { flex-direction: column; align-items: center; gap: 10px; padding: 4px 0 12px; }
   .is-collapsed .ad-admin__brand .ad-logo, .is-collapsed .ad-admin__tag { display: none; }
-  .is-collapsed .ad-admin__mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--highlight); color: var(--ink-on-highlight); font: 800 15px/1 var(--font-display); letter-spacing: -.02em; }
+  .is-collapsed .ad-admin__mark { display: grid; place-items: center; width: 100%; }
+  .is-collapsed .ad-admin__mark img { display: block; width: 52px; height: auto; }
   .is-collapsed .ad-admin__toggle { margin-left: 0; }
   /* group titles become thin divider lines */
   .is-collapsed .ad-admin__group > .ad-label { height: 1px; margin: 4px 10px 6px; padding: 0; overflow: hidden; font-size: 0; opacity: 1; background: rgba(128, 128, 128, .35); }
@@ -1404,3 +1405,7 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
 .ad-ho__state { font-weight: 600; }
 .ad-ho__bar.is-dirty .ad-ho__state { color: var(--accent); }
 @media (max-width: 640px) { .ad-ho__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .ad-ho__btn--text { margin-left: 0; } .ad-ho__bar { bottom: 8px; } }
+
+/* Header logo on narrow phones: scale it down so the menu button never gets pushed off the screen. */
+.ad-nav__brand { min-width: 0; }
+@media (max-width: 560px) { .ad-nav__brand .ad-logo__img { height: auto !important; width: min(200px, 50vw); } }

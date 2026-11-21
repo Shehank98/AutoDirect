@@ -1209,7 +1209,7 @@
     function toggleNav() { var n = !collapsed; setCollapsed(n); try { localStorage.setItem("ad-admin-nav", n ? "collapsed" : "open"); } catch (e) { /* storage blocked */ } }
     return h("div", { className: cx("ad-admin", navOpen && "is-navopen", collapsed && "is-collapsed") },
       h("aside", { className: "ad-admin__nav", id: "admin-nav", "aria-label": "Admin menu" }, h("div", { className: "ad-admin__navin" },
-        h("div", { className: "ad-admin__brand" }, h("span", { className: "ad-admin__mark", "aria-hidden": true }, "DA"), h(A.Logo, { size: 18, inverse: true }), h("span", { className: "ad-admin__tag" }, "Admin"),
+        h("div", { className: "ad-admin__brand" }, h("span", { className: "ad-admin__mark", "aria-hidden": true }, h("img", { src: "/assets/brand/dai-dark.webp", alt: "", width: 52, height: 20 })), h(A.Logo, { size: 18, inverse: true }), h("span", { className: "ad-admin__tag" }, "Admin"),
           h("button", { type: "button", className: "ad-admin__toggle", onClick: toggleNav, "aria-expanded": !collapsed, "aria-controls": "admin-nav",
             "aria-label": collapsed ? "Expand sidebar" : "Collapse sidebar", title: collapsed ? "Expand sidebar" : "Collapse sidebar" }, h(A.Icon, { name: collapsed ? "chevron-right" : "chevron-left", size: 16 }))),
         NAV.map(function (g) {

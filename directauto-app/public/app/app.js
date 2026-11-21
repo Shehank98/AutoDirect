@@ -460,26 +460,7 @@
     return h("div", { className: "ad-modal ad-modal--auth", role: "dialog", "aria-modal": true, "aria-label": "Sign in", onMouseDown: function (e) { if (e.target === e.currentTarget) p.onClose(); } },
       h("div", { className: "ad-signin" },
         h("button", { type: "button", className: "ad-signin__x", "aria-label": "Close", onClick: p.onClose }, h(A.Icon, { name: "x", size: 18 })),
-        h(A.AuthCard, { mode: "login", onDone: p.onDone }),
-        h("p", { className: "ad-small ad-muted ad-center" }, "Customers and staff sign in here. Staff get an Admin button once signed in.")));
-  }
-
-  // /admin is protected by Firebase sign-in. Signed out -> sign-in form; signed in but not an admin -> how to get access.
-  function AdminDenied(p) {
-    var u = p.user, st = useState(""), msg = st[0], setMsg = st[1], bz = useState(false), busy = bz[0], setBusy = bz[1];
-    var fu = fb && fb.auth().currentUser, verified = !!(fu && fu.emailVerified);
-    function recheck() { setBusy(true); setMsg(""); p.recheck().then(function () { setBusy(false); }, function (e) { setBusy(false); setMsg(e.message || "Couldn’t check just now."); }); }
-    function resend() { sendVerificationMail().then(function () { setMsg("Verification email sent. Open it, tap the link, then press “Check again”."); }, function (e) { setMsg(e.message || "Couldn’t send the email."); }); }
-    return h("div", { className: "ad-wrap ad-authpage" }, h("div", { className: "ad-auth" },
-      h(A.Logo, { size: 20 }),
-      h("div", null, h("h2", { className: "ad-h2" }, "No admin access yet"), h("p", { className: "ad-muted ad-small" }, "You’re signed in as " + (u.email || "this account") + ", but it isn’t an admin account.")),
-      !verified ? h("p", { className: "ad-note" }, h(A.Icon, { name: "mail", size: 16 }), "Your email address isn’t verified yet. Open the verification email we sent, tap the link, then press “Check again”.") : null,
-      h("ul", { className: "ad-small ad-muted", style: { margin: 0, paddingLeft: 18, display: "grid", gap: 6 } },
-        h("li", null, cfgInfo.adminEmails ? "The owner’s email is added to ADMIN_EMAILS on the server, so the owner becomes admin after verifying that email." : "The server has no ADMIN_EMAILS yet. Add the owner’s email to it (in the host’s Variables) and redeploy."),
-        h("li", null, "Other staff: an existing admin turns on “Admin” for you under Customers.")),
-      msg ? h("p", { className: "ad-small", role: "status" }, msg) : null,
-      h("div", { className: "ad-row" }, h(A.Button, { loading: busy, onClick: recheck }, "Check again"), !verified ? h(A.Button, { variant: "secondary", onClick: resend }, "Resend verification email") : null,
-        h(A.Button, { variant: "ghost", onClick: p.signOut }, "Sign out"))));
+        h(A.AuthCard, { mode: "login", onDone: p.onDone })));
   }
 
   /* Admin console is a separate file, loaded only when somebody opens /admin. */
@@ -642,11 +623,9 @@
     else if (pg === "account" && !fb) body = h(AccountsOff, common);
     else if (pg === "account") body = user ? h(Account, Object.assign({ tab: route.tab }, common)) : needLogin("Sign in to see your inquiries and imports.");
     else if (pg === "admin") {
+      // No sign-in page here: typing /admin shows "not found" to everyone except a signed-in admin.
       if (user === undefined) body = h(Loading, null);
-      else if (!fb) body = h("div", { className: "ad-wrap ad-authpage" }, h("div", { className: "ad-auth" }, h(A.Logo, { size: 20 }), h("h2", { className: "ad-h2" }, "Admin sign-in isn’t set up"),
-        h("p", { className: "ad-muted ad-small" }, "Admin access uses Firebase sign-in. Add the FIREBASE_* variables (and ADMIN_EMAILS) to the server and redeploy.")));
-      else if (!user) body = h(Login, { mode: "login", note: "Staff sign-in. Use your admin account email and password.", onLogin: function () { setRoute(parse()); } });
-      else if (!user.is_admin) body = h(AdminDenied, { user: user, recheck: recheckAdmin, signOut: signOut });
+      else if (!fb || !user || !user.is_admin) body = h(NotFound, common);
       else body = h(Admin, Object.assign({ adminName: user.email, adminLabel: user.name }, common));
     }
     else if (pg === "authaction") body = h(AuthAction, { key: route.code, mode: route.mode, code: route.code, user: user, nav: nav, resend: sendVerificationMail, signin: function () { if (fb) { nav("home"); setSignin(true); } else nav("login"); }, onUser: function (row) { me = row; setUser(row); } });

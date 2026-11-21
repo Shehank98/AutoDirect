@@ -1326,7 +1326,7 @@
     if (state === "done") return h("div", { className: "ad-auth ad-success", role: "status" },
       h("div", { className: "ad-success__icon" }, h(Icon, { name: mode === "forgot" ? "mail" : "check", size: 26, stroke: 2 })),
       h("h3", { className: "ad-h2" }, mode === "login" ? "Welcome back" : mode === "register" ? "Account created" : "Check your inbox"),
-      h("p", { className: "ad-muted" }, mode === "forgot" ? "A reset link is on its way to " + d.email + "." : "Your inquiries and auction requests are in My account."),
+      h("p", { className: "ad-muted" }, mode === "forgot" ? "If " + d.email + " has an account, a reset link is on its way." : "Your inquiries and auction requests are in My account."),
       h(Button, { variant: "secondary", onClick: function () { if (mode !== "forgot" && p.onDone) { p.onDone(doneName || d.name || d.email.split("@")[0]); return; } setState("idle"); setMode("login"); } }, mode === "forgot" ? "Back to sign in" : "Go to dashboard"));
     return h("form", { className: "ad-auth", onSubmit: submit, noValidate: true },
       h(Logo, { size: 20 }),

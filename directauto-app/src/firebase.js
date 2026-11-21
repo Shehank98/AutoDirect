@@ -65,4 +65,12 @@ async function actionLink(kind, email, continueUrl) {
   }
 }
 
-module.exports = { init, isConfigured, verifyIdToken, bucket, actionLink };
+// True when Firebase has an account for this email. Used so a reset link is only ever created for real accounts.
+async function userExists(email) {
+  const sdk = init();
+  if (!sdk) throw new Error('Firebase is not configured on the server');
+  try { await sdk.auth().getUserByEmail(email); return true; }
+  catch (e) { if (/user-not-found|email-not-found/i.test(`${e.code} ${e.message}`)) return false; throw e; }
+}
+
+module.exports = { init, isConfigured, verifyIdToken, bucket, actionLink, userExists };
