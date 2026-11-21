@@ -272,7 +272,7 @@
           h("p", { className: "ad-small ad-muted ad-vp__trust" }, h(A.Icon, { name: "shield", size: 15 }), "Original auction sheet and translation available on request"))),
       h("div", { id: "vp-tabs" }, h(A.Tabs, { variant: "line", label: "Vehicle details", tabs: [{ id: "specs", label: "Specs & features" }, { id: "loan", label: "Loan calculator" }, { id: "inquiry", label: "Inquiry" }], value: tab, onChange: setTab })),
       h("div", { className: "ad-vp__panel" }, tab === "specs" ? h(A.SpecSheet, { vehicle: v }) : tab === "loan" ? h(A.LoanCalculator, { key: v.id, price: v.price }) :
-        h("div", { className: "ad-narrow" }, h(A.InquiryForm, { key: v.id, vehicle: v, onTrack: function () { p.nav("account", { tab: "inquiries" }); } }))),
+        h("div", { className: "ad-iqgrid" }, h(A.InquiryForm, { key: v.id, vehicle: v, onTrack: function () { p.nav("account", { tab: "inquiries" }); } }), h(A.InquiryAside, { vehicle: v }))),
       similar.length ? h(Frag, null,
         h("div", { className: "ad-sec__head ad-vp__similar" }, h("h2", { className: "ad-h2" }, "Similar vehicles"), h(A.Button, { variant: "ghost", iconRight: "arrow-right", onClick: function () { p.nav("stock"); } }, "All stock")),
         h("div", { className: "ad-stock__grid ad-stock__grid--3" }, similar.map(function (x) { return vehicleCard(p, x); }))) : null);

@@ -1017,6 +1017,23 @@
   }
 
   /* ---------- InquiryForm ---------- */
+  // The panel beside the inquiry form: what happens next and quick ways to reach the team.
+  function InquiryAside(p) {
+    var v = p.vehicle, tel = (SITE.phone || "").replace(/[^+0-9]/g, "");
+    var steps = [["We reply within 2 working hours", "On WhatsApp, by call or email, whichever you choose."], ["Auction sheet and photos", "The original sheet with a plain-English translation."], ["Landed price in writing", "Duty, clearance and delivery, so there are no surprises."]];
+    return h("aside", { className: "ad-iq", "aria-label": "What happens next" },
+      h("div", { className: "ad-iq__card" },
+        h("h3", { className: "ad-h3" }, "What happens next"),
+        h("ol", { className: "ad-iq__steps" }, steps.map(function (s, i) { return h("li", { key: i }, h("span", { className: "ad-iq__n", "aria-hidden": true }, i + 1), h("div", null, h("strong", null, s[0]), h("span", { className: "ad-muted ad-small" }, s[1]))); }))),
+      h("div", { className: "ad-iq__card" },
+        h("h3", { className: "ad-h3" }, "Prefer to talk?"),
+        h("p", { className: "ad-muted ad-small" }, "Ask about " + title(v) + " (" + v.id + ") directly."),
+        h("div", { className: "ad-iq__btns" },
+          SITE.whatsapp ? h(Button, { variant: "secondary", icon: "whatsapp", block: true, href: "https://wa.me/" + SITE.whatsapp + "?text=" + encodeURIComponent("Hi Direct Auto, I'm interested in the " + title(v) + " (" + v.id + ")."), target: "_blank", rel: "noopener" }, "WhatsApp us") : null,
+          tel ? h(Button, { variant: "secondary", icon: "phone", block: true, href: "tel:" + tel }, SITE.phone) : null),
+        SITE.hours ? h("p", { className: "ad-small ad-muted ad-iq__hours" }, h(Icon, { name: "clock", size: 14 }), SITE.hours) : null),
+      h("p", { className: "ad-small ad-muted ad-iq__trust" }, h(Icon, { name: "shield", size: 15 }), "Refundable deposit. No obligation to buy."));
+  }
   function InquiryForm(p) {
     var v = p.vehicle;
     var me = (HOOKS.me && HOOKS.me()) || {};
@@ -1521,7 +1538,7 @@
     TextField: TextField, SelectField: SelectField, RangeSlider: RangeSlider, ChipGroup: ChipGroup, Switch: Switch, Checkbox: Checkbox, Tabs: Tabs,
     SiteHeader: SiteHeader, SiteFooter: SiteFooter, HomeStock: HomeStock, VehicleCard: VehicleCard, StockBrowser: StockBrowser,
     CompareTray: CompareTray, CompareTable: CompareTable, VehicleGallery: VehicleGallery, SpecSheet: SpecSheet, LoanCalculator: LoanCalculator,
-    InquiryForm: InquiryForm, LiveAuctionFrame: LiveAuctionFrame, AuctionSheetDecoder: AuctionSheetDecoder, AuctionRequestForm: AuctionRequestForm,
+    InquiryForm: InquiryForm, InquiryAside: InquiryAside, LiveAuctionFrame: LiveAuctionFrame, AuctionSheetDecoder: AuctionSheetDecoder, AuctionRequestForm: AuctionRequestForm,
     ProcessSteps: ProcessSteps, Glossary: Glossary, Testimonials: Testimonials, AuthCard: AuthCard, OrderTracker: OrderTracker,
     AccountDashboard: AccountDashboard, ContactPanel: ContactPanel, BrowseSection: BrowseSection, Empty: Empty, PhotoPending: PhotoPending, Spec: Spec,
     data: { vehicles: VEHICLES, testimonials: TESTIMONIALS, brands: BRANDS, types: ALL_TYPES, locations: LOCATIONS, features: FEATURES, makes: ALL_MAKES, stockMakes: MAKES, glossary: GLOSSARY, images: IMG, load: loadData },

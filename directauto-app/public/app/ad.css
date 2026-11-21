@@ -1409,3 +1409,27 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
 /* Header logo on narrow phones: scale it down so the menu button never gets pushed off the screen. */
 .ad-nav__brand { min-width: 0; }
 @media (max-width: 560px) { .ad-nav__brand .ad-logo__img { height: auto !important; width: min(200px, 50vw); } }
+
+/* Inquiry tab: form on the left, "what happens next" on the right (stacks on phones) */
+.ad-iqgrid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); gap: 24px; align-items: start; }
+.ad-iq { display: grid; gap: 16px; position: sticky; top: calc(var(--ad-header-h, 109px) + 16px); }
+.ad-iq__card { display: grid; gap: 12px; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius-l); background: var(--surface-200); }
+.ad-iq__card p { margin: 0; }
+.ad-iq__steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.ad-iq__steps li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; }
+.ad-iq__steps li > div { display: grid; gap: 2px; }
+.ad-iq__n { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--brand-tint); color: var(--brand); font: 700 13px/1 var(--font-sans); }
+.ad-iq__btns { display: grid; gap: 8px; }
+.ad-iq__hours { display: flex; align-items: center; gap: 6px; }
+.ad-iq__trust { display: flex; align-items: center; gap: 8px; margin: 0; padding: 0 4px; }
+@media (max-width: 980px) { .ad-iqgrid { grid-template-columns: 1fr; } .ad-iq { position: static; } }
+
+/* Very narrow phones (320px): long car names must wrap instead of widening the page */
+.ad-vp__top > *, .ad-iqgrid > *, .ad-form, .ad-form__grid > * { min-width: 0; }
+.ad-crumbs { max-width: 100%; }
+.ad-crumbs [aria-current], .ad-form__ctx strong, .ad-form__ctx span { overflow-wrap: anywhere; min-width: 0; }
+.ad-form__ctx div { min-width: 0; }
+.ad-vp > * { min-width: 0; }
+@media (max-width: 380px) { .ad-tabs--line { gap: 14px; } .ad-tab { font-size: 13.5px; } }
+.ad-form > * { min-width: 0; }
+@media (max-width: 380px) { .ad-tabs--block .ad-tab { padding: 0 8px; gap: 5px; font-size: 13px; min-width: 0; } }
