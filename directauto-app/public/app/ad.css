@@ -1446,3 +1446,11 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
 
 /* Add a new inventory country (inside the vehicle form) */
 .ad-newloc { display: grid; gap: 10px; padding: 14px; border: 1px dashed var(--line-strong); border-radius: var(--radius-m); background: var(--surface-100); }
+
+/* No stray little up/down scroll arrows: sideways-scrolling strips (tabs, tables, thumbnails) never scroll up and down. */
+.ad-tabs, .ad-dt, .ad-ctable__scroll, .ad-gallery__thumbs, .ad-ho__strip, .ad-hb__chips { overflow-y: hidden; }
+.ad-tabs { scrollbar-width: none; }
+.ad-tabs::-webkit-scrollbar { display: none; }
+/* Underlined tabs: the line is drawn by the strip itself, so the tabs no longer poke 1px out of it. */
+.ad-tabs--line { border-bottom: 0; box-shadow: inset 0 -1px 0 var(--line); }
+.ad-tabs--line .ad-tab { margin-bottom: 0; }
