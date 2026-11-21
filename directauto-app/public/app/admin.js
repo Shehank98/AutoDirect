@@ -219,7 +219,7 @@
       h("div", { className: "ad-form__grid ad-form__grid--3" },
         txt("mileage", "Mileage (km)", { inputMode: "numeric" }), txt("engine_capacity", "Engine (cc)", { inputMode: "numeric" }),
         sel("fuel_type", "Fuel", opts(FUELS), "-"), sel("transmission", "Transmission", opts(GEARS), "-"), sel("drive_type", "Drive", opts(DRIVES), "-"),
-        txt("auction_grade", "Auction grade", { placeholder: "4.5" }), txt("grade", "Interior grade", { placeholder: "A–E" }),
+        txt("auction_grade", "Auction grade", { placeholder: "4.5" }), txt("grade", "Interior grade", { placeholder: "A-E" }),
         txt("seats", "Seats", { type: "number", min: 0 }), txt("doors", "Doors", { type: "number", min: 0 }), txt("other_color", "Other colour notes"),
         h("div", { className: "ad-span3" }, txt("conditions", "Condition", { maxLength: 500 })),
         h("div", { className: "ad-span3" }, txt("description", "Description", { multiline: true, rows: 3, maxLength: 500, hint: "Shown on the vehicle page." }))),
@@ -417,7 +417,7 @@
     }
     var facts = [["Name", r.name], ["Phone", r.phone], ["Email", r.email], ["Received", dayTime(r.created_at)]];
     if (p.live) {
-      if (det.yearFrom) facts.push(["Years", det.yearFrom + "–" + det.yearTo]); if (det.chassis) facts.push(["Chassis code", det.chassis]);
+      if (det.yearFrom) facts.push(["Years", det.yearFrom + "-" + det.yearTo]); if (det.chassis) facts.push(["Chassis code", det.chassis]);
       if (det.budget) facts.push(["Budget", fmt.lkr(det.budget)]); if (det.maxKm) facts.push(["Max mileage", fmt.num(det.maxKm) + " km"]);
       if (r.grade) facts.push(["Min grade", r.grade]); if (r.color) facts.push(["Colours", r.color]);
       if (det.max) facts.push(["Proxy maximum", fmt.yen(det.max)]); if (det.lotNo) facts.push(["Lot", det.lotNo + (det.house ? " · " + det.house : "")]);
@@ -719,7 +719,7 @@
           h(A.TextField, { label: "Heading", value: f.buyTitle, onChange: set("buyTitle"), placeholder: "From auction floor to your driveway" }),
           h(A.TextField, { label: "Sub-heading", value: f.buyLead, onChange: set("buyLead"), placeholder: "No hidden charges. The whole process is visible in My account." })),
         listCard(f, set, "buySteps", "The buying steps", "Shown on the How to buy page. Use the arrows to change the order.", [
-          { key: "t", label: "Step title", half: true }, { key: "d", label: "How long", half: true, placeholder: "e.g. Day 1–3" }, { key: "body", label: "What happens", multiline: true, rows: 3 }], { min: 2, max: 8, addLabel: "Add a step" }),
+          { key: "t", label: "Step title", half: true }, { key: "d", label: "How long", half: true, placeholder: "e.g. Day 1-3" }, { key: "body", label: "What happens", multiline: true, rows: 3 }], { min: 2, max: 8, addLabel: "Add a step" }),
         h(Card, { title: "“Why do we ask for a deposit?”", text: "The answer shown under the steps." },
           h(A.TextField, { label: "Answer", multiline: true, rows: 3, value: f.depositFaq, onChange: set("depositFaq"), placeholder: "Deposits are 100% refundable. They protect you and us from last-minute cancellations and spam bids…", hint: "Leave empty to use the standard answer." })));
     } }, p));

@@ -14,6 +14,10 @@ const mailer = require('../mailer');
 
 const router = express.Router();
 router.use(requireAdmin);
+// The site never shows long dashes: anything staff type is saved with a plain hyphen instead (backups are left exactly as they are).
+const noDash = (v) => (typeof v === 'string' ? v.replace(/[–—]/g, '-') : Array.isArray(v) ? v.map(noDash)
+  : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, noDash(x)])) : v);
+router.use((req, _res, next) => { if (req.body && typeof req.body === 'object' && !req.path.startsWith('/backup')) req.body = noDash(req.body); next(); });
 // Any change made in the admin must show up on the public site right away.
 router.use((req, res, next) => { if (req.method !== 'GET') res.on('finish', invalidate); next(); });
 

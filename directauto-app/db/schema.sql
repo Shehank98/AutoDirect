@@ -207,3 +207,19 @@ CREATE TABLE IF NOT EXISTS backups (
     counts      JSONB NOT NULL DEFAULT '{}',
     data        JSONB NOT NULL
 );
+
+-- The site never shows long dashes: clean any that are already stored in the content tables (safe to repeat).
+DO $$
+DECLARE r RECORD;
+BEGIN
+  FOR r IN SELECT table_name AS t, column_name AS c, data_type AS d FROM information_schema.columns
+           WHERE table_schema = 'public' AND data_type IN ('text', 'character varying', 'jsonb')
+             AND table_name IN ('settings', 'vehicle', 'testimonials', 'vehicle_manufacturer', 'vehicle_model', 'vehicle_type', 'vehicle_feature', 'vehicle_color')
+             AND column_name NOT IN ('images', 'image', 'seo_url', 'key') LOOP
+    IF r.d = 'jsonb' THEN
+      EXECUTE format('UPDATE %I SET %I = regexp_replace(%I::text, %L, %L, %L)::jsonb WHERE %I::text ~ %L', r.t, r.c, r.c, E'[\\u2013\\u2014]', '-', 'g', r.c, E'[\\u2013\\u2014]');
+    ELSE
+      EXECUTE format('UPDATE %I SET %I = regexp_replace(%I, %L, %L, %L) WHERE %I ~ %L', r.t, r.c, r.c, E'[\\u2013\\u2014]', '-', 'g', r.c, E'[\\u2013\\u2014]');
+    END IF;
+  END LOOP;
+END $$;

@@ -318,7 +318,7 @@
       h(PageHead, { crumb: "How to buy", kicker: "How to buy", title: A.T("buyTitle", "From auction floor to your driveway"), lead: A.T("buyLead", "No hidden charges. The whole process is visible in My account.") }),
       h("div", { className: "ad-wrap ad-pagebody" }, h(A.ProcessSteps, { onStart: function () { p.nav("request"); } }),
         h("div", { className: "ad-infostrip" },
-          [["clock", "30–45 days", "Typical time from opening the LC to delivery."], ["doc", "LC within 7 days", "Of the pro-forma invoice. We prepare the bank documents with you."], ["ship", "~20 days at sea", "After loading. Duty is paid directly to Sri Lanka Customs."]].map(function (x) {
+          [["clock", "30-45 days", "Typical time from opening the LC to delivery."], ["doc", "LC within 7 days", "Of the pro-forma invoice. We prepare the bank documents with you."], ["ship", "~20 days at sea", "After loading. Duty is paid directly to Sri Lanka Customs."]].map(function (x) {
             return h("div", { key: x[1] }, h(A.Icon, { name: x[0], size: 22 }), h("b", null, x[1]), h("p", { className: "ad-small ad-muted" }, x[2]));
           })),
         h(CTA, { title: "Ready to start?", text: "Send a request, or browse cars that have already landed." },

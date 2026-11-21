@@ -198,7 +198,7 @@
     { term: "Highest bidder wins", cat: "Auction", def: "Japanese car auctions work like any other auction: the highest bidder wins the lot." },
     { term: "Proxy bidding", cat: "Auction", def: "Bids are placed by proxy, so even with a high maximum you only pay just over the next-highest bidder.", example: "Your maximum is ¥500,000 and the next-highest bid is ¥400,000, you win at ¥401,000, not ¥500,000." },
     { term: "Auction sheet", cat: "Auction", def: "The inspection report written at the auction house (USS, TAA, JU…). It records grade, first registration, mileage, chassis number and every scratch, dent and repair. We share the original with an English translation before every bid." },
-    { term: "Auction grade", cat: "Auction", def: "The overall score on the auction sheet, from S (as new) through 6, 5, 4.5, 4, 3.5 down to R/RA (repaired). Interior is graded separately A–E." },
+    { term: "Auction grade", cat: "Auction", def: "The overall score on the auction sheet, from S (as new) through 6, 5, 4.5, 4, 3.5 down to R/RA (repaired). Interior is graded separately A-E." },
     { term: "Bid price", cat: "Auction", def: "The highest price a bidder is willing to pay for a lot." },
     { term: "FOB (Free on Board)", cat: "Pricing", def: "The vehicle price plus transport, insurance and loading costs up to the port of departure in Japan." },
     { term: "C&F (Cost and Freight)", cat: "Pricing", def: "The vehicle price including all costs and freight to the destination port (Colombo)." },
@@ -480,7 +480,7 @@
     function set(i, x) { x = Number(x); p.onChange(i === 0 ? [Math.min(x, b), b] : [a, Math.max(x, a)]); }
     return h("div", { className: cx("ad-range", p.className) },
       p.label ? h("div", { className: "ad-range__head" }, h("span", { className: "ad-label" }, p.label),
-        h("span", { className: "ad-range__val" }, single ? fmt(b) : fmt(a) + " – " + fmt(b))) : null,
+        h("span", { className: "ad-range__val" }, single ? fmt(b) : fmt(a) + " to " + fmt(b))) : null,
       h("div", { className: "ad-range__track" },
         h("div", { className: "ad-range__fill", style: { left: (single ? 0 : pa) + "%", right: (100 - pb) + "%" } }),
         single ? null : h("input", { type: "range", min: min, max: max, step: step, value: a, onChange: function (e) { set(0, e.target.value); }, "aria-label": (p.label || "Range") + " minimum", "aria-valuetext": fmt(a) }),
@@ -539,7 +539,7 @@
     { id: "stock", label: "Ex Stock" },
     { id: "auction", label: "Live auction", live: true },
     { id: "buy", label: "How to buy", children: [
-      { id: "buy", label: "Buying process", text: "Five steps, 30–45 days" },
+      { id: "buy", label: "Buying process", text: "Five steps, 30-45 days" },
       { id: "sheet", label: "Reading an auction sheet", text: "Grades & damage codes decoded" },
       { id: "vocab", label: "Import vocabulary", text: "FOB, CIF, LC and more" }] },
     { id: "compare", label: "Compare" },
@@ -662,7 +662,7 @@
     for (var i = 0; i < cuts.length - 1; i++) {
       var lo = cuts[i], hi = cuts[i + 1];
       if (hi <= pb[0] || lo >= pb[1]) continue;
-      out.push({ value: Math.max(lo, pb[0]) + "-" + Math.min(hi, pb[1]), label: i === 0 ? "Under " + lkr(hi) : hi === Infinity ? lkr(lo) + " and above" : lkr(lo) + " – " + lkr(hi) });
+      out.push({ value: Math.max(lo, pb[0]) + "-" + Math.min(hi, pb[1]), label: i === 0 ? "Under " + lkr(hi) : hi === Infinity ? lkr(lo) + " and above" : lkr(lo) + " to " + lkr(hi) });
     }
     return out;
   }
@@ -853,8 +853,8 @@
     types.forEach(function (t) { active.push([t, function () { setTypes(types.filter(function (x) { return x !== t; })); }]); });
     locs.forEach(function (l) { active.push([l, function () { setLocs(locs.filter(function (x) { return x !== l; })); }]); });
     if (minGrade) active.push(["Grade " + minGrade + "+", function () { setMinGrade(""); }]);
-    if (priceTouched) active.push([lkr(price[0]) + "–" + lkr(price[1]).replace("LKR ", ""), function () { setPrice(pb); }]);
-    if (years[0] !== yb[0] || years[1] !== yb[1]) active.push([years[0] + "–" + years[1], function () { setYears(yb); }]);
+    if (priceTouched) active.push([lkr(price[0]) + "-" + lkr(price[1]).replace("LKR ", ""), function () { setPrice(pb); }]);
+    if (years[0] !== yb[0] || years[1] !== yb[1]) active.push([years[0] + "-" + years[1], function () { setYears(yb); }]);
     function clearAll() { setMakes([]); setTypes([]); setLocs([]); setMinGrade(""); setPrice(pb); setYears(yb); setQ(""); }
     function countBy(key, val) { return vehicles.filter(function (v) { return v[key] === val && (showSold || v.status !== "Sold"); }).length; }
     function toggleCmp(id) { p.onToggleCmp && p.onToggleCmp(id); }
@@ -1162,7 +1162,7 @@
           h("div", null, h("div", { className: "ad-label" }, mark.panel), h("p", { className: "ad-h3" }, info.kind + (info.size ? " · " + info.size.split(", ")[0] : "")),
             h("p", { className: "ad-muted ad-small" }, info.text + (info.size ? ", " + info.size + "." : ".")))) : null,
         h("div", { className: "ad-decoder__try" },
-          h(TextField, { label: "Decode any code", placeholder: "e.g. B2, XX, S1", mono: true, value: code, onChange: function (e) { setCode(e.target.value); }, hint: typed ? typed.kind + (typed.size ? " · " + typed.size : "") + ": " + typed.text : code ? "Not a standard code. Ask us, we translate every sheet." : "Letter = damage type, number 1–3 = size." })),
+          h(TextField, { label: "Decode any code", placeholder: "e.g. B2, XX, S1", mono: true, value: code, onChange: function (e) { setCode(e.target.value); }, hint: typed ? typed.kind + (typed.size ? " · " + typed.size : "") + ": " + typed.text : code ? "Not a standard code. Ask us, we translate every sheet." : "Letter = damage type, number 1-3 = size." })),
         h("div", null, h("div", { className: "ad-label" }, "Overall grade"),
           h("div", { className: "ad-gradescale", role: "radiogroup", "aria-label": "Overall grade" }, GRADES.map(function (gr) {
             return h("button", { key: gr[0], type: "button", role: "radio", "aria-checked": grade === gr[0], className: cx(grade === gr[0] && "is-on"), onClick: function () { setGrade(gr[0]); } }, gr[0]);
@@ -1222,7 +1222,7 @@
           : h("div", { className: "ad-form__grid" },
             h("div", { className: "ad-summary ad-span2" },
               h("div", null, h("span", { className: "ad-label" }, "Vehicle"), h("b", null, (d.make || "Any") + " " + (d.model || "") + (d.chassis ? " · " + d.chassis : ""))),
-              h("div", null, h("span", { className: "ad-label" }, "Years"), h("b", null, d.yFrom + "–" + d.yTo)),
+              h("div", null, h("span", { className: "ad-label" }, "Years"), h("b", null, d.yFrom + "-" + d.yTo)),
               h("div", null, h("span", { className: "ad-label" }, "Budget"), h("b", null, "up to " + lkr(d.budget))),
               h("div", null, h("span", { className: "ad-label" }, "Condition"), h("b", null, "Grade " + d.grade + "+ · ≤ " + num(d.km) + " km"))),
             h(TextField, { label: "Full name *", required: true, "aria-required": true, value: d.name, onChange: function (ev) { set("name", ev.target.value); }, error: errs.name }),
@@ -1237,11 +1237,11 @@
 
   /* ---------- ProcessSteps ---------- */
   var STEPS = [
-    { t: "Select your vehicle", d: "Day 1–3", icon: "search", body: "We learn what you need, then review thousands of lots from reputed auction houses to shortlist the right car at the right price." },
+    { t: "Select your vehicle", d: "Day 1-3", icon: "search", body: "We learn what you need, then review thousands of lots from reputed auction houses to shortlist the right car at the right price." },
     { t: "Bid at auction", d: "Weekly", icon: "gavel", body: "After a 100% refundable deposit we send the original auction sheet with an English translation, photos and a bid amount for your approval. If the car sells below your bid, you keep the difference." },
     { t: "Pay by LC", d: "Within 7 days", icon: "doc", body: "Open a Letter of Credit within 7 days of the pro-forma invoice. We prepare the bank documents with you." },
     { t: "Shipping", d: "~20 days at sea", icon: "ship", body: "Export certificate and inspections done, the vehicle is loaded. Duty and levies go directly to Sri Lanka Customs via a nominated clearance agent." },
-    { t: "Delivery", d: "30–45 days total", icon: "car", body: "Cleared, registered and handed over. Track every stage in My account." }
+    { t: "Delivery", d: "30-45 days total", icon: "car", body: "Cleared, registered and handed over. Track every stage in My account." }
   ];
   var STEP_ICONS = ["search", "gavel", "doc", "ship", "car"];
   function steps() {
