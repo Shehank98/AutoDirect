@@ -1039,8 +1039,7 @@
         h("div", { className: "ad-iq__btns" },
           SITE.whatsapp ? h(Button, { variant: "secondary", icon: "whatsapp", block: true, href: "https://wa.me/" + SITE.whatsapp + "?text=" + encodeURIComponent("Hi Direct Auto, I'm interested in the " + title(v) + " (" + v.id + ")."), target: "_blank", rel: "noopener" }, "WhatsApp us") : null,
           tel ? h(Button, { variant: "secondary", icon: "phone", block: true, href: "tel:" + tel }, SITE.phone) : null),
-        SITE.hours ? h("p", { className: "ad-small ad-muted ad-iq__hours" }, h(Icon, { name: "clock", size: 14 }), SITE.hours) : null),
-      h("p", { className: "ad-small ad-muted ad-iq__trust" }, h(Icon, { name: "shield", size: 15 }), "Refundable deposit. No obligation to buy."));
+        SITE.hours ? h("p", { className: "ad-small ad-muted ad-iq__hours" }, h(Icon, { name: "clock", size: 14 }), SITE.hours) : null));
   }
   function InquiryForm(p) {
     var v = p.vehicle;

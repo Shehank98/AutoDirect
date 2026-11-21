@@ -1,4 +1,4 @@
-/* DirectAuto Import — shared frontend logic (vanilla JS, no build step). */
+/* DirectAuto Import - shared frontend logic (vanilla JS, no build step). */
 (function () {
   'use strict';
 
@@ -70,9 +70,9 @@
       '    <h5><a href="' + url + '">' + DA.esc(DA.vehicleTitle(v)) + '</a></h5>' +
       '    <div class="price_info"><p class="featured-price">' + DA.money(v.price) + '</p></div>' +
       '    <ul class="car-info-list" style="list-style:none;padding:0;margin:8px 0;font-size:13px;color:#777;">' +
-      '      <li style="display:inline-block;margin-right:12px;"><i class="fa fa-tachometer"></i> ' + DA.esc(v.mileage || '—') + ' km</li>' +
-      '      <li style="display:inline-block;margin-right:12px;"><i class="fa fa-cog"></i> ' + DA.esc(v.transmission || '—') + '</li>' +
-      '      <li style="display:inline-block;"><i class="fa fa-tint"></i> ' + DA.esc(v.fuel_type || '—') + '</li>' +
+      '      <li style="display:inline-block;margin-right:12px;"><i class="fa fa-tachometer"></i> ' + DA.esc(v.mileage || '-') + ' km</li>' +
+      '      <li style="display:inline-block;margin-right:12px;"><i class="fa fa-cog"></i> ' + DA.esc(v.transmission || '-') + '</li>' +
+      '      <li style="display:inline-block;"><i class="fa fa-tint"></i> ' + DA.esc(v.fuel_type || '-') + '</li>' +
       '    </ul>' +
       '    <a href="' + url + '" class="btn btn-sm">View Details <i class="fa fa-angle-right"></i></a>' +
       '  </div>' +

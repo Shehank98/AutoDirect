@@ -1,7 +1,7 @@
 {
   "name": "directauto-app",
   "version": "1.0.0",
-  "description": "DirectAuto Import — car store & Japan live auction. HTML/CSS/JS frontend, Node/Express API, PostgreSQL, Firebase (auth + image storage).",
+  "description": "DirectAuto Import - car store & Japan live auction. HTML/CSS/JS frontend, Node/Express API, PostgreSQL, Firebase (auth + image storage).",
   "type": "commonjs",
   "main": "server.js",
   "engines": {
