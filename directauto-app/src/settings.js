@@ -33,6 +33,7 @@ const FIELDS = {
   // Seasons: one festive look at a time (effect, decorations, banner, colours), optionally between two dates.
   backupEvery: ['e', ['daily', 'weekly']], siteStyle: ['e', STYLES], fontTheme: ['e', FONTS],
   seoTitle: ['s', 120], seoDescription: ['s', 300],
+  stockSubtitle: ['s', 200], buyTitle: ['s', 100], buyLead: ['s', 250],
   depositFaq: ['s', 700], aboutCtaTitle: ['s', 100], aboutCtaText: ['s', 250],
   buySteps: ['j', LISTS.buySteps], aboutValues: ['j', LISTS.aboutValues], locationsList: ['j', LISTS.locationsList],
   glossaryItems: ['j', LISTS.glossaryItems], auctionPoints: ['j', LISTS.auctionPoints],

@@ -592,11 +592,13 @@
     } }, p));
   }
 
-  var HOME_KEYS = ["showAuction", "auctionPoints", "auctionTitle", "auctionLead", "showReviews", "reviewsTitle", "showCta", "ctaTitle", "ctaText"];
+  var HOME_KEYS = ["stockSubtitle", "showAuction", "auctionPoints", "auctionTitle", "auctionLead", "showReviews", "reviewsTitle", "showCta", "ctaTitle", "ctaText"];
   function HomeContent(p) {
     return h(SettingsForm, Object.assign({ keys: HOME_KEYS, render: function (f, set, tog) {
       return h(Frag, null,
         h("p", { className: "ad-note" }, h(A.Icon, { name: "info", size: 16 }), "Switch sections on or off and change their wording. A box left empty keeps the standard wording shown inside it."),
+        h(Card, { title: "Our stock page", text: "The line under the vehicle count on the Our stock page." },
+          h(A.TextField, { label: "Sub-heading", value: f.stockSubtitle, onChange: set("stockSubtitle"), placeholder: "Imported from Japan · prices include duty & clearance" })),
         h(Card, { title: "Live auction", text: "The Japan auctions promo strip." },
           h(A.Switch, { label: "Show this section", checked: on(f, "showAuction"), onChange: tog("showAuction") }),
           h("div", { className: "ad-fgrid" }, h(A.TextField, { label: "Heading", value: f.auctionTitle, onChange: set("auctionTitle"), placeholder: "Watch Japan auctions live" }),
@@ -711,8 +713,11 @@
   }
 
   function BuyPage(p) {
-    return h(SettingsForm, Object.assign({ keys: ["buySteps", "depositFaq"], render: function (f, set) {
+    return h(SettingsForm, Object.assign({ keys: ["buyTitle", "buyLead", "buySteps", "depositFaq"], render: function (f, set) {
       return h(Frag, null,
+        h(Card, { title: "Page heading", text: "The big heading at the top of the How to buy page." },
+          h(A.TextField, { label: "Heading", value: f.buyTitle, onChange: set("buyTitle"), placeholder: "From auction floor to your driveway" }),
+          h(A.TextField, { label: "Sub-heading", value: f.buyLead, onChange: set("buyLead"), placeholder: "No hidden charges. The whole process is visible in My account." })),
         listCard(f, set, "buySteps", "The buying steps", "Shown on the How to buy page. Use the arrows to change the order.", [
           { key: "t", label: "Step title", half: true }, { key: "d", label: "How long", half: true, placeholder: "e.g. Day 1–3" }, { key: "body", label: "What happens", multiline: true, rows: 3 }], { min: 2, max: 8, addLabel: "Add a step" }),
         h(Card, { title: "“Why do we ask for a deposit?”", text: "The answer shown under the steps." },
@@ -1001,6 +1006,7 @@
     ["auctionTitle", "Live auction heading", "home", "Live auction section", "Watch Japan auctions live"], ["auctionLead", "Live auction sub-heading", "home", "Live auction section", "Browse live lots from Japanese auction houses without leaving Direct Auto."],
     ["reviewsTitle", "Reviews heading", "home", "Reviews section", "What our customers say"], ["ctaTitle", "Banner heading", "home", "Bottom banner", "Looking for one exact car?"],
     ["ctaText", "Banner text", "home", "Bottom banner", "Tell us the model, year and budget. We shortlist lots and send every sheet before bidding."],
+    ["buyTitle", "How to buy heading", "buy", "Page heading", "From auction floor to your driveway"], ["buyLead", "How to buy sub-heading", "buy", "Page heading", "No hidden charges. The whole process is visible in My account."], ["stockSubtitle", "Our stock sub-heading", "home", "Our stock page", "Imported from Japan · prices include duty & clearance"],
     ["depositFaq", "Deposit answer", "buy", "Deposit", "Deposits are 100% refundable."], ["aboutCtaTitle", "About banner heading", "about", "Bottom banner", "Visit us in Malabe or Colombo 07"], ["aboutCtaText", "About banner text", "about", "Bottom banner", "See landed stock in person, or sit down with our LC desk."]
   ];
   var SET_LISTS = [

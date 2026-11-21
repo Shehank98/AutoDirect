@@ -354,15 +354,110 @@
       ctl, p.trailing || null) : ctl;
     return h(Field, { label: p.label, hint: p.hint, error: p.error, id: id, className: p.className, optional: p.optional }, inner);
   }
+  // A dropdown that looks the same everywhere. Mouse and keyboard users get a smooth custom list
+  // (arrow keys, Home/End, type-ahead, Esc). Touch screens keep the phone's own native picker.
+  var FINE = window.matchMedia ? window.matchMedia("(pointer: fine)") : null;
+  function usePointerFine() {
+    var s = useState(FINE ? FINE.matches : true), v = s[0], set = s[1];
+    useEffect(function () {
+      if (!FINE) return;
+      function on() { set(FINE.matches); }
+      if (FINE.addEventListener) FINE.addEventListener("change", on); else FINE.addListener(on);
+      return function () { if (FINE.removeEventListener) FINE.removeEventListener("change", on); else FINE.removeListener(on); };
+    }, []);
+    return v;
+  }
+  function DropList(p) {
+    var opts = p.options, listId = p.id + "-list";
+    var st = useState(false), open = st[0], setOpen = st[1];
+    var ac = useState(-1), active = ac[0], setActive = ac[1];
+    var ps = useState(null), pos = ps[0], setPos = ps[1];
+    var btn = useRef(null), panel = useRef(null), typed = useRef({ s: "", t: 0 });
+    var idx = -1; for (var i = 0; i < opts.length; i++) if (String(opts[i].value) === String(p.value)) { idx = i; break; }
+    var current = idx >= 0 ? opts[idx] : null;
+
+    function place() {
+      if (!btn.current) return;
+      var r = btn.current.getBoundingClientRect(), vh = window.innerHeight, vw = window.innerWidth;
+      var want = Math.min(opts.length * 40 + 12, 320), below = vh - r.bottom - 12, above = r.top - 12;
+      var up = below < Math.min(want, 180) && above > below;
+      var width = Math.max(r.width, 160), left = Math.max(8, Math.min(r.left, vw - width - 8));
+      setPos({ left: left, width: width, up: up, top: up ? undefined : r.bottom + 6, bottom: up ? vh - r.top + 6 : undefined, max: Math.max(120, Math.min(320, up ? above : below)) });
+    }
+    function openList(at) { if (p.disabled) return; place(); setActive(at != null ? at : idx >= 0 ? idx : 0); setOpen(true); }
+    function close(focus) { setOpen(false); if (focus && btn.current) btn.current.focus(); }
+    function pick(i) { var o = opts[i]; if (!o) return; close(true); if (String(o.value) !== String(p.value) && p.onChange) p.onChange({ target: { value: o.value } }); }
+
+    useEffect(function () {
+      if (!open) return;
+      function down(e) { if (panel.current && panel.current.contains(e.target)) return; if (btn.current && btn.current.contains(e.target)) return; setOpen(false); }
+      function move(e) { if (e.type === "scroll" && panel.current && panel.current.contains(e.target)) return; place(); }
+      document.addEventListener("mousedown", down); window.addEventListener("resize", move); window.addEventListener("scroll", move, true);
+      return function () { document.removeEventListener("mousedown", down); window.removeEventListener("resize", move); window.removeEventListener("scroll", move, true); };
+    }, [open, opts.length]);
+    useEffect(function () {
+      if (!open || !panel.current) return;
+      var el = panel.current.querySelector('[data-i="' + active + '"]');
+      if (el && el.scrollIntoView) el.scrollIntoView({ block: "nearest" });
+    }, [open, active, pos]);
+
+    function onKey(e) {
+      var k = e.key, n = opts.length;
+      if (!open) {
+        if (k === "ArrowDown" || k === "ArrowUp" || k === "Enter" || k === " ") { e.preventDefault(); openList(); }
+        else if (k.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) typeAhead(e, true);
+        return;
+      }
+      if (k === "ArrowDown") { e.preventDefault(); setActive(Math.min(n - 1, active + 1)); }
+      else if (k === "ArrowUp") { e.preventDefault(); setActive(Math.max(0, active - 1)); }
+      else if (k === "Home") { e.preventDefault(); setActive(0); }
+      else if (k === "End") { e.preventDefault(); setActive(n - 1); }
+      else if (k === "Enter" || k === " ") { e.preventDefault(); pick(active); }
+      else if (k === "Escape") { e.preventDefault(); e.stopPropagation(); close(true); }
+      else if (k === "Tab") { setOpen(false); }
+      else if (k.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) typeAhead(e, false);
+    }
+    function typeAhead(e, closed) {
+      var now = Date.now(), t = typed.current;
+      t.s = now - t.t > 700 ? e.key.toLowerCase() : t.s + e.key.toLowerCase(); t.t = now;
+      var from = closed ? idx : active, hit = -1;
+      for (var j = 1; j <= opts.length && hit < 0; j++) { var c = (from + (t.s.length > 1 ? j - 1 : j) + opts.length * 2) % opts.length; if (String(opts[c].label).toLowerCase().indexOf(t.s) === 0) hit = c; }
+      if (hit < 0) return;
+      e.preventDefault();
+      if (closed) { if (p.onChange && String(opts[hit].value) !== String(p.value)) p.onChange({ target: { value: opts[hit].value } }); } else setActive(hit);
+    }
+
+    var list = open && pos ? window.ReactDOM.createPortal(
+      h("div", { ref: panel, id: listId, role: "listbox", tabIndex: -1, "aria-label": p["aria-label"], className: cx("ad-dd", pos.up && "is-up"),
+        style: { left: pos.left, width: pos.width, top: pos.top, bottom: pos.bottom, maxHeight: pos.max } },
+        opts.map(function (o, i) {
+          return h("div", { key: String(o.value) + i, id: p.id + "-o" + i, role: "option", "data-i": i, "aria-selected": i === idx,
+            className: cx("ad-dd__opt", i === active && "is-active", i === idx && "is-selected"),
+            onMouseMove: function () { if (active !== i) setActive(i); }, onMouseDown: function (e) { e.preventDefault(); }, onClick: function () { pick(i); } },
+            h("span", { className: "ad-dd__txt" }, o.label), i === idx ? h(Icon, { name: "check", size: 15, className: "ad-dd__tick" }) : null);
+        })), document.body) : null;
+
+    return h(Frag, null,
+      h("button", { ref: btn, type: "button", id: p.id, disabled: p.disabled, role: "combobox", "aria-haspopup": "listbox", "aria-expanded": open, "aria-controls": open ? listId : undefined,
+        "aria-activedescendant": open && active >= 0 ? p.id + "-o" + active : undefined, "aria-label": p["aria-label"], "aria-invalid": p.invalid ? true : undefined,
+        className: cx("ad-input", "ad-select__btn", !current && "is-empty", open && "is-open"),
+        onClick: function () { open ? close(false) : openList(); }, onKeyDown: onKey },
+        h("span", { className: "ad-select__val" }, current ? current.label : p.placeholder || "Select")),
+      list);
+  }
   function SelectField(p) {
     var id = useId("sf", p.id);
+    var fine = usePointerFine();
     var rest = omit(p, ["label", "hint", "error", "className", "options", "placeholder", "optional"]);
     var opts = (p.options || []).map(function (o) { return typeof o === "object" ? o : { value: String(o), label: String(o) }; });
+    var all = p.placeholder != null ? [{ value: "", label: p.placeholder }].concat(opts) : opts;
     return h(Field, { label: p.label, hint: p.hint, error: p.error, id: id, className: p.className, optional: p.optional },
       h("div", { className: cx("ad-select", p.disabled && "is-disabled") },
-        h("select", Object.assign({ id: id, className: "ad-input", "aria-invalid": p.error ? true : undefined }, rest),
-          p.placeholder != null ? h("option", { value: "" }, p.placeholder) : null,
-          opts.map(function (o) { return h("option", { key: o.value, value: o.value }, o.label); })),
+        fine
+          ? h(DropList, { id: id, options: all, value: p.value == null ? "" : p.value, onChange: p.onChange, disabled: p.disabled, placeholder: p.placeholder, invalid: !!p.error, "aria-label": p["aria-label"] })
+          : h("select", Object.assign({ id: id, className: "ad-input", "aria-invalid": p.error ? true : undefined }, rest),
+            p.placeholder != null ? h("option", { value: "" }, p.placeholder) : null,
+            opts.map(function (o) { return h("option", { key: o.value, value: o.value }, o.label); })),
         h(Icon, { name: "chevron-down", size: 16, className: "ad-select__chev" })));
   }
   function RangeSlider(p) {
@@ -774,7 +869,7 @@
       h("div", { className: "ad-stock__main" },
         h("div", { className: "ad-stock__bar" },
           h("div", null, h("h2", { className: "ad-h2" }, list.length + " vehicle" + (list.length === 1 ? "" : "s")),
-            h("p", { className: "ad-muted ad-small" }, "Imported from Japan · prices include duty & clearance")),
+            h("p", { className: "ad-muted ad-small" }, T("stockSubtitle", "Imported from Japan · prices include duty & clearance"))),
           h("div", { className: "ad-stock__tools" },
             h(Button, { variant: "secondary", size: "s", icon: "filter", className: "ad-show-md", onClick: function () { setPanel(true); } }, "Filters" + (active.length ? " (" + active.length + ")" : "")),
             h(SelectField, { "aria-label": "Sort by", options: SORTS, value: sort, onChange: function (e) { setSort(e.target.value); }, className: "ad-stock__sort" }),

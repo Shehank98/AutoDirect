@@ -314,7 +314,7 @@
 
   function Buy(p) {
     return h(Frag, null,
-      h(PageHead, { crumb: "How to buy", kicker: "How to buy", title: "From auction floor to your driveway", lead: "No hidden charges. The whole process is visible in My account." }),
+      h(PageHead, { crumb: "How to buy", kicker: "How to buy", title: A.T("buyTitle", "From auction floor to your driveway"), lead: A.T("buyLead", "No hidden charges. The whole process is visible in My account.") }),
       h("div", { className: "ad-wrap ad-pagebody" }, h(A.ProcessSteps, { onStart: function () { p.nav("request"); } }),
         h("div", { className: "ad-infostrip" },
           [["clock", "30–45 days", "Typical time from opening the LC to delivery."], ["doc", "LC within 7 days", "Of the pro-forma invoice. We prepare the bank documents with you."], ["ship", "~20 days at sea", "After loading. Duty is paid directly to Sri Lanka Customs."]].map(function (x) {
