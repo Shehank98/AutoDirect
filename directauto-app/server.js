@@ -55,7 +55,7 @@ api.use('/', require('./src/routes/taxonomy'));
 api.use('/', require('./src/routes/catalog'));
 api.use('/vehicles', require('./src/routes/vehicles'));
 api.use('/', require('./src/routes/inquiries'));
-// Password reset ("forgot password") email from our own address. Always answers ok so nobody can probe which emails exist.
+// Password reset ("forgot password") email from our own address. If there is no account for the email, nothing is sent and the answer says so.
 const authLimit = rateLimit({ windowMs: 10 * 60 * 1000, max: 6, message: 'Too many attempts. Please try again in a few minutes.' });
 api.post(['/auth/forgot', '/account/send-verification'], authLimit);
 api.post('/auth/forgot', async (req, res) => {
@@ -68,6 +68,8 @@ api.use('/admin', require('./src/routes/admin'));
 
 // Unknown API paths stay JSON (never fall through to the app shell).
 api.use((_req, res) => res.status(404).json({ error: 'Not found' }));
+app.use(require('compression')());                                  // smaller downloads for text, JSON and scripts
+app.get('/api/img', require('./src/imgopt').resizeRoute);   // resized, cached copies of stored photos
 app.use('/api', api);
 
 // ---------------- Static frontend ----------------
@@ -81,7 +83,11 @@ app.get('/robots.txt', (req, res) => res.type('text/plain').send(seo.robots(req)
 app.get('/sitemap.xml', async (req, res, next) => {
   try { res.type('application/xml').send(seo.sitemap(req, await getCatalog().catch(() => null))); } catch (e) { next(e); }
 });
-app.use(express.static(PUBLIC_DIR, { index: false }));
+// Smaller downloads: compress text files, and let browsers keep images, fonts and libraries for a while.
+app.use(express.static(PUBLIC_DIR, { index: false, setHeaders: (res, file) => {
+  if (/\.(?:jpe?g|png|webp|avif|gif|svg|ico|woff2?)$/i.test(file) || file.includes(`${path.sep}vendor${path.sep}`)) res.setHeader('Cache-Control', 'public, max-age=604800');
+  else if (/\.(?:js|css)$/i.test(file)) res.setHeader('Cache-Control', 'public, max-age=300, must-revalidate');
+} }));
 app.get('*', async (req, res, next) => {
   if (path.extname(req.path)) return next(); // a missing file is a real 404
   // The app shell, with this page's title / description / link-preview tags filled in for crawlers.

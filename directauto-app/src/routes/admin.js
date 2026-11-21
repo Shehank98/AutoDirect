@@ -3,6 +3,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const multer = require('multer');
+const { optimize } = require('../imgopt');
 const db = require('../../db/pool');
 const { requireAdmin, ownerEmails } = require('../auth');
 const { bucket, isConfigured } = require('../firebase');
@@ -73,12 +74,13 @@ router.post('/upload', upload.array('images', 12), async (req, res, next) => {
     const b = bucket();
     const urls = [];
     for (const file of req.files) {
-      const ext = (file.originalname.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'jpg';
+      const opt = await optimize(file.buffer, file.mimetype);      // shrink big phone photos before storing
+      const ext = opt.ext || (file.originalname.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'jpg';
       const token = crypto.randomUUID();
       const objectName = `${folder}/${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
       const blob = b.file(objectName);
-      await blob.save(file.buffer, {
-        contentType: file.mimetype,
+      await blob.save(opt.buffer, {
+        contentType: opt.mimetype,
         metadata: { metadata: { firebaseStorageDownloadTokens: token } },
       });
       urls.push(`https://firebasestorage.googleapis.com/v0/b/${b.name}/o/${encodeURIComponent(objectName)}?alt=media&token=${token}`);

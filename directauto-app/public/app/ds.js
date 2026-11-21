@@ -6,6 +6,10 @@
   var useState = R.useState, useEffect = R.useEffect, useMemo = R.useMemo, useRef = R.useRef;
 
   /* ---------- helpers ---------- */
+  // Photos kept in our storage are served through /api/img as a smaller, cached copy sized for where they are shown.
+  function ph(url, w) {
+    return typeof url === "string" && /^https:\/\/(firebasestorage|storage)\.googleapis\.com\//.test(url) ? "/api/img?w=" + w + "&u=" + encodeURIComponent(url) : url;
+  }
   function cx() { var a = []; for (var i = 0; i < arguments.length; i++) if (arguments[i]) a.push(arguments[i]); return a.join(" "); }
   function omit(o, keys) { var r = {}; for (var k in o) if (keys.indexOf(k) < 0) r[k] = o[k]; return r; }
   function num(n) { return Math.round(n).toLocaleString("en-US"); }
@@ -764,7 +768,7 @@
     var v = p.vehicle;
     return h("article", { className: cx("ad-vcard", p.layout === "row" && "ad-vcard--row", v.status === "Sold" && "is-sold", p.className) },
       h("div", { className: "ad-vcard__media" },
-        v.img ? h("img", { src: v.img, alt: (title(v) + " " + v.grade).trim(), loading: "lazy" }) : h(PhotoPending, null),
+        v.img ? h("img", { src: ph(v.img, 800), alt: (title(v) + " " + v.grade).trim(), loading: "lazy", decoding: "async" }) : h(PhotoPending, null),
         vehicleLabel(v) ? h("div", { className: "ad-vcard__tags" }, labelBadge(vehicleLabel(v))) : null,
         p.onSave ? h("button", { type: "button", className: cx("ad-vcard__save", p.saved && "is-on"), "aria-pressed": !!p.saved, "aria-label": (p.saved ? "Remove " : "Save ") + title(v), onClick: p.onSave }, h(Icon, { name: "heart", size: 18 })) : null,
         h("button", { type: "button", className: "ad-vcard__ask", "aria-label": "Ask the price of " + title(v), onClick: function (e) { e.stopPropagation(); (p.onPrice || p.onOpen) && (p.onPrice || p.onOpen)(v); } }, "Price", h(Icon, { name: "chevron-right", size: 14 }))),
@@ -792,7 +796,7 @@
         var v = items[i];
         if (!v) return h("div", { key: i, className: "ad-tray__slot is-empty" }, h(Icon, { name: "plus", size: 16 }), h("span", null, "Add a vehicle"));
         return h("div", { key: v.id, className: "ad-tray__slot" },
-          v.img ? h("img", { src: v.img, alt: "" }) : h("span", { className: "ad-tray__ph" }, h(Icon, { name: "car", size: 18 })),
+          v.img ? h("img", { src: ph(v.img, 240), alt: "" }) : h("span", { className: "ad-tray__ph" }, h(Icon, { name: "car", size: 18 })),
           h("span", { className: "ad-tray__name" }, h("b", null, v.make + " " + v.model), h("span", null, lkr(v.price))),
           h("button", { type: "button", className: "ad-tray__x", "aria-label": "Remove " + title(v), onClick: function () { p.onRemove && p.onRemove(v.id); } }, h(Icon, { name: "x", size: 14 })));
       })),
@@ -918,7 +922,7 @@
           h("thead", null, h("tr", null, h("th", { scope: "col", className: "ad-ctable__corner" }, h("span", { className: "ad-label" }, list.length + " vehicles")),
             list.map(function (v) {
               return h("th", { key: v.id, scope: "col" }, h("div", { className: "ad-ctable__car" },
-                h("div", { className: "ad-ctable__img" }, v.img ? h("img", { src: v.img, alt: "" }) : h(PhotoPending, { label: "Photos soon" }),
+                h("div", { className: "ad-ctable__img" }, v.img ? h("img", { src: ph(v.img, 800), alt: "", loading: "lazy" }) : h(PhotoPending, { label: "Photos soon" }),
                   h("button", { type: "button", className: "ad-ctable__x", "aria-label": "Remove " + title(v), onClick: function () { setList(list.filter(function (x) { return x.id !== v.id; })); p.onRemove && p.onRemove(v.id); } }, h(Icon, { name: "x", size: 14 }))),
                 h("strong", null, title(v)), h("span", { className: "ad-muted ad-small" }, v.grade)));
             }))),
@@ -951,16 +955,16 @@
     var cur = items[i];
     return h("div", { className: "ad-gallery", onKeyDown: key },
       h("div", { className: cx("ad-gallery__stage", cur.sheet && "is-sheet") },
-        cur.src ? h("button", { type: "button", className: "ad-gallery__img", onClick: function () { setZoom(true); }, "aria-label": "Enlarge " + cur.label }, h("img", { src: cur.src, alt: (p.alt || "Vehicle") + ", " + cur.label })) : h(PhotoPending, { label: cur.label }),
+        cur.src ? h("button", { type: "button", className: "ad-gallery__img", onClick: function () { setZoom(true); }, "aria-label": "Enlarge " + cur.label }, h("img", { src: ph(cur.src, cur.sheet ? 1600 : 1200), alt: (p.alt || "Vehicle") + ", " + cur.label, fetchpriority: "high" })) : h(PhotoPending, { label: cur.label }),
         h("span", { className: "ad-gallery__count ad-mono" }, (i + 1) + " / " + items.length + " · " + cur.label),
         items.length > 1 ? h("button", { type: "button", className: "ad-gallery__nav is-prev", onClick: function () { go(-1); }, "aria-label": "Previous photo" }, h(Icon, { name: "chevron-left" })) : null,
         items.length > 1 ? h("button", { type: "button", className: "ad-gallery__nav is-next", onClick: function () { go(1); }, "aria-label": "Next photo" }, h(Icon, { name: "chevron-right" })) : null),
       h("div", { className: "ad-gallery__thumbs", role: "tablist", "aria-label": "Photos" }, items.map(function (it, k) {
         return h("button", { key: k, type: "button", role: "tab", "aria-selected": k === i, "aria-label": it.label, className: cx("ad-gallery__thumb", k === i && "is-on"), onClick: function () { setI(k); } },
-          it.src ? h("img", { src: it.src, alt: "" }) : h(Icon, { name: "image", size: 18 }), it.sheet ? h("span", { className: "ad-gallery__tag" }, "Sheet") : null);
+          it.src ? h("img", { src: ph(it.src, 240), alt: "", loading: "lazy" }) : h(Icon, { name: "image", size: 18 }), it.sheet ? h("span", { className: "ad-gallery__tag" }, "Sheet") : null);
       })),
       zoom && cur.src ? h("div", { className: "ad-lightbox", role: "dialog", "aria-modal": true, "aria-label": cur.label, onClick: function () { setZoom(false); } },
-        h("img", { src: cur.src, alt: cur.label }), h("button", { type: "button", className: "ad-lightbox__x", "aria-label": "Close", autoFocus: true }, h(Icon, { name: "x" }))) : null);
+        h("img", { src: ph(cur.src, 2000), alt: cur.label }), h("button", { type: "button", className: "ad-lightbox__x", "aria-label": "Close", autoFocus: true }, h(Icon, { name: "x" }))) : null);
   }
 
   /* ---------- SpecSheet ---------- */
@@ -1066,7 +1070,7 @@
     return h("form", { className: "ad-form", onSubmit: submit, noValidate: true },
       h("div", { className: "ad-form__head" },
         h(Tabs, { block: true, label: "Inquiry type", tabs: [{ id: "quote", label: "Request a quote", icon: "doc" }, { id: "viewing", label: "Book a viewing", icon: "calendar" }], value: kind, onChange: setKind })),
-      h("div", { className: "ad-form__ctx" }, v.img ? h("img", { src: v.img, alt: "" }) : null, h("div", null, h("strong", null, title(v)), h("span", { className: "ad-mono ad-muted" }, v.id + " · " + lkr(v.price)))),
+      h("div", { className: "ad-form__ctx" }, v.img ? h("img", { src: ph(v.img, 240), alt: "" }) : null, h("div", null, h("strong", null, title(v)), h("span", { className: "ad-mono ad-muted" }, v.id + " · " + lkr(v.price)))),
       errs.form ? h("p", { className: "ad-field__error", role: "alert" }, h(Icon, { name: "info", size: 14 }), errs.form) : null,
       h("div", { className: "ad-form__grid" },
         h(TextField, { label: "Full name *", autoComplete: "name", required: true, "aria-required": true, value: form.name, onChange: set("name"), error: errs.name }),
@@ -1343,7 +1347,7 @@
     if (state === "done") return h("div", { className: "ad-auth ad-success", role: "status" },
       h("div", { className: "ad-success__icon" }, h(Icon, { name: mode === "forgot" ? "mail" : "check", size: 26, stroke: 2 })),
       h("h3", { className: "ad-h2" }, mode === "login" ? "Welcome back" : mode === "register" ? "Account created" : "Check your inbox"),
-      h("p", { className: "ad-muted" }, mode === "forgot" ? "If " + d.email + " has an account, a reset link is on its way." : "Your inquiries and auction requests are in My account."),
+      h("p", { className: "ad-muted" }, mode === "forgot" ? "A reset link is on its way to " + d.email + "." : "Your inquiries and auction requests are in My account."),
       h(Button, { variant: "secondary", onClick: function () { if (mode !== "forgot" && p.onDone) { p.onDone(doneName || d.name || d.email.split("@")[0]); return; } setState("idle"); setMode("login"); } }, mode === "forgot" ? "Back to sign in" : "Go to dashboard"));
     return h("form", { className: "ad-auth", onSubmit: submit, noValidate: true },
       h(Logo, { size: 20 }),

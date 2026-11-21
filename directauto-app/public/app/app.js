@@ -116,8 +116,9 @@
     return Promise.resolve().then(function () {
       var f = needFb(), au = f.auth();
       if (mode === "forgot") {
-        var viaFirebase = function () { return au.sendPasswordResetEmail(d.email).then(function () { return ""; }); };
-        return api.post("/api/auth/forgot", { email: d.email }).then(function (r) { return r && r.ok ? "" : viaFirebase(); }, function (e) { if (e.status === 429 || e.status === 400) throw e; return viaFirebase(); });
+        var NO_ACCOUNT = "We couldn’t find an account with that email. Check the spelling, or create an account.";
+        var viaFirebase = function () { return au.sendPasswordResetEmail(d.email).then(function () { return ""; }, function (e) { if (e && e.code === "auth/user-not-found") throw new Error(NO_ACCOUNT); throw e; }); };
+        return api.post("/api/auth/forgot", { email: d.email }).then(function (r) { if (r && r.notFound) throw new Error(NO_ACCOUNT); return r && r.ok ? "" : viaFirebase(); }, function (e) { if (e.status === 429 || e.status === 400) throw e; return viaFirebase(); });
       }
       if (mode === "login") {
         return au.setPersistence(d.remember ? f.auth.Auth.Persistence.LOCAL : f.auth.Auth.Persistence.SESSION)

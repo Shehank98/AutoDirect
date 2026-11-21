@@ -32,11 +32,11 @@ async function sendVerification(user) {
 async function sendReset(email) {
   if (!usable()) return { ok: false, fallback: true };
   try {
-    if (!(await userExists(email))) return { ok: true };       // no account with this email: send nothing, say nothing
+    if (!(await userExists(email))) return { ok: false, notFound: true };   // no account with this email: send nothing and tell the person
     const r = await mailer.send('password_reset', { email, link: await link('reset', email) });
     return r.ok ? { ok: true } : { ok: false, fallback: true };
   } catch (e) {
-    if (/user-not-found|no user record|email-not-found/i.test(`${e.code} ${e.message}`)) return { ok: true };   // never reveal who has an account
+    if (/user-not-found|no user record|email-not-found/i.test(`${e.code} ${e.message}`)) return { ok: false, notFound: true };
     console.error('[authmail] reset email failed:', e.message);
     return { ok: false, fallback: true };
   }
