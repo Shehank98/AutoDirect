@@ -555,6 +555,7 @@
     return h("header", { className: "ad-header", ref: ref },
       h("div", { className: "ad-topbar" }, h("div", { className: "ad-wrap ad-topbar__in" },
         h("a", { href: "tel:" + SITE.phone.replace(/[^+0-9]/g, "") }, h(Icon, { name: "phone", size: 14 }), SITE.phone),
+        on("showWhatsapp") && SITE.whatsapp ? h("a", { href: "https://wa.me/" + SITE.whatsapp + "?text=" + encodeURIComponent(T("whatsappMessage", "Hi Direct Auto, I have a question about importing a car.")), target: "_blank", rel: "noopener", className: "ad-topbar__wa", "aria-label": "Chat with us on WhatsApp (opens in a new tab)" }, h(Icon, { name: "whatsapp", size: 14 }), "WhatsApp") : null,
         h("a", { href: "mailto:" + SITE.email, className: "ad-hide-sm" }, h(Icon, { name: "mail", size: 14 }), SITE.email),
         h("span", { className: "ad-hide-sm" }, h(Icon, { name: "pin", size: 14 }), SITE.address),
         h("span", { className: "ad-topbar__sp" }),
