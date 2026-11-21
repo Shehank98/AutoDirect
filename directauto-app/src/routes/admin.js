@@ -37,6 +37,28 @@ router.post('/email-test', async (req, res) => {
 
 router.use('/backup', require('./backup'));
 
+// Add inventory countries from the vehicle form: { names: "India, Australia" } (comma or new line separated).
+router.post('/locations', async (req, res, next) => {
+  try {
+    const locations = require('../locations'), settings = require('../settings');
+    const names = [...new Set(String((req.body && req.body.names) || '').split(/[,\n]/).map((s) => s.trim().replace(/\s+/g, ' ').slice(0, 40)).filter(Boolean))].slice(0, 20);
+    if (!names.length) return res.status(400).json({ error: 'Type a country name.' });
+    const o = await settings.overrides();
+    const have = locations.merge(o.extraLocations);
+    const extra = (Array.isArray(o.extraLocations) ? o.extraLocations : []).map((x) => ({ name: x.name, code: x.code || '' }));
+    const added = [];
+    for (let n of names) {
+      if (n === n.toLowerCase() && n.length > 3) n = n.replace(/\b[a-z]/g, (c) => c.toUpperCase());   // "india" -> "India"
+      if (have.some((l) => l.name.toLowerCase() === n.toLowerCase())) continue;
+      extra.push({ name: n, code: locations.codeFor(n) });
+      have.push({ name: n });
+      added.push(n);
+    }
+    if (added.length) await settings.save({ extraLocations: extra });
+    res.status(added.length ? 201 : 200).json({ added, locations: locations.merge(extra) });
+  } catch (e) { next(e); }
+});
+
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
 
 const slugify = (s) => String(s || '')

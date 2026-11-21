@@ -1443,3 +1443,6 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
 .ad-nav__brand:hover .ad-logo__clip, .ad-nav__brand:focus-visible .ad-logo__clip { clip-path: inset(0 0 0 0); }
 @media (max-width: 560px) { .ad-logo--short { --lw: min(250px, 66vw) !important; } }
 @media (prefers-reduced-motion: reduce) { .ad-logo--short .ad-logo__clip { transition: none; } }
+
+/* Add a new inventory country (inside the vehicle form) */
+.ad-newloc { display: grid; gap: 10px; padding: 14px; border: 1px dashed var(--line-strong); border-radius: var(--radius-m); background: var(--surface-100); }

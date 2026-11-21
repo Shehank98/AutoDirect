@@ -9,6 +9,7 @@ const STYLES = ['directauto', 'classifieds', 'showroom'];     // complete websit
 const FONTS = ['logo', 'previous', 'inter', 'poppins', 'nunito', 'playfair', 'montserrat'];   // anything else = the built-in font
 // Lists staff can edit as a whole (add / remove / reorder). `req` fields must not be empty or the row is dropped.
 const LISTS = {
+  extraLocations: { max: 60, f: { name: 40, code: 2 }, req: ['name'] },
   buySteps: { max: 8, f: { t: 100, d: 60, body: 700 }, req: ['t'] },
   aboutValues: { max: 8, f: { title: 100, text: 400 }, req: ['title'] },
   locationsList: { max: 6, f: { name: 80, text: 120 }, req: ['name'] },
@@ -35,7 +36,7 @@ const FIELDS = {
   seoTitle: ['s', 120], seoDescription: ['s', 300],
   stockSubtitle: ['s', 200], buyTitle: ['s', 100], buyLead: ['s', 250],
   depositFaq: ['s', 700], aboutCtaTitle: ['s', 100], aboutCtaText: ['s', 250],
-  buySteps: ['j', LISTS.buySteps], aboutValues: ['j', LISTS.aboutValues], locationsList: ['j', LISTS.locationsList],
+  extraLocations: ['j', LISTS.extraLocations], buySteps: ['j', LISTS.buySteps], aboutValues: ['j', LISTS.aboutValues], locationsList: ['j', LISTS.locationsList],
   glossaryItems: ['j', LISTS.glossaryItems], auctionPoints: ['j', LISTS.auctionPoints],
   season: ['e', SEASONS], seasonStart: ['d'], seasonEnd: ['d'], seasonIntensity: ['e', DENSITIES],
   seasonEffect: ['b'], seasonDecor: ['b'], seasonBanner: ['b'], seasonTheme: ['b'], seasonMessage: ['s', 200],

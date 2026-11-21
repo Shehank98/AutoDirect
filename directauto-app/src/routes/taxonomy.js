@@ -55,6 +55,8 @@ router.get('/features', async (_req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.get('/locations', (_req, res) => res.json(locations));
+router.get('/locations', async (_req, res, next) => {
+  try { res.json(locations.merge((await require('../settings').overrides()).extraLocations)); } catch (e) { next(e); }
+});
 
 module.exports = router;

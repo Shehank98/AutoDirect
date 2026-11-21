@@ -190,6 +190,20 @@
     var v = p.vehicle, L = p.L, isNew = !v.id;
     var s = useState(function () { return Object.assign({}, v, { price: v.price == null ? "" : String(Math.round(v.price)), images: (v.images || []).slice(), feature_ids: (v.feature_ids || []).map(Number) }); }), f = s[0], setF = s[1];
     var bs = useState(false), busy = bs[0], setBusy = bs[1], er = useState(""), err = er[0], setErr = er[1];
+    // Inventory countries: the list can grow right from this form ("Add a new country").
+    var lcs = useState(L.locations), locs = lcs[0], setLocs = lcs[1];
+    var ncs = useState(null), newLoc = ncs[0], setNewLoc = ncs[1], nbs = useState(false), newBusy = nbs[0], setNewBusy = nbs[1], nes = useState(""), newErr = nes[0], setNewErr = nes[1];
+    function addCountries() {
+      if (!newLoc || !newLoc.trim()) { setNewErr("Type a country name."); return; }
+      setNewBusy(true); setNewErr("");
+      api.post("/api/admin/locations", { names: newLoc }).then(function (r) {
+        setNewBusy(false); setLocs(r.locations); L.locations = r.locations;
+        var first = (r.added && r.added[0]) || newLoc.split(/[,\n]/)[0].trim();
+        var match = r.locations.filter(function (l) { return l.name.toLowerCase() === first.toLowerCase(); })[0];
+        if (match) setF(function (o) { return Object.assign({}, o, { location: match.name }); });
+        setNewLoc(null);
+      }, function (x) { setNewBusy(false); setNewErr(x.message); });
+    }
     function set(k) { return function (e) { var o = Object.assign({}, f); o[k] = e && e.target ? e.target.value : e; setF(o); }; }
     var models = L.models.filter(function (m) { return String(m.manufacturer_id) === String(f.vehicle_manufacturer) && (m.status === 1 || m.id === f.vehicle_model); });
     function save(e) {
@@ -211,7 +225,12 @@
         sel("vehicle_model", "Model", opts(models), f.vehicle_manufacturer ? "Select model" : "Choose a brand first", { disabled: !f.vehicle_manufacturer }),
         sel("vehicle_type", "Body type", opts(L.types.filter(function (m) { return m.status === 1 || m.id === f.vehicle_type; })), "Select type"),
         txt("trim", "Trim / grade name", { placeholder: "e.g. Hybrid WxB" }), txt("year", "Year", { maxLength: 4, inputMode: "numeric" }),
-        sel("location", "Inventory location", opts(L.locations.map(function (l) { return l.name; })), "Not set"),
+        sel("location", "Inventory location", opts(locs.map(function (l) { return l.name; }).concat(f.location && !locs.some(function (l) { return l.name === f.location; }) ? [f.location] : [])).concat([{ value: "__add__", label: "+ Add a new country" }]), "Not set",
+          { onChange: function (e) { if (e.target.value === "__add__") { setNewLoc(""); setNewErr(""); } else { setNewLoc(null); set("location")(e); } } }),
+        newLoc !== null ? h("div", { className: "ad-span2 ad-newloc" },
+          h(A.TextField, { label: "New inventory country", value: newLoc, onChange: function (e) { setNewLoc(e.target.value); }, placeholder: "e.g. Australia, India", autoFocus: true, error: newErr, hint: "Add one or several, separated by commas. They appear in the list for every vehicle.",
+            onKeyDown: function (e) { if (e.key === "Enter") { e.preventDefault(); addCountries(); } } }),
+          h("div", { className: "ad-row" }, h(A.Button, { type: "button", loading: newBusy, onClick: addCountries }, "Add country"), h(A.Button, { type: "button", variant: "ghost", onClick: function () { setNewLoc(null); } }, "Cancel"))) : null,
         txt("price", "Price (LKR)", { type: "number", min: 0, step: 1000, hint: "Leave blank to show “Price on request”." }),
         sel("stock_status", "Sales status", opts(STOCK_STATUS)), sel("main_color", "Colour", opts(L.colors.filter(function (m) { return m.status === 1 || m.id === f.main_color; })), "Select colour"),
         txt("chassi_id", "Chassis no.", { mono: true })),

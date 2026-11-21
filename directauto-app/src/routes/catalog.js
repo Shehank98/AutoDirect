@@ -50,7 +50,7 @@ async function build() {
     })),
     types: types.rows.map((t) => ({ ...t, count: count('type', t.name) })),
     features: feats.rows.map((f) => f.name),
-    locations: locations.map((l) => ({ ...l, count: count('location', l.name) })),
+    locations: locations.merge(overrides.extraLocations).map((l) => ({ ...l, count: count('location', l.name) })),
     testimonials: reviews || fallbackTestimonials,
     overrides,
   };
