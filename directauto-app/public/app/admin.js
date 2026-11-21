@@ -624,7 +624,7 @@
     var d = useSettings();
     var s = useState(null), f = s[0], setF = s[1], b = useState(false), busy = b[0], setBusy = b[1];
     var themes = A.themes;
-    useEffect(function () { if (d.data) setF({ theme: d.data.values.theme || "forest", brandColor: d.data.values.brandColor || "#0e4f45", accentColor: d.data.values.accentColor || "#c93a17", font: d.data.values.fontTheme || "default", style: d.data.values.siteStyle || "standard" }); }, [d.data]);
+    useEffect(function () { if (d.data) setF({ theme: d.data.values.theme || "forest", brandColor: d.data.values.brandColor || "#0e4f45", accentColor: d.data.values.accentColor || "#c93a17", font: d.data.values.fontTheme || "logo", style: d.data.values.siteStyle || "standard" }); }, [d.data]);
     useEffect(function () { Object.keys(A.fonts).forEach(A.loadFont); }, []);
     // Preview while choosing; when leaving the page without saving, go back to what is saved.
     useEffect(function () { if (f) { A.applyStyle(f.style); A.applyTheme(f.theme, f.brandColor, f.accentColor); A.applyFont(f.font); } }, [f]);
@@ -632,13 +632,13 @@
     if (d.error) return h(Err, { text: d.error });
     if (!d.data || !f) return h("p", { className: "ad-muted" }, "Loading…");
     var v = d.data.values, cur = v.theme || "forest";
-    var curFont = v.fontTheme || "default", curStyle = v.siteStyle || "standard";
+    var curFont = v.fontTheme || "logo", curStyle = v.siteStyle || "standard";
     var dirty = f.style !== curStyle || f.theme !== cur || f.font !== curFont || (f.theme === "custom" && (f.brandColor !== (v.brandColor || "#0e4f45") || f.accentColor !== (v.accentColor || "#c93a17")));
     var tooLight = f.theme === "custom" && lum(f.brandColor) > 0.3;
     function pick(id) { setF(Object.assign({}, f, { theme: id })); }
     function save(e) {
       e.preventDefault(); setBusy(true);
-      var body = { siteStyle: f.style === "standard" ? "" : f.style, fontTheme: f.font === "default" ? "" : f.font, theme: f.theme === "forest" ? "" : f.theme, brandColor: f.theme === "custom" ? f.brandColor : "", accentColor: f.theme === "custom" ? f.accentColor : "" };
+      var body = { siteStyle: f.style === "standard" ? "" : f.style, fontTheme: f.font === "logo" ? "" : f.font, theme: f.theme === "forest" ? "" : f.theme, brandColor: f.theme === "custom" ? f.brandColor : "", accentColor: f.theme === "custom" ? f.accentColor : "" };
       api.put("/api/admin/settings", body).then(function (r) { d.set(r); setBusy(false); p.say("Saved. The whole website now uses your choices."); p.changed(); }, function (x) { setBusy(false); p.say(x.message, "danger"); });
     }
     return h("form", { className: "ad-settings", onSubmit: save },
@@ -674,7 +674,7 @@
       h(Card, { title: "Font", text: "The lettering used across the website and this admin. Sinhala and Tamil text uses your device’s own font." },
         h("div", { className: "ad-themes ad-fonts", role: "radiogroup", "aria-label": "Font" },
           Object.keys(A.fonts).map(function (id) {
-            var ft = A.fonts[id], css = id === "default" ? undefined : { fontFamily: '"' + ft.display + '", system-ui, sans-serif' };
+            var ft = A.fonts[id], css = id === "previous" ? undefined : { fontFamily: '"' + ft.display + '", system-ui, sans-serif' };
             return h("button", { key: id, type: "button", role: "radio", "aria-checked": f.font === id, className: cx("ad-theme", "ad-font", f.font === id && "is-on"), onClick: function () { setF(Object.assign({}, f, { font: id })); } },
               h("span", { className: "ad-font__aa", style: css, "aria-hidden": true }, "Aa"), h("b", null, ft.name), h("span", { className: "ad-small ad-muted" }, ft.note),
               id === curFont ? h("span", { className: "ad-small ad-muted" }, "In use") : null, f.font === id ? h(A.Icon, { name: "check", size: 16, className: "ad-theme__ck" }) : null);
@@ -945,7 +945,7 @@
   function Overview(p) {
     var d = useLoad("/api/admin/stats");
     var x = d.data, site = A.site || {}, season = A.seasonState(site), name = (p.user && (p.user.name || p.user.email) || "there").split("@")[0];
-    var font = A.fonts[site.fontTheme] ? A.fonts[site.fontTheme].name : "Standard";
+    var font = A.fonts[site.fontTheme] ? A.fonts[site.fontTheme].name : "Logo font";
     var theme = site.theme && A.themes[site.theme] ? A.themes[site.theme].name : site.theme === "custom" ? "Your own colours" : "Forest";
     var kpis = x ? [["car", "On the website", x.published, "of " + x.vehicles + " vehicles", "vehicles"], ["check", "Ready to drive", x.in_stock, "available now", "vehicles"], ["users", "Customers", x.customers, "registered", "customers"], ["mail", "Subscribers", x.subscribers, "newsletter", "newsletters"]] : [];
     var attn = x ? [

@@ -101,6 +101,7 @@
   // Colours for the page: the season's own colours when switched on, otherwise the theme chosen in Appearance.
   function applySiteTheme(site) {
     applyStyle(site && site.siteStyle);
+    curStyleId = site && site.siteStyle || "standard";
     var st = seasonState(site || {});
     if (st && st.theme) applyTheme("custom", st.def.brand, st.def.accent); else applyTheme(site && site.theme, site && site.brandColor, site && site.accentColor);
     applySeasonDecor(st);
@@ -131,7 +132,7 @@
   function applyStyle(id) {
     var st = STYLES[id], el = document.getElementById("ad-style");
     if (!st || id === "standard" || !st.dark) { if (el) el.remove(); return; }
-    if (st.font && st.font !== "default") loadFont(st.font);
+    if (st.font && st.font !== "previous") loadFont(st.font);
     var f = FONTS[st.font];
     var fontCss = f && f.display ? "--font-display:\"" + f.display + "\",system-ui,sans-serif;--font-sans:\"" + f.body + "\",system-ui,-apple-system,\"Segoe UI\",sans-serif;" : "";
     var dark = styleVars(st.dark);
@@ -142,12 +143,13 @@
     el.textContent = ":root{" + styleVars(st.light, st.r) + fontCss + "}" +
       "@media (prefers-color-scheme: dark){:root:not([data-theme=\"light\"]){" + dark + "color-scheme:dark;}}:root[data-theme=\"dark\"]{" + dark + "color-scheme:dark;}";
   }
-  /* Fonts. "default" is what the stylesheet already loads; the others are fetched from Google Fonts on demand. */
+  /* Fonts. "previous" is what the stylesheet already loads; the others are fetched from Google Fonts on demand. */
   var FONTS = {
-    default: { name: "Standard", note: "Bricolage Grotesque + Instrument Sans" },
+    logo: { name: "Logo font", note: "Rounded and friendly, like the Direct Auto logo", display: "Nunito", body: "Nunito", q: "family=Nunito:wght@400..900" },
+    previous: { name: "Previous font", note: "Bricolage Grotesque + Instrument Sans" },
     inter: { name: "Inter", note: "Clean and neutral", display: "Inter", body: "Inter", q: "family=Inter:wght@400..800" },
     poppins: { name: "Poppins", note: "Rounded and modern", display: "Poppins", body: "Poppins", q: "family=Poppins:wght@400;500;600;700" },
-    nunito: { name: "Nunito", note: "Soft and friendly", display: "Nunito", body: "Nunito", q: "family=Nunito:wght@400..800" },
+    nunito: { name: "Nunito", note: "Soft and friendly (same as the logo font)", display: "Nunito", body: "Nunito", q: "family=Nunito:wght@400..800" },
     montserrat: { name: "Montserrat", note: "Bold and geometric", display: "Montserrat", body: "Montserrat", q: "family=Montserrat:wght@400..800" },
     playfair: { name: "Playfair + Source Sans", note: "Classic and elegant", display: "Playfair Display", body: "Source Sans 3", q: "family=Playfair+Display:wght@500..800&family=Source+Sans+3:wght@400..700" }
   };
@@ -156,9 +158,12 @@
     if (!f || !f.q || document.getElementById("ad-font-link-" + id)) return;
     var l = document.createElement("link"); l.id = "ad-font-link-" + id; l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?" + f.q + "&display=swap"; document.head.appendChild(l);
   }
+  var curStyleId = "standard";
   function applyFont(id) {
+    // Nothing chosen: the logo font, unless the site style (Showroom, Classifieds ...) brings its own font.
+    if (!id) { var sf = STYLES[curStyleId] && STYLES[curStyleId].font; id = sf && sf !== "default" && sf !== "previous" ? "" : "logo"; }
     var f = FONTS[id], el = document.getElementById("ad-font");
-    if (!f || id === "default") { if (el) el.remove(); return; }
+    if (!f || id === "previous") { if (el) el.remove(); return; }
     loadFont(id);
     if (!el) { el = document.createElement("style"); el.id = "ad-font"; document.head.appendChild(el); }
     el.textContent = ":root{--font-display:\"" + f.display + "\",system-ui,sans-serif;--font-sans:\"" + f.body + "\",system-ui,-apple-system,\"Segoe UI\",sans-serif;}";

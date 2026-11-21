@@ -6,7 +6,7 @@ const THEMES = ['forest', 'ocean', 'crimson', 'royal', 'sunset', 'slate', 'custo
 const SEASONS = ['christmas', 'newyear', 'avurudu', 'vesak', 'easter', 'deepavali'];
 const DENSITIES = ['light', 'normal', 'heavy'];
 const STYLES = ['directauto', 'classifieds', 'showroom'];     // complete website styles; anything else = the standard look
-const FONTS = ['inter', 'poppins', 'nunito', 'playfair', 'montserrat'];   // anything else = the built-in font
+const FONTS = ['logo', 'previous', 'inter', 'poppins', 'nunito', 'playfair', 'montserrat'];   // anything else = the built-in font
 // Lists staff can edit as a whole (add / remove / reorder). `req` fields must not be empty or the row is dropped.
 const LISTS = {
   buySteps: { max: 8, f: { t: 100, d: 60, body: 700 }, req: ['t'] },
