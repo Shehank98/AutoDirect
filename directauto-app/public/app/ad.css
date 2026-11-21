@@ -1217,9 +1217,12 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
 /* ============ Logo image ============ */
 .ad-logo { display: inline-flex; align-items: center; line-height: 0; }
 .ad-logo__img { display: block; width: auto; max-width: 100%; object-fit: contain; }
-.ad-logo--inverse .ad-logo__img { background: #fff; padding: 5px 10px; border-radius: 10px; box-sizing: content-box; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ad-logo__img { background: #fff; padding: 4px 8px; border-radius: 9px; box-sizing: content-box; } }
-:root[data-theme="dark"] .ad-logo__img { background: #fff; padding: 4px 8px; border-radius: 9px; box-sizing: content-box; }
+.ad-logo__img--dark { display: none; }
+.ad-logo--inverse .ad-logo__img--light { display: none; }
+.ad-logo--inverse .ad-logo__img--dark { display: block; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ad-logo__img--light { display: none; } :root:not([data-theme="light"]) .ad-logo__img--dark { display: block; } }
+:root[data-theme="dark"] .ad-logo__img--light { display: none; }
+:root[data-theme="dark"] .ad-logo__img--dark { display: block; }
 .ad-nav__brand { display: inline-flex; align-items: center; }
 .ad-auth .ad-logo__img { margin-bottom: 4px; }
 

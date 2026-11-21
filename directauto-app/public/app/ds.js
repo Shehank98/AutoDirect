@@ -270,11 +270,12 @@
 
   /* ---------- Logo ---------- */
   // The company logo (cart + car + clock). Sits on a small white tile in dark places so the navy letters stay readable.
-  var LOGO_RATIO = 1101 / 391;
+  var LOGO_RATIO = 2905 / 422;
   function Logo(p) {
-    var ht = Math.round((p.size || 22) * 2);
+    var ht = Math.round((p.size || 22) * 1.6);
     return h("span", { className: cx("ad-logo", p.inverse && "ad-logo--inverse", p.className) },
-      h("img", { className: "ad-logo__img", src: "/assets/brand/logo.webp", alt: "Direct Auto", width: Math.round(ht * LOGO_RATIO), height: ht, style: { height: ht + "px" }, decoding: "async" }));
+      h("img", { className: "ad-logo__img ad-logo__img--light", src: "/assets/brand/logo.webp", alt: "Direct Auto", width: Math.round(ht * LOGO_RATIO), height: ht, style: { height: ht + "px" }, decoding: "async" }),
+      h("img", { className: "ad-logo__img ad-logo__img--dark", src: "/assets/brand/logo-dark.webp", alt: "", "aria-hidden": true, width: Math.round(ht * LOGO_RATIO), height: ht, style: { height: ht + "px" }, decoding: "async" }));
   }
 
   /* ---------- Button ---------- */
