@@ -281,10 +281,12 @@
   // The company logo (cart + car + clock). Sits on a small white tile in dark places so the navy letters stay readable.
   var LOGO_RATIO = 2905 / 422;
   function Logo(p) {
-    var ht = Math.round((p.size || 22) * 1.6);
-    return h("span", { className: cx("ad-logo", p.inverse && "ad-logo--inverse", p.className) },
-      h("img", { className: "ad-logo__img ad-logo__img--light", src: "/assets/brand/logo.webp", alt: "Direct Auto", width: Math.round(ht * LOGO_RATIO), height: ht, style: { height: ht + "px" }, decoding: "async" }),
-      h("img", { className: "ad-logo__img ad-logo__img--dark", src: "/assets/brand/logo-dark.webp", alt: "", "aria-hidden": true, width: Math.round(ht * LOGO_RATIO), height: ht, style: { height: ht + "px" }, decoding: "async" }));
+    var ht = Math.round((p.size || 22) * 1.6), w = Math.round(ht * LOGO_RATIO);
+    function img(cls, src, alt) { return h("img", { className: "ad-logo__img " + cls, src: src, alt: alt, "aria-hidden": alt ? undefined : true, width: w, height: ht, style: p.short ? undefined : { height: ht + "px" }, decoding: "async" }); }
+    var imgs = [img("ad-logo__img--light", "/assets/brand/logo.webp", "Direct Auto"), img("ad-logo__img--dark", "/assets/brand/logo-dark.webp", "")];
+    // short: only "directauto" (plus the cart) shows; the rest ("import.lk") slides out when the pointer is over the logo.
+    if (p.short) return h("span", { className: cx("ad-logo ad-logo--short", p.inverse && "ad-logo--inverse", p.className), style: { "--lw": w + "px" } }, h("span", { className: "ad-logo__clip" }, imgs));
+    return h("span", { className: cx("ad-logo", p.inverse && "ad-logo--inverse", p.className) }, imgs);
   }
 
   /* ---------- Button ---------- */
@@ -561,7 +563,7 @@
         h("span", { className: "ad-topbar__sp" }),
         h("span", { className: "ad-topbar__live" }, h("span", { className: "ad-pulse", "aria-hidden": true }), T("topbarText", "Japan auction imports for Sri Lanka")))),
       h("div", { className: "ad-wrap ad-nav" },
-        h("a", { href: HREF("home"), className: "ad-nav__brand", "aria-label": "Direct Auto home", onClick: go("home") }, h(Logo, { size: 25 })),
+        h("a", { href: HREF("home"), className: "ad-nav__brand", "aria-label": "Direct Auto home", onClick: go("home") }, h(Logo, { size: 25, short: true })),
         h("nav", { className: cx("ad-nav__links", open && "is-open"), "aria-label": "Main" },
           NAV.filter(function (n) { return !n.hidden || SITE.showAbout === true; }).map(function (n) {
             var isActive = active === n.id || (n.children && n.children.some(function (c) { return c.id === active; }));

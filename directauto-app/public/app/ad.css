@@ -1407,7 +1407,6 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
 
 /* Header logo on narrow phones: scale it down so the menu button never gets pushed off the screen. */
 .ad-nav__brand { min-width: 0; }
-@media (max-width: 560px) { .ad-nav__brand .ad-logo__img { height: auto !important; width: min(200px, 50vw); } }
 
 /* Inquiry tab: form on the left, "what happens next" on the right (stacks on phones) */
 .ad-iqgrid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); gap: 24px; align-items: start; }
@@ -1436,3 +1435,11 @@ button.ad-bside__it:focus-visible { outline: 2px solid var(--focus); outline-off
 /* Top bar: WhatsApp quick link */
 .ad-topbar__wa { color: #4ade80 !important; font-weight: 650; }
 .ad-topbar__wa:hover { text-decoration: underline; }
+
+/* Header logo: only "directauto" shows; "import.lk" slides out when the pointer is over it (or it has keyboard focus). */
+.ad-logo--short { position: relative; display: inline-block; width: calc(var(--lw) * .63); aspect-ratio: 1830 / 422; line-height: 0; }
+.ad-logo--short .ad-logo__clip { position: absolute; left: 0; top: 0; width: var(--lw); height: 100%; background: var(--surface-200); clip-path: inset(0 37% 0 0); transition: clip-path 320ms cubic-bezier(.2,.8,.2,1); z-index: 2; }
+.ad-logo--short .ad-logo__img { width: 100%; height: 100%; max-width: none; }
+.ad-nav__brand:hover .ad-logo__clip, .ad-nav__brand:focus-visible .ad-logo__clip { clip-path: inset(0 0 0 0); }
+@media (max-width: 560px) { .ad-logo--short { --lw: min(250px, 66vw) !important; } }
+@media (prefers-reduced-motion: reduce) { .ad-logo--short .ad-logo__clip { transition: none; } }
